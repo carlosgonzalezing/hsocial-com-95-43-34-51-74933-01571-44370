@@ -2,11 +2,12 @@ import { Star, MessageCircle, Menu, TrendingUp, Bookmark, Settings, Monitor } fr
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/providers/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const auth = useAuth();
   const [open, setOpen] = useState(false);
 
   const menuItems = [
@@ -17,7 +18,7 @@ const Header = () => {
   ];
 
   const handleLogout = async () => {
-    await signOut();
+    await supabase.auth.signOut();
     setOpen(false);
   };
 

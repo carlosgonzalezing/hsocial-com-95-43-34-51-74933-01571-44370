@@ -54,7 +54,7 @@ export function StoriesBar() {
     <>
       <div className="w-full border-b border-border bg-background">
         <ScrollArea className="w-full">
-          <div className="flex gap-2 py-1.5 px-4">
+          <div className="flex gap-2 py-3 px-4">
             {/* Create Story Button - Always visible */}
             {user && currentUserProfile && (
               <StoryCircle
@@ -73,15 +73,6 @@ export function StoriesBar() {
                 onClick={() => setSelectedStoryId(story.id)}
               />
             ))}
-            
-            {/* Message when no stories from friends */}
-            {stories.length === 0 && user && (
-              <div className="flex items-center px-4">
-                <p className="text-sm text-muted-foreground whitespace-nowrap">
-                  Tus amigos aún no han publicado historias. Sé el primero en compartir una.
-                </p>
-              </div>
-            )}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>

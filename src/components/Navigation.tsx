@@ -1,5 +1,4 @@
 import { Home, MessageCircle, User, Heart, UserPlus, Film, TrendingUp, Users, Video, Bell, Crown, FolderOpen } from "lucide-react";
-import { Logo } from "./navigation/Logo";
 import { NavigationItem } from "./navigation/NavigationItem";
 import { useNavigation } from "./navigation/use-navigation";
 import { useFriends } from "@/hooks/use-friends";
