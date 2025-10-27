@@ -28,6 +28,15 @@ export interface Idea {
   contact_link?: string;
 }
 
+export interface Proyecto {
+  title: string;
+  description: string;
+  required_skills: string[];
+  status: 'planificacion' | 'desarrollo' | 'finalizado';
+  contact_link?: string;
+  max_participants: number;
+}
+
 export interface EventForm {
   title: string;
   description: string;
@@ -45,7 +54,7 @@ export interface EventForm {
   banner_file?: File | null;
 }
 
-type PostType = 'regular' | 'idea' | 'evento';
+type PostType = 'regular' | 'idea' | 'proyecto';
 type Visibility = 'public' | 'friends' | 'private' | 'incognito';
 
 interface PostCreatorProps {
@@ -82,6 +91,14 @@ export function PostCreator({
     contact_link: ""
   });
   const [tempSkills, setTempSkills] = useState(""); // Temporary state for skills input
+  const [proyecto, setProyecto] = useState<Proyecto>({
+    title: "",
+    description: "",
+    required_skills: [],
+    status: 'planificacion',
+    contact_link: "",
+    max_participants: 5
+  });
   const [evento, setEvento] = useState<EventForm>({
     title: "",
     description: "",
@@ -190,8 +207,8 @@ export function PostCreator({
         return;
       }
 
-      if (postType === 'evento' && (!evento.title.trim() || !evento.description.trim() || !evento.start_date || !evento.location.trim())) {
-        mobileToasts.validationError("Completa los campos obligatorios del evento (título, descripción, fecha y ubicación)");
+      if (postType === 'proyecto' && (!proyecto.title.trim() || !proyecto.description.trim())) {
+        mobileToasts.validationError("Completa los campos obligatorios del proyecto (título y descripción)");
         return;
       }
 
@@ -253,165 +270,19 @@ export function PostCreator({
 
       console.log("Creating post with data:", postData);
       
-      // Handle events separately using atomic function
-      if (postType === 'evento' && evento.title.trim()) {
-        // Use atomic function for events with enhanced validation
-        console.log("🎯 Creating academic event with data:", {
-          title: evento.title,
-          description: evento.description,
-          category: evento.category,
-          start_date: evento.start_date,
-          end_date: evento.end_date,
-          location: evento.location,
-          location_type: evento.location_type,
-          max_attendees: evento.max_attendees,
-          registration_required: evento.registration_required,
-          contact_info: evento.contact_info
-        });
-        
-        // Validate required fields one more time
-        if (!evento.title.trim() || !evento.description.trim() || !evento.start_date || !evento.location.trim()) {
-          throw new Error('Faltan campos obligatorios para el evento');
-        }
-        
-        // Validate category is in allowed list
-        const validCategories = ['conference', 'seminar', 'workshop', 'hackathon', 'webinar', 'networking', 'career_fair'];
-        if (!validCategories.includes(evento.category)) {
-          console.error('❌ Invalid event category:', evento.category);
-          throw new Error(`Categoría de evento no válida: ${evento.category}`);
-        }
-        
-        // Validate location type
-        const validLocationTypes = ['presencial', 'virtual', 'híbrido'];
-        if (!validLocationTypes.includes(evento.location_type)) {
-          console.error('❌ Invalid location type:', evento.location_type);
-          throw new Error(`Tipo de ubicación no válido: ${evento.location_type}`);
-        }
-        
-        // Convert date strings to proper timestamps
-        const formatDateForDB = (dateString: string): string => {
-          if (!dateString) return '';
-          
-          // If it's already in the right format, return as is
-          if (dateString.includes('T')) {
-            // Ensure it has timezone info
-            if (!dateString.endsWith('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-              return `${dateString}:00.000Z`;
-            }
-            return dateString;
+      // Handle proyectos - store metadata in post_metadata
+      if (postType === 'proyecto' && proyecto.title.trim()) {
+        postData.post_metadata = {
+          ...postData.post_metadata,
+          proyecto: {
+            title: proyecto.title,
+            description: proyecto.description,
+            required_skills: proyecto.required_skills,
+            status: proyecto.status,
+            contact_link: proyecto.contact_link || '',
+            max_participants: proyecto.max_participants
           }
-          
-          // If it's just a date, add default time
-          return `${dateString}T09:00:00.000Z`;
         };
-        
-        const formattedStartDate = formatDateForDB(evento.start_date);
-        const formattedEndDate = evento.end_date ? formatDateForDB(evento.end_date) : null;
-        
-        console.log('📅 Formatted dates:', {
-          original_start: evento.start_date,
-          formatted_start: formattedStartDate,
-          original_end: evento.end_date,
-          formatted_end: formattedEndDate
-        });
-        
-        // Validate required fields
-        if (!formattedStartDate) {
-          mobileToasts.validationError("La fecha de inicio es requerida");
-          setIsUploading(false);
-          return;
-        }
-        
-        // Use the atomic function to create both post and event
-        const { data: eventResult, error: eventError } = await supabase
-          .rpc('create_academic_event_atomic', {
-            post_content: content.trim() || null,
-            post_visibility: visibilityValue,
-            event_title: evento.title.trim(),
-            event_description: evento.description.trim(),
-            event_type: evento.category, // Map category to event_type
-            start_date: formattedStartDate,
-            end_date: formattedEndDate,
-            location: evento.location.trim(),
-            is_virtual: evento.location_type === 'virtual',
-            meeting_link: evento.location_type === 'virtual' ? evento.location.trim() : null,
-            max_attendees: evento.max_attendees || null,
-            user_id_param: session.user.id
-          });
-
-        console.log('📤 RPC call completed:', { eventResult, eventError });
-        
-        if (eventError) {
-          console.error('❌ Event creation error:', eventError);
-          
-          // Enhanced error handling for specific cases
-          let errorMessage = 'Error al crear el evento';
-          if (eventError.message?.includes('invalid input syntax')) {
-            errorMessage = 'Error en el formato de fecha. Por favor verifica las fechas ingresadas.';
-          } else if (eventError.message?.includes('permission denied')) {
-            errorMessage = 'No tienes permisos para crear eventos.';
-          } else if (eventError.message?.includes('violates check constraint')) {
-            errorMessage = 'Los datos del evento no son válidos. Revisa los campos obligatorios.';
-          } else if (eventError.message) {
-            errorMessage = eventError.message;
-          }
-          
-          mobileToasts.error(errorMessage);
-          setIsUploading(false);
-          return;
-        }
-
-        // Parse the result as JSON and check success
-        const result = eventResult as { success: boolean; error?: string; event_id?: string; post_id?: string };
-        console.log('📋 Parsed result:', result);
-        
-        if (!result?.success) {
-          const errorMsg = result?.error || 'Error desconocido al crear evento';
-          console.error('❌ Event creation failed:', errorMsg);
-          mobileToasts.error(errorMsg);
-          setIsUploading(false);
-          return;
-        }
-
-        console.log('✅ Event created successfully:', eventResult);
-        
-        // Clear form and show success message
-        mobileToasts.postCreated();
-        onPostCreated?.();
-        clearDraft();
-        
-        // Reset form
-        setContent("");
-        setVisibility("public");
-        setPostType("regular");
-        setSelectedFile(null);
-        setContentStyle({
-          backgroundKey: 'none',
-          textColor: 'text-foreground',
-          isTextOnly: false
-        });
-        setIdea({
-          title: "",
-          description: "",
-          required_skills: [],
-          max_participants: 5,
-          contact_link: ""
-        });
-        setTempSkills("");
-        setEvento({
-          title: "",
-          description: "",
-          subtitle: "",
-          start_date: "",
-          location: "",
-          location_type: 'presencial',
-          category: 'conference',
-          gradient_color: 'gradient-1',
-          banner_file: null
-        });
-        
-        setIsUploading(false);
-        return; // Exit early for events
       }
       
       // Insert regular post or idea post
@@ -508,8 +379,6 @@ export function PostCreator({
           errorMessage = "Datos del evento no válidos. Revisa los campos obligatorios.";
         } else if (errorMsg.includes('permission') || errorMsg.includes('access')) {
           errorMessage = "No tienes permisos para realizar esta acción.";
-        } else if (postType === 'evento' && (errorMsg.includes('category') || errorMsg.includes('type'))) {
-          errorMessage = "Tipo de evento no válido. Selecciona una categoría correcta.";
         } else {
           errorMessage = error.message;
         }
@@ -543,55 +412,15 @@ export function PostCreator({
         const isValid = validation.hasTitle && validation.hasDescription && validation.validParticipants;
         console.log('💡 Idea validation:', { ...validation, isValid });
         return isValid;
-      } else if (postType === 'evento') {
-        // Valid event categories from database constraint
-        const validCategories = ['conference', 'seminar', 'workshop', 'hackathon', 'webinar', 'networking', 'career_fair'];
-        
-        const validation = {
-          hasTitle: evento.title && evento.title.trim().length >= 5,
-          hasDescription: evento.description && evento.description.trim().length >= 10,
-          hasStartDate: !!evento.start_date,
-          hasLocation: evento.location && evento.location.trim().length >= 3,
-          validCategory: evento.category && validCategories.includes(evento.category),
-          validLocationType: evento.location_type && ['presencial', 'virtual', 'híbrido'].includes(evento.location_type)
+      } else if (postType === 'proyecto') {
+        const validationProyecto = {
+          hasTitle: proyecto.title.trim().length >= 5,
+          hasDescription: proyecto.description.trim().length >= 10,
+          validParticipants: proyecto.max_participants > 0 && proyecto.max_participants <= 50
         };
-        
-        const isValid = validation.hasTitle && 
-                        validation.hasDescription && 
-                        validation.hasStartDate && 
-                        validation.hasLocation && 
-                        validation.validCategory && 
-                        validation.validLocationType;
-        
-        console.log('🎪 Event validation:', { 
-          ...validation, 
-          isValid,
-          eventData: {
-            title: evento.title,
-            titleLength: evento.title.length,
-            description: evento.description,
-            descriptionLength: evento.description.length,
-            start_date: evento.start_date,
-            location: evento.location,
-            locationLength: evento.location.length,
-            category: evento.category,
-            location_type: evento.location_type
-          }
-        });
-        
-        if (!isValid) {
-          const missingFields = [];
-          if (!validation.hasTitle) missingFields.push(`título (actual: "${evento.title || ''}" - necesita mínimo 5 caracteres)`);
-          if (!validation.hasDescription) missingFields.push(`descripción (actual: "${evento.description || ''}" - necesita mínimo 10 caracteres)`);
-          if (!validation.hasStartDate) missingFields.push(`fecha de inicio (actual: "${evento.start_date || ''}")`);
-          if (!validation.hasLocation) missingFields.push(`ubicación (actual: "${evento.location || ''}" - necesita mínimo 3 caracteres)`);
-          if (!validation.validCategory) missingFields.push(`categoría válida (actual: "${evento.category || ''}" - debe ser una de: ${validCategories.join(', ')})`);
-          if (!validation.validLocationType) missingFields.push(`tipo de ubicación válido (actual: "${evento.location_type || ''}" - debe ser: presencial, virtual, o híbrido)`);
-          
-          console.warn('❌ Event validation failed. Missing/invalid fields:', missingFields);
-        }
-        
-        return isValid;
+        const isValidProyecto = validationProyecto.hasTitle && validationProyecto.hasDescription && validationProyecto.validParticipants;
+        console.log('📁 Proyecto validation:', { ...validationProyecto, isValidProyecto });
+        return isValidProyecto;
       }
       
       console.log('❌ Unknown postType:', postType);
@@ -715,70 +544,68 @@ export function PostCreator({
         </div>
       )}
 
-      {postType === 'evento' && (
-        <>
-          <EventCreatorForm 
-            event={evento} 
-            setEvent={setEvento}
-          />
-          
-          {/* Debug panel for event validation - remove in production */}
-          <div className="mt-4 p-3 border border-orange-200 bg-orange-50 rounded-lg text-xs">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-medium">🔍 Estado de Validación:</span>
-              <span className={`px-2 py-1 rounded ${isFormValid() ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {isFormValid() ? 'Válido ✅' : 'Inválido ❌'}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>Título: {evento.title.length >= 5 ? '✅' : '❌'} ({evento.title.length}/5)</div>
-              <div>Descripción: {evento.description.length >= 10 ? '✅' : '❌'} ({evento.description.length}/10)</div>
-              <div>Fecha: {evento.start_date ? '✅' : '❌'}</div>
-              <div>Ubicación: {evento.location.length >= 3 ? '✅' : '❌'} ({evento.location.length}/3)</div>
-              <div>Categoría: {['conference', 'seminar', 'workshop', 'hackathon', 'webinar', 'networking', 'career_fair'].includes(evento.category) ? '✅' : '❌'}</div>
-              <div>Tipo: {['presencial', 'virtual', 'híbrido'].includes(evento.location_type) ? '✅' : '❌'}</div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Marketplace creator removed for performance */}
-
-      {postType === 'regular' && (
-        <>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <AttachmentInput
-              onFileSelect={handleFileSelect}
-              isUploading={isUploading}
-              type="image"
-              label="Fotos y Videos"
-              showLabel={true}
-              buttonSize="sm"
-              buttonClassName="flex-1 sm:flex-none justify-center"
-              accept="image/*,video/*"
-            />
-            <AttachmentInput
-              onFileSelect={handleFileSelect}
-              isUploading={isUploading}
-              type="file"
-              showLabel={true}
-              label="Archivos"
-              buttonSize="sm"
-              buttonClassName="flex-1 sm:flex-none justify-center"
-              accept="*/*"
+      {postType === 'proyecto' && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Título del proyecto</label>
+            <input
+              type="text"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="Ej: App para conectar empresas"
+              value={proyecto.title}
+              onChange={(e) => setProyecto({ ...proyecto, title: e.target.value })}
             />
           </div>
-
-          {selectedFile && (
-            <AttachmentPreview
-              previews={[URL.createObjectURL(selectedFile)]}
-              files={[selectedFile]}
-              onRemove={removeAttachment}
-              className="w-full"
-              previewClassName="w-full h-40 sm:h-48 object-cover rounded-lg"
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Descripción</label>
+            <Textarea
+              placeholder="Describe tu proyecto en detalle"
+              value={proyecto.description}
+              onChange={(e) => setProyecto({ ...proyecto, description: e.target.value })}
             />
-          )}
-        </>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Habilidades requeridas</label>
+            <input
+              type="text"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="Ej: React, Node.js, Diseño UI"
+              value={proyecto.required_skills.join(', ')}
+              onChange={(e) => setProyecto({ ...proyecto, required_skills: e.target.value.split(',').map(s => s.trim()) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Estado del proyecto</label>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={proyecto.status}
+              onChange={(e) => setProyecto({ ...proyecto, status: e.target.value as any })}
+            >
+              <option value="planificacion">En planificación</option>
+              <option value="desarrollo">En desarrollo</option>
+              <option value="finalizado">Finalizado</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Enlace de contacto (opcional)</label>
+            <input
+              type="text"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="https://wa.me/1234567890 o https://t.me/usuario"
+              value={proyecto.contact_link || ""}
+              onChange={(e) => setProyecto({ ...proyecto, contact_link: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Máximo participantes</label>
+            <input
+              type="number"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={proyecto.max_participants}
+              onChange={(e) => setProyecto({ ...proyecto, max_participants: parseInt(e.target.value) })}
+            />
+          </div>
+        </div>
       )}
 
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between sm:items-center">

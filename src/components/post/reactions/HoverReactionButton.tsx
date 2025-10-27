@@ -73,21 +73,20 @@ export function HoverReactionButton({ 
     setShowReactions(false);
   }, [onReactionClick, setShowReactions]);
 
-  return (
-    <div className="relative">
-      {/* Menú de reacciones flotante */}
-      {showReactions && (
-        {/* CORRECCIÓN FINAL: Centrado (left-1/2 transform -translate-x-1/2) + Margen negativo AGRESIVO (ml-[-16rem]) para compensar. */}
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 ml-[-16rem]"> 
-          <ReactionMenu
-            show={showReactions}
-            activeReaction={activeReaction}
-            setActiveReaction={setActiveReaction}
-            onReactionSelected={handleReactionSelected}
-            onPointerLeave={() => setActiveReaction(null)}
-          />
-        </div>
-      )}
+  return (
+    <div className="relative">
+      {/* Menú de reacciones flotante */}
+      {showReactions && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 ml-[-16rem]"> 
+          <ReactionMenu
+            show={showReactions}
+            activeReaction={activeReaction}
+            setActiveReaction={setActiveReaction}
+            onReactionSelected={handleReactionSelected}
+            onPointerLeave={() => setActiveReaction(null)}
+          />
+        </div>
+      )}
 
       <Button 
         ref={buttonRef}

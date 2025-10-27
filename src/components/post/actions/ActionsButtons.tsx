@@ -97,21 +97,19 @@ export function ActionsButtons({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {/* Reaccionar - Instagram style con long press */}
-          <div className="relative">
-            {/* Menú de reacciones flotante */}
-            {showReactions && (
-              {/* CORRECCIÓN: Aumentamos el desplazamiento negativo a ml-[-10rem] para asegurar la visibilidad en móviles, 
-                   y añadimos sm:ml-0 para que se centre correctamente en escritorio. */}
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 ml-[-10rem] sm:ml-0">
-                <ReactionMenu
-                  show={showReactions}
-                  activeReaction={activeReaction}
-                  setActiveReaction={setActiveReaction}
-                  onReactionSelected={handleReactionSelected}
-                  onPointerLeave={() => setActiveReaction(null)}
-                />
-              </div>
-            )}
+          <div className="relative">
+            {/* Menú de reacciones flotante */}
+            {showReactions && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 ml-[-10rem] sm:ml-0">
+                <ReactionMenu
+                  show={showReactions}
+                  activeReaction={activeReaction}
+                  setActiveReaction={setActiveReaction}
+                  onReactionSelected={handleReactionSelected}
+                  onPointerLeave={() => setActiveReaction(null)}
+                />
+              </div>
+            )}
 
             <Button
               ref={buttonRef}

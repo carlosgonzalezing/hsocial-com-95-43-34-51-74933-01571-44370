@@ -1,8 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { SparklesIcon, MessageCircle, Calendar, Plus } from "lucide-react";
+import { MessageCircle, Lightbulb, Briefcase } from "lucide-react";
 
-type PostType = 'regular' | 'idea' | 'evento';
+type PostType = 'regular' | 'idea' | 'proyecto';
 
 interface PostCreatorHeaderProps {
   postType: PostType;
@@ -14,36 +14,35 @@ export function PostCreatorHeader({
   setPostType 
 }: PostCreatorHeaderProps) {
   return (
-    <div className="flex items-center gap-1 pb-3 border-b overflow-x-auto scrollbar-hide">
+    <div className="flex items-center gap-2 pb-4 border-b">
       <Button
         variant={postType === 'regular' ? "default" : "ghost"}
         size="sm"
         onClick={() => setPostType('regular')}
-        className="flex items-center gap-1 px-2 py-1 min-w-fit text-xs whitespace-nowrap"
+        className="flex items-center gap-2 px-4 py-2"
       >
-        <MessageCircle className="h-3 w-3" />
-        <span className="hidden xs:inline">Regular</span>
+        <MessageCircle className="h-4 w-4" />
+        <span>Publicación</span>
       </Button>
       
       <Button
         variant={postType === 'idea' ? "default" : "ghost"}
         size="sm"
         onClick={() => setPostType('idea')}
-        className="flex items-center gap-1 px-2 py-1 min-w-fit text-xs whitespace-nowrap"
+        className="flex items-center gap-2 px-4 py-2"
       >
-        <SparklesIcon className="h-3 w-3" />
-        <span className="hidden xs:inline">Idea</span>
+        <Lightbulb className="h-4 w-4" />
+        <span>Idea</span>
       </Button>
       
       <Button
-        variant={postType === 'evento' ? "default" : "ghost"}
+        variant={postType === 'proyecto' ? "default" : "ghost"}
         size="sm"
-        onClick={() => setPostType('evento')}
-        className="flex items-center gap-1 px-2 py-1 min-w-fit text-xs whitespace-nowrap"
+        onClick={() => setPostType('proyecto')}
+        className="flex items-center gap-2 px-4 py-2"
       >
-        <Plus className="h-3 w-3" />
-        <Calendar className="h-3 w-3" />
-        <span className="hidden xs:inline">Crear Evento</span>
+        <Briefcase className="h-4 w-4" />
+        <span>Proyecto</span>
       </Button>
     </div>
   );
