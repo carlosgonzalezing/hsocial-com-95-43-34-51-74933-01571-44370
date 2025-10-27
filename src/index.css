@@ -5,41 +5,41 @@
 
 @layer base {
   :root {
-    /* Instagram Style Pure White */
-    --background: 0 0% 100%; /* Pure white #FFFFFF */
-    --foreground: 0 0% 9%; /* Pure black text #171717 */
-    --primary: 0 0% 9%; /* Pure black primary */
+    /* H Social - Blanco, Azul y Negro */
+    --background: 0 0% 100%; /* Blanco puro #FFFFFF */
+    --foreground: 0 0% 0%; /* Negro puro #000000 */
+    --primary: 221 83% 53%; /* Azul H Social #1877F2 */
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 0 0% 96%; /* Light gray for secondary elements */
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 0 0% 96%; /* Gris claro para elementos secundarios */
+    --secondary-foreground: 0 0% 0%;
     
-    --destructive: 0 84% 60%; /* Red for destructive actions */
+    --destructive: 0 84% 60%; /* Rojo para acciones destructivas */
     --destructive-foreground: 0 0% 98%;
     
-    --muted: 0 0% 96%; /* Muted backgrounds */
-    --muted-foreground: 0 0% 45%; /* Muted text */
+    --muted: 0 0% 96%; /* Fondos silenciados */
+    --muted-foreground: 0 0% 45%; /* Texto silenciado */
     
     --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
+    --accent-foreground: 0 0% 0%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 0 0% 0%;
     
-    --card: 0 0% 100%; /* Pure white cards */
-    --card-foreground: 0 0% 9%;
+    --card: 0 0% 100%; /* Tarjetas blancas puras */
+    --card-foreground: 0 0% 0%;
     
-    --border: 0 0% 89%; /* Subtle borders */
-    --input: 0 0% 100%; /* Pure white inputs */
-    --ring: 0 0% 9%;
+    --border: 0 0% 89%; /* Bordes sutiles */
+    --input: 0 0% 96%; /* Inputs con fondo gris claro */
+    --ring: 221 83% 53%;
     
-    --radius: 0.5rem; /* Facebook uses smaller radius */
+    --radius: 0.5rem;
     
-    /* Facebook specific colors */
-    --facebook-blue: 221 44% 41%; /* #1877F2 */
+    /* H Social colores específicos */
+    --facebook-blue: 221 83% 53%; /* #1877F2 */
     --facebook-green: 142 76% 36%; /* #42B883 */
     --facebook-red: 0 100% 60%; /* #FF3040 */
-    --facebook-text-primary: 0 0% 19%; /* #1C1E21 */
+    --facebook-text-primary: 0 0% 0%; /* #000000 */
     --facebook-text-secondary: 0 0% 40%; /* #65676B */
     --facebook-hover: 0 0% 96%; /* #F0F2F5 */
     --facebook-active: 0 0% 93%; /* #E4E6EA */

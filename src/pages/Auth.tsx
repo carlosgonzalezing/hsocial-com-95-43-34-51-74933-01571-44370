@@ -97,31 +97,14 @@ export default function Auth() {
     <>
       <SEOHead {...seoData} />
       <RecoveryTokenHandler />
-      <main className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-8 sm:py-12 relative" role="main">
-      {/* Theme Toggle Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 z-10"
-      >
-        {theme === "dark" ? (
-          <Sun className="h-5 w-5" />
-        ) : (
-          <Moon className="h-5 w-5" />
-        )}
-      </Button>
-
-      <div className="w-full max-w-md space-y-6 bg-background rounded-lg shadow-sm p-6 sm:p-8">
+      <main className="min-h-screen flex items-center justify-center bg-background px-4 py-8 sm:py-12 relative" role="main">
+      <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="mx-auto w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-4">
-            <span className="text-2xl font-bold text-primary-foreground">H</span>
+          <div className="mx-auto mb-4">
+            <span className="text-6xl font-bold text-primary">H</span>
           </div>
-          <h1 className="text-2xl font-semibold">
-            {authMode === 'login' ? "Iniciar sesión" : "Crear cuenta"}
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            {authMode === 'login' ? "Bienvenido de nuevo" : "Regístrate para comenzar"}
+          <p className="text-muted-foreground text-sm">
+            Conecta Ideas con Proyectos
           </p>
         </div>
 
@@ -152,8 +135,9 @@ export default function Auth() {
               size="sm"
               onClick={() => setAuthMode('register')}
               disabled={loading}
+              className="text-foreground hover:text-primary"
             >
-              ¿No tienes cuenta? Crear cuenta
+              ¿No tienes cuenta? <span className="font-semibold ml-1">Crear cuenta</span>
             </Button>
           ) : (
             <Button
@@ -161,8 +145,9 @@ export default function Auth() {
               size="sm"
               onClick={() => setAuthMode('login')}
               disabled={loading}
+              className="text-foreground hover:text-primary"
             >
-              ¿Ya tienes cuenta? Iniciar sesión
+              ¿Ya tienes cuenta? <span className="font-semibold ml-1">Iniciar sesión</span>
             </Button>
           )}
         </div>

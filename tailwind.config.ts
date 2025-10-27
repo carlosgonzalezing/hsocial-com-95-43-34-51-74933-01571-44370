@@ -47,11 +47,11 @@ export default {
         'safe-right': 'env(safe-area-inset-right)',
       },
       colors: {
-        // Facebook Colors
+        // H Social Colors
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--facebook-blue))", // #1877F2
+          DEFAULT: "hsl(var(--primary))", 
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
