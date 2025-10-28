@@ -36,7 +36,7 @@ export const reactionIcons = {
   wow: {
     icon: Heart,
     color: "text-purple-400",
-    label: "Me Asombra",
+    label: "Me sorprende",
     emoji: "😮",
     animationClass: "reaction-wow",
     size: "text-3xl"
@@ -52,7 +52,7 @@ export const reactionIcons = {
   interesting: {
     icon: Lightbulb,
     color: "text-orange-500",
-    label: "Interesante",
+    label: "Gran idea",
     emoji: "💡",
     animationClass: "reaction-interesting",
     size: "text-3xl"
