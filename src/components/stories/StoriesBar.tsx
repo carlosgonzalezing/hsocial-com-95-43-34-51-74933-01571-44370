@@ -12,9 +12,7 @@ export function StoriesBar() {
   const { stories, isLoading } = useStories();
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [showCreator, setShowCreator] = useState(false);
-  const [currentUserProfile, setCurrentUserProfile] = useState<{ avatar_url: string | null; username: string } | null>(
-    null,
-  );
+  const [currentUserProfile, setCurrentUserProfile] = useState<{ avatar_url: string | null; username: string } | null>(null);
 
   // Fetch current user profile
   useEffect(() => {
@@ -24,8 +22,12 @@ export function StoriesBar() {
     }
 
     const fetchProfile = async () => {
-      const { data } = await supabase.from("profiles").select("avatar_url, username").eq("id", user.id).single();
-
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url, username')
+        .eq('id', user.id)
+        .single();
+      
       if (data) {
         setCurrentUserProfile(data);
       }
@@ -51,40 +53,20 @@ export function StoriesBar() {
   return (
     <>
       <div className="w-full border-b border-border bg-background">
-        <ScrollArea className="w-full">
-          {/* CORRECCIÓN CLAVE: py-2 cambiado a py-1 para reducir el espacio vertical */}
-          <div className="flex gap-3 py-1 px-3">
-            {/* Create Story Button - Always visible */}
-            {user && currentUserProfile && (
-              <StoryCircle
-                isCreate
-                onClick={() => setShowCreator(true)}
-                currentUserAvatar={currentUserProfile.avatar_url}
-                currentUsername={currentUserProfile.username}
-              />
-            )}
+       // Dentro de StoriesBar.tsx, alrededor de la línea 56
 
-            {/* Story Circles */}
-            {stories.map((story) => (
-              <StoryCircle key={story.id} story={story} onClick={() => setSelectedStoryId(story.id)} />
-            ))}
+  return (
+    <>
+      <div className="w-full border-b border-border bg-background">
+        <ScrollArea className="w-full">
+          {/* APLICA ESTE CAMBIO: py-2 cambiado a py-1 (o py-0.5 si aún hay espacio) */}
+          <div className="flex gap-3 py-1 px-3"> 
+            {/* ... Contenido de Historias ... */}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
-
-      {/* Story Viewer Modal */}
-      {selectedStoryId && (
-        <StoryViewer
-          storyId={selectedStoryId}
-          allStories={stories}
-          onClose={() => setSelectedStoryId(null)}
-          onNavigate={setSelectedStoryId}
-        />
-      )}
-
-      {/* Story Creator Modal */}
-      <StoryCreator open={showCreator} onOpenChange={setShowCreator} />
+      {/* ... */}
     </>
   );
 }
