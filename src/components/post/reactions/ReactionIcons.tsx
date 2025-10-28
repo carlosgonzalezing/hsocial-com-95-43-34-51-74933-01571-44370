@@ -1,13 +1,13 @@
 import { Heart, Star, Lightbulb, HandshakeIcon } from "lucide-react";
 
 export const reactionIcons = {
-  love: { 
-    icon: Heart, 
-    color: "text-red-500", 
+  love: {
+    icon: Heart,
+    color: "text-red-500",
     label: "Me Encanta",
     emoji: "❤️",
     animationClass: "reaction-love",
-    size: "text-3xl"
+    size: "text-3xl",
   },
   awesome: {
     icon: Star,
@@ -15,7 +15,7 @@ export const reactionIcons = {
     label: "Éxito",
     emoji: "⭐",
     animationClass: "reaction-awesome",
-    size: "text-3xl"
+    size: "text-3xl",
   },
   haha: {
     icon: Heart,
@@ -23,7 +23,7 @@ export const reactionIcons = {
     label: "Me Divierte",
     emoji: "😂",
     animationClass: "reaction-haha",
-    size: "text-3xl"
+    size: "text-3xl",
   },
   join: {
     icon: HandshakeIcon,
@@ -31,7 +31,7 @@ export const reactionIcons = {
     label: "Me Uno",
     emoji: "🤝",
     animationClass: "reaction-join",
-    size: "text-3xl"
+    size: "text-3xl",
   },
   wow: {
     icon: Heart,
@@ -39,7 +39,7 @@ export const reactionIcons = {
     label: "Me sorprende",
     emoji: "😮",
     animationClass: "reaction-wow",
-    size: "text-3xl"
+    size: "text-3xl",
   },
   angry: {
     icon: Heart,
@@ -47,7 +47,7 @@ export const reactionIcons = {
     label: "Me Enoja",
     emoji: "😠",
     animationClass: "reaction-angry",
-    size: "text-3xl"
+    size: "text-3xl",
   },
   interesting: {
     icon: Lightbulb,
@@ -55,8 +55,8 @@ export const reactionIcons = {
     label: "Gran idea",
     emoji: "💡",
     animationClass: "reaction-interesting",
-    size: "text-3xl"
-  }
+    size: "text-3xl",
+  },
 } as const;
 
 export type ReactionType = keyof typeof reactionIcons;
