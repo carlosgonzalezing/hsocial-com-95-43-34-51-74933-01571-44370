@@ -45,18 +45,18 @@ export function HoverReactionButton({ 
   const primaryReactionType: ReactionType = userReaction || "love";
   const reactionData = reactionIcons[primaryReactionType];
   
-  // Click en el botón principal
-  const handleButtonClick = useCallback(() => {
-    if (!showReactions) {
-      setAnimatingReaction(primaryReactionType);
-      
-      // Clear animation after it completes
-      setTimeout(() => setAnimatingReaction(null), 600);
-      
-      // Toggle reacción
-      onReactionClick(primaryReactionType);
-    }
-  }, [onReactionClick, primaryReactionType, showReactions]);
+  // Click en el botón principal
+  const handleButtonClick = useCallback(() => {
+    if (userReaction) {
+      // Si ya reaccionó, cambiar/quitar la reacción
+      setAnimatingReaction(primaryReactionType);
+      setTimeout(() => setAnimatingReaction(null), 600);
+      onReactionClick(primaryReactionType);
+    } else {
+      // Si no ha reaccionado, mostrar menú
+      setShowReactions(true);
+    }
+  }, [onReactionClick, primaryReactionType, userReaction, setShowReactions]);
 
   // Determinar si el usuario ha reaccionado
   const hasReacted = userReaction !== null;

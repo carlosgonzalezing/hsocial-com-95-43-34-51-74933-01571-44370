@@ -17,24 +17,21 @@ export function ReactionMenu({
   onReactionSelected,
   onPointerLeave,
 }: ReactionMenuProps) {
-  if (!show) return null; // Mostramos las 7 reacciones
+  if (!show) return null;
 
   const reactionTypes: ReactionType[] = ["love", "awesome", "haha", "join", "wow", "angry", "interesting"];
+  
   return (
     <div
       className={cn(
-        "flex items-center gap-1",
-        "bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-full",
-        "px-2 py-1.5 shadow-2xl transition-all duration-200",
-        // CORRECCIÓN CRÍTICA:
-        // 'flex-nowrap' asegura que se mantenga en una línea.
-        // 'min-w-max' fuerza que el ancho mínimo sea el necesario para el contenido (7 emojis).
+        "flex items-center gap-2",
+        "bg-white dark:bg-gray-900 border border-border rounded-full",
+        "px-4 py-3 shadow-xl transition-all duration-200",
         "flex-nowrap min-w-max",
         show ? "opacity-100 scale-100" : "opacity-0 scale-95",
       )}
       onPointerLeave={onPointerLeave}
     >
-      {" "}
       {reactionTypes.map((type) => {
         const reaction = reactionIcons[type];
         const isActive = activeReaction === type;
@@ -42,18 +39,21 @@ export function ReactionMenu({
           <button
             key={type}
             className={cn(
-              "reaction-menu-item p-1 rounded-full transition-all duration-150 hover:scale-110 hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0",
-              isActive && "scale-110 ring-2 ring-primary bg-gray-100 dark:bg-gray-800",
+              "flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-150",
+              "hover:scale-110 hover:bg-muted/50 flex-shrink-0",
+              isActive && "scale-110 bg-muted"
             )}
             onClick={() => onReactionSelected(type)}
             onPointerEnter={() => setActiveReaction(type)}
             onPointerLeave={() => setActiveReaction(null)}
-            title={reaction.label}
           >
-            <span className="text-xl leading-none block">{reaction.emoji}</span>{" "}
+            <span className="text-2xl leading-none block">{reaction.emoji}</span>
+            <span className="text-[10px] font-medium text-foreground whitespace-nowrap">
+              {reaction.label}
+            </span>
           </button>
         );
-      })}{" "}
+      })}
     </div>
   );
 }

@@ -119,12 +119,12 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
     return (
       <nav className="bg-background border-b border-border fixed top-0 left-0 right-0 z-[70]">
         {/* Simplified top bar - Instagram Style */}
-        <div className="flex items-center justify-between h-14 px-4">
-          {/* Logo - "H Social" with purple icon */}
+        <div className="flex items-center justify-between h-14 px-3">
+          {/* Logo - "H Social" */}
           <HSocialLogo size="md" showText={true} />
           
-          {/* Action Icons - Right (only 3) */}
-          <div className="flex items-center gap-2">
+          {/* Action Icons - Right */}
+          <div className="flex items-center gap-1">
             {/* Notifications with Star */}
             <Button
               variant="ghost"

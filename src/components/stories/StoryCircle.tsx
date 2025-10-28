@@ -27,24 +27,24 @@ export function StoryCircle({ story, isCreate, onClick, currentUserAvatar, curre
         className="flex-shrink-0 flex flex-col items-center gap-1 group"
       >
         <div className="relative">
-          {/* User avatar with blue gradient border */}
-          <div className="w-[68px] h-[68px] rounded-full p-[2px] bg-gradient-to-br from-[#0095f6] via-[#0081d9] to-[#0095f6] hover:scale-105 transition-transform">
-            <div className="w-full h-full rounded-full bg-black flex items-center justify-center p-[3px]">
+          {/* User avatar with dashed border */}
+          <div className="w-16 h-16 rounded-full p-[2px] border-2 border-dashed border-muted-foreground hover:scale-105 transition-transform">
+            <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
               <Avatar className="w-full h-full">
                 <AvatarImage src={currentUserAvatar || undefined} />
-                <AvatarFallback className="bg-gray-700 text-white">
+                <AvatarFallback className="bg-muted text-foreground">
                   {currentUsername?.charAt(0).toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
             </div>
           </div>
           {/* Small plus icon in bottom right corner */}
-          <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#0095f6] border-2 border-black flex items-center justify-center">
+          <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#1877F2] border-2 border-background flex items-center justify-center">
             <Plus className="w-3 h-3 text-white" strokeWidth={3} />
           </div>
         </div>
-        <span className="text-xs font-medium max-w-[68px] truncate text-white">
-          {currentUsername || "tu_historia"}
+        <span className="text-xs font-medium max-w-16 truncate text-foreground">
+          Tu historia
         </span>
       </button>
     );
@@ -58,19 +58,19 @@ export function StoryCircle({ story, isCreate, onClick, currentUserAvatar, curre
       className="flex-shrink-0 flex flex-col items-center gap-1 group"
     >
       <div className="relative">
-        {/* Gradient border for unviewed stories */}
+        {/* Border for stories */}
         <div
           className={cn(
-            "w-[68px] h-[68px] rounded-full p-[2px] transition-all",
+            "w-16 h-16 rounded-full p-[2px] transition-all",
             hasGradient
-              ? "bg-gradient-to-br from-[#0095f6] via-[#0081d9] to-[#0095f6]"
-              : "bg-gray-600"
+              ? "bg-[#1877F2]"
+              : "bg-border"
           )}
         >
-          <div className="w-full h-full rounded-full bg-black flex items-center justify-center p-[3px]">
+          <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
             <Avatar className="w-full h-full">
               <AvatarImage src={story?.avatar_url || undefined} />
-              <AvatarFallback className="bg-gray-700 text-white">
+              <AvatarFallback className="bg-muted text-foreground">
                 {story?.username?.charAt(0).toUpperCase() || "?"}
               </AvatarFallback>
             </Avatar>
@@ -79,12 +79,12 @@ export function StoryCircle({ story, isCreate, onClick, currentUserAvatar, curre
 
         {/* Story count badge */}
         {story && story.story_count > 1 && (
-          <div className="absolute -bottom-1 -right-1 bg-[#0095f6] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-black">
+          <div className="absolute -bottom-1 -right-1 bg-[#1877F2] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-background">
             {story.story_count}
           </div>
         )}
       </div>
-      <span className="text-xs font-medium max-w-[68px] truncate text-white">
+      <span className="text-xs font-medium max-w-16 truncate text-foreground">
         {story?.username || "Usuario"}
       </span>
     </button>

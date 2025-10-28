@@ -54,7 +54,7 @@ export function StoriesBar() {
     <>
       <div className="w-full border-b border-border bg-background">
         <ScrollArea className="w-full">
-          <div className="flex gap-2 py-3 px-4">
+          <div className="flex gap-3 py-2 px-3">
             {/* Create Story Button - Always visible */}
             {user && currentUserProfile && (
               <StoryCircle
