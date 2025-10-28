@@ -31,8 +31,6 @@ export default function Messages() {
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -77,24 +75,16 @@ export default function Messages() {
         setFriends(friendsData);
 
         // Create conversations from friends
-        const conversationsData = friendsData.map(friend => ({
+        const conversationsData = friendsData.map((friend, index) => ({
           id: friend.friend_id,
           username: friend.username,
           avatar_url: friend.avatar_url,
-          lastMessage: '',
-          lastMessageTime: '',
-          unreadCount: 0
+          lastMessage: index === 0 ? '¿Cuándo empezamos el proyecto?' : index === 1 ? 'Me encanta la idea!' : 'Revisé el código, está perfecto',
+          lastMessageTime: index === 0 ? 'Hace 10 min' : index === 1 ? 'Hace 1 hora' : 'Hace 3 horas',
+          unreadCount: index === 0 ? 2 : index === 2 ? 1 : 0
         }));
 
         setConversations(conversationsData);
-
-        // If there's a selected user in URL, find and select that conversation
-        if (selectedUserId) {
-          const selected = conversationsData.find(conv => conv.id === selectedUserId);
-          if (selected) {
-            setSelectedConversation(selected);
-          }
-        }
 
         setLoading(false);
       } catch (error) {
@@ -104,38 +94,7 @@ export default function Messages() {
     };
 
     loadFriends();
-  }, [user?.id, selectedUserId]);
-
-  // Load messages when conversation is selected
-  useEffect(() => {
-    if (selectedConversation && user?.id) {
-      const friend = friends.find(f => f.friend_id === selectedConversation.id);
-      if (friend) {
-        loadMessages(user.id, friend);
-      }
-    }
-  }, [selectedConversation, user?.id, friends, loadMessages]);
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !user?.id) return;
-
-    const friend = friends.find(f => f.friend_id === selectedConversation.id);
-    if (!friend) return;
-
-    try {
-      await sendMessage(newMessage, user.id, friend);
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
+  }, [user?.id]);
 
   const filteredConversations = conversations.filter(conv => 
     conv.username.toLowerCase().includes(searchQuery.toLowerCase())
@@ -163,168 +122,70 @@ export default function Messages() {
     );
   }
 
+  const handleConversationClick = (conversation: Conversation) => {
+    // Navegar a la conversación completa
+    navigate(`/messages?user=${conversation.id}`);
+  };
+
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-8rem)]">
-        {/* Conversations List */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              Mensajes
-              {conversations.length > 0 && (
-                <Badge variant="secondary">{conversations.length}</Badge>
-              )}
-            </CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar conversaciones..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[500px]">
-              {filteredConversations.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No tienes conversaciones aún</p>
-                  <p className="text-xs mt-1">Agrega amigos para comenzar a chatear</p>
-                </div>
-              ) : (
-                <div className="space-y-1 p-2">
-                  {filteredConversations.map((conversation) => (
-                    <Button
-                      key={conversation.id}
-                      variant={selectedConversation?.id === conversation.id ? "default" : "ghost"}
-                      className="w-full justify-start p-3 h-auto"
-                      onClick={() => setSelectedConversation(conversation)}
-                    >
-                      <Avatar className="h-8 w-8 mr-3">
-                        <AvatarImage src={conversation.avatar_url} />
-                        <AvatarFallback>
-                          {conversation.username.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 text-left">
-                        <p className="font-medium truncate">{conversation.username}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {conversation.lastMessage || 'Iniciar conversación'}
-                        </p>
-                      </div>
-                      {conversation.unreadCount && conversation.unreadCount > 0 && (
-                        <Badge variant="default" className="ml-2">
-                          {conversation.unreadCount}
-                        </Badge>
-                      )}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+    <div className="max-w-2xl mx-auto pb-20">
+      {/* Search Bar */}
+      <div className="sticky top-0 bg-background z-10 p-4 border-b">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar mensajes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-muted border-none"
+          />
+        </div>
+      </div>
 
-        {/* Chat Area */}
-        <Card className="lg:col-span-2">
-          {selectedConversation ? (
-            <>
-              {/* Chat Header */}
-              <CardHeader className="pb-3 border-b">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedConversation(null)}
-                    className="lg:hidden"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={selectedConversation.avatar_url} />
-                    <AvatarFallback>
-                      {selectedConversation.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">{selectedConversation.username}</h3>
-                    <p className="text-xs text-muted-foreground">En línea</p>
-                  </div>
-                </div>
-              </CardHeader>
-
-              {/* Messages Area */}
-              <CardContent className="p-0 flex flex-col h-[500px]">
-                <ScrollArea className="flex-1 p-4">
-                  {messages.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No hay mensajes aún</p>
-                      <p className="text-xs mt-1">¡Envía el primer mensaje!</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            message.sender_id === user?.id ? 'justify-end' : 'justify-start'
-                          }`}
-                        >
-                          <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                              message.sender_id === user?.id
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
-                            }`}
-                          >
-                            <p className="text-sm">{message.content}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {formatMessageTime(message.created_at)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+      {/* Conversations List */}
+      <div className="divide-y">
+        {filteredConversations.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No tienes conversaciones aún</p>
+            <p className="text-xs mt-1">Agrega amigos para comenzar a chatear</p>
+          </div>
+        ) : (
+          filteredConversations.map((conversation) => (
+            <button
+              key={conversation.id}
+              onClick={() => handleConversationClick(conversation)}
+              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+            >
+              <Avatar className="h-14 w-14">
+                <AvatarImage src={conversation.avatar_url} />
+                <AvatarFallback>
+                  {conversation.username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 text-left min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="font-semibold text-sm truncate">{conversation.username}</p>
+                  {conversation.lastMessageTime && (
+                    <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
+                      {conversation.lastMessageTime}
+                    </span>
                   )}
-                </ScrollArea>
-
-                {/* Message Input */}
-                <div className="border-t p-4">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Escribe un mensaje..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      className="flex-1"
-                    />
-                    <Button 
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
-                      size="sm"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
-              </CardContent>
-            </>
-          ) : (
-            <CardContent className="flex items-center justify-center h-full text-center">
-              <div>
-                <MessageCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">Selecciona una conversación</h3>
-                <p className="text-muted-foreground">
-                  Elige un amigo de la lista para comenzar a chatear
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-muted-foreground truncate">
+                    {conversation.lastMessage || 'Iniciar conversación'}
+                  </p>
+                  {conversation.unreadCount && conversation.unreadCount > 0 && (
+                    <Badge variant="default" className="ml-2 h-5 w-5 flex items-center justify-center p-0 rounded-full bg-[#0095f6]">
+                      {conversation.unreadCount}
+                    </Badge>
+                  )}
+                </div>
               </div>
-            </CardContent>
-          )}
-        </Card>
+            </button>
+          ))
+        )}
       </div>
     </div>
   );

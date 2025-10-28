@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { PostCreatorModal } from "../PostCreatorModal";
+import { CreatePostSheet } from "./CreatePostSheet";
 import { toast } from "@/hooks/use-toast";
 
 interface CreateContentMenuProps {
@@ -24,6 +25,7 @@ interface CreateContentMenuProps {
 export function CreateContentMenu({ open, onOpenChange }: CreateContentMenuProps) {
   const navigate = useNavigate();
   const [showPostCreator, setShowPostCreator] = useState(false);
+  const [showPostSheet, setShowPostSheet] = useState(false);
   const [postType, setPostType] = useState<'regular' | 'idea' | null>(null);
 
   const handleOptionClick = (option: string) => {
@@ -31,19 +33,10 @@ export function CreateContentMenu({ open, onOpenChange }: CreateContentMenuProps
     
     switch (option) {
       case 'idea':
-        setPostType('idea');
-        setShowPostCreator(true);
-        break;
       case 'project':
-        navigate('/projects');
-        toast({
-          title: "Próximamente",
-          description: "La función de crear proyectos estará disponible pronto"
-        });
-        break;
       case 'media':
-        setPostType('regular');
-        setShowPostCreator(true);
+        // Abrir el nuevo sheet de crear publicación
+        setShowPostSheet(true);
         break;
       case 'group':
         toast({
@@ -145,6 +138,11 @@ export function CreateContentMenu({ open, onOpenChange }: CreateContentMenuProps
           focusOnOpen
         />
       )}
+
+      <CreatePostSheet
+        open={showPostSheet}
+        onOpenChange={setShowPostSheet}
+      />
     </>
   );
 }
