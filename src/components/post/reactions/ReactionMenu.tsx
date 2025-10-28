@@ -20,7 +20,7 @@ export function ReactionMenu({
   if (!show) return null;
 
   const reactionTypes: ReactionType[] = ["interesting", "love", "awesome", "haha", "join", "wow", "angry"];
-  
+
   return (
     <div
       className={cn(
@@ -40,17 +40,27 @@ export function ReactionMenu({
             key={type}
             className={cn(
               "flex flex-col items-center gap-0.5 p-1.5 rounded-lg transition-all duration-150",
-              "hover:scale-110 hover:bg-muted/50 flex-shrink-0",
-              isActive && "scale-110 bg-muted"
+              // CAMBIO 1: Eliminamos la escala del botón (scale-110) para que no afecte el texto.
+              "hover:bg-muted/50 flex-shrink-0",
+              // CAMBIO 2: Dejamos solo el cambio de fondo en el estado activo.
+              isActive && "bg-muted",
             )}
             onClick={() => onReactionSelected(type)}
             onPointerEnter={() => setActiveReaction(type)}
             onPointerLeave={() => setActiveReaction(null)}
           >
-            <span className="text-2xl leading-none block">{reaction.emoji}</span>
-            <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">
-              {reaction.label}
+            {/* CAMBIO 3: Aplicamos la escala al <span> del emoji. */}
+            <span
+              className={cn(
+                "text-2xl leading-none block transition-transform duration-150",
+                // La escala se aplica al hacer hover o al estar activo.
+                (isActive || activeReaction === type) && "scale-125",
+              )}
+            >
+              {reaction.emoji}
             </span>
+
+            <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">{reaction.label}</span>
           </button>
         );
       })}
