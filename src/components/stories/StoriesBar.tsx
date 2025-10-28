@@ -12,7 +12,9 @@ export function StoriesBar() {
   const { stories, isLoading } = useStories();
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [showCreator, setShowCreator] = useState(false);
-  const [currentUserProfile, setCurrentUserProfile] = useState<{ avatar_url: string | null; username: string } | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<{ avatar_url: string | null; username: string } | null>(
+    null,
+  );
 
   // Fetch current user profile
   useEffect(() => {
@@ -22,12 +24,8 @@ export function StoriesBar() {
     }
 
     const fetchProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('avatar_url, username')
-        .eq('id', user.id)
-        .single();
-      
+      const { data } = await supabase.from("profiles").select("avatar_url, username").eq("id", user.id).single();
+
       if (data) {
         setCurrentUserProfile(data);
       }
@@ -54,7 +52,8 @@ export function StoriesBar() {
     <>
       <div className="w-full border-b border-border bg-background">
         <ScrollArea className="w-full">
-          <div className="flex gap-3 py-2 px-3">
+          {/* CORRECCIÓN CLAVE: py-2 cambiado a py-1 para reducir el espacio vertical */}
+          <div className="flex gap-3 py-1 px-3">
             {/* Create Story Button - Always visible */}
             {user && currentUserProfile && (
               <StoryCircle
@@ -67,11 +66,7 @@ export function StoriesBar() {
 
             {/* Story Circles */}
             {stories.map((story) => (
-              <StoryCircle
-                key={story.id}
-                story={story}
-                onClick={() => setSelectedStoryId(story.id)}
-              />
+              <StoryCircle key={story.id} story={story} onClick={() => setSelectedStoryId(story.id)} />
             ))}
           </div>
           <ScrollBar orientation="horizontal" />
@@ -89,10 +84,7 @@ export function StoriesBar() {
       )}
 
       {/* Story Creator Modal */}
-      <StoryCreator
-        open={showCreator}
-        onOpenChange={setShowCreator}
-      />
+      <StoryCreator open={showCreator} onOpenChange={setShowCreator} />
     </>
   );
 }
