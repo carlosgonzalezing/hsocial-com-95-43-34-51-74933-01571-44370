@@ -1,3 +1,5 @@
+// Archivo: src/components/reactions/ReactionIcons.ts
+
 import { Heart, Star, Lightbulb, HandshakeIcon } from "lucide-react";
 
 export const reactionIcons = {
