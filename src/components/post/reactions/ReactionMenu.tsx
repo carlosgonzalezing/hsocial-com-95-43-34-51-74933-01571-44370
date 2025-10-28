@@ -1,6 +1,8 @@
+// Archivo: src/components/reactions/ReactionMenu.tsx
+
 import React from "react";
 import { reactionIcons, type ReactionType } from "./ReactionIcons";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"; // Asegúrate de tener esta función de utilidad
 
 interface ReactionMenuProps {
   show: boolean;
@@ -40,20 +42,17 @@ export function ReactionMenu({
             key={type}
             className={cn(
               "flex flex-col items-center gap-0.5 p-1.5 rounded-lg transition-all duration-150",
-              // CAMBIO 1: Eliminamos la escala del botón (scale-110) para que no afecte el texto.
               "hover:bg-muted/50 flex-shrink-0",
-              // CAMBIO 2: Dejamos solo el cambio de fondo en el estado activo.
               isActive && "bg-muted",
             )}
             onClick={() => onReactionSelected(type)}
             onPointerEnter={() => setActiveReaction(type)}
             onPointerLeave={() => setActiveReaction(null)}
           >
-            {/* CAMBIO 3: Aplicamos la escala al <span> del emoji. */}
             <span
               className={cn(
                 "text-2xl leading-none block transition-transform duration-150",
-                // La escala se aplica al hacer hover o al estar activo.
+                // ESCALA DEL EMOJI al hacer hover o al estar activo.
                 (isActive || activeReaction === type) && "scale-125",
               )}
             >
