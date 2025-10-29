@@ -86,12 +86,8 @@ export function ActionsButtons({
         // Si el menú no está visible (es un clic rápido)
         const reactionType = userReaction || 'love';
         
-        // Si ya ha reaccionado, el clic rápido podría ser para quitar la reacción
-        if (userReaction) {
-            handleReactionClick(userReaction === 'love' ? 'unreact' : 'love'); // Lógica simplificada: cambia/quita la reacción
-        } else {
-            handleReactionClick(reactionType);
-        }
+        // Siempre reaccionar con el tipo actual o por defecto
+        handleReactionClick(reactionType);
         setAnimatingReaction(reactionType);
         setTimeout(() => setAnimatingReaction(null), 600);
     }

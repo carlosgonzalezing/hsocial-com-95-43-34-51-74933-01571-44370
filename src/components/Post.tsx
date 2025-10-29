@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Comments } from "@/components/post/Comments";
 // CAMBIO: Se elimina la importación de PostActions y se usa ActionsButtons
 // import { PostActions } from "@/components/post/PostActions";
-import { ActionsButtons } from "@/components/publicacion/acciones/ActionsButtons"; // Asegúrate de que esta ruta es correcta
+import { ActionsButtons } from "@/components/post/actions/ActionsButtons";
 import { PostContent } from "@/components/post/PostContent";
 import { PostHeader } from "@/components/post/PostHeader";
 import { type Post as PostType } from "@/types/post";
@@ -47,10 +47,7 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
     handleCancelReply,
     handleDeleteComment,
     setNewComment,
-    // CAMBIO: Necesitas la reacción del usuario y el handler de reacción para ActionsButtons
-    userReaction, // Asumiendo que usePost expone userReaction
-    handlePostReaction, // Asumiendo que usePost expone una función para reaccionar al post
-  } = usePost(post, hideComments); // NOTA: Tu hook usePost DEBE exponer userReaction y handlePostReaction
+  } = usePost(post, hideComments);
 
   // Determinar si esta es una publicación compartida
   const isSharedPost = !!post.shared_post;
@@ -84,17 +81,12 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
       )}
       
       {!isDemoPost && (
-        // CAMBIO: Se usa ActionsButtons en lugar de PostActions
         <ActionsButtons 
           post={post}
-          postId={post.id} // ActionsButtons usa postId
-          userReaction={userReaction} // Pasar la reacción del hook
-          onReaction={handlePostReaction} // Pasar el handler de reacción del hook
-          onComment={toggleComments} // Reemplaza onToggleComments/onCommentsClick
-          onToggleComments={toggleComments}
-          onCommentsClick={toggleComments}
+          postId={post.id}
+          userReaction={null}
+          onComment={toggleComments}
           commentsExpanded={showComments}
-          isIdeaPost={isIdeaPost}
         />
       )}
       

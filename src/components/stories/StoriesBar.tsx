@@ -53,20 +53,43 @@ export function StoriesBar() {
   return (
     <>
       <div className="w-full border-b border-border bg-background">
-       // Dentro de StoriesBar.tsx, alrededor de la línea 56
-
-  return (
-    <>
-      <div className="w-full border-b border-border bg-background">
         <ScrollArea className="w-full">
-          {/* APLICA ESTE CAMBIO: py-2 cambiado a py-1 (o py-0.5 si aún hay espacio) */}
-          <div className="flex gap-3 py-1 px-3"> 
-            {/* ... Contenido de Historias ... */}
+          <div className="flex gap-3 py-1 px-3">
+            {user && currentUserProfile && (
+              <StoryCircle
+                isCreate
+                onClick={() => setShowCreator(true)}
+                currentUserAvatar={currentUserProfile.avatar_url}
+                currentUsername={currentUserProfile.username}
+              />
+            )}
+            {stories.map((story) => (
+              <StoryCircle
+                key={story.id}
+                story={story}
+                onClick={() => setSelectedStoryId(story.id)}
+              />
+            ))}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
-      {/* ... */}
+
+      {selectedStoryId && (
+        <StoryViewer
+          storyId={selectedStoryId}
+          allStories={stories}
+          onClose={() => setSelectedStoryId(null)}
+          onNavigate={(id) => setSelectedStoryId(id)}
+        />
+      )}
+
+      {showCreator && (
+        <StoryCreator 
+          open={showCreator} 
+          onOpenChange={setShowCreator} 
+        />
+      )}
     </>
   );
 }
