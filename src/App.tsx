@@ -40,6 +40,7 @@ const StatisticsSettings = React.lazy(() => import("@/pages/settings/StatisticsS
 const AccessibilitySettings = React.lazy(() => import("@/pages/settings/AccessibilitySettings"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const IdeaParticipants = React.lazy(() => import("@/pages/IdeaParticipants"));
+const ProjectDetail = React.lazy(() => import("@/pages/ProjectDetail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -223,6 +224,15 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <IdeaParticipants />
+                  </Suspense>
+                </AuthGuard>
+              } />
+
+              {/* Project detail page */}
+              <Route path="/project/:postId" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ProjectDetail />
                   </Suspense>
                 </AuthGuard>
               } />

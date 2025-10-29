@@ -52,9 +52,11 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
   // Determinar si esta es una publicación compartida
   const isSharedPost = !!post.shared_post;
   // Determinar si esta es una publicación de idea
-  const isIdeaPost = !!post.idea;
+  const isIdeaPost = !!post.idea && post.post_type !== 'project';
   // Determinar si es un evento
   const isEventPost = post.post_type === 'academic_event' && !!post.event;
+  // Determinar si es un proyecto
+  const isProjectPost = post.post_type === 'project';
   // Determinar si la publicación está fijada
   const isPinned = post.is_pinned;
 
@@ -76,6 +78,8 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
         <IdeaPostView post={post} />
       ) : isEventPost ? (
         <EventPostView post={post} />
+      ) : isProjectPost ? (
+        <ProjectPostView post={post} />
       ) : (
         <StandardPostView post={post} />
       )}
@@ -187,6 +191,25 @@ function EventPostView({ post }: { post: PostType }) {
 // Componente para las publicaciones de tipo Idea
 function IdeaPostView({ post }: { post: PostType }) {
   if (!post.idea) return null;
+  
+  return (
+    <div className="px-0 md:px-4 pb-2">
+      <IdeaContent 
+        idea={post.idea} 
+        content={post.content || ''}
+      />
+    </div>
+  );
+}
+
+// Componente para las publicaciones de tipo Proyecto
+function ProjectPostView({ post }: { post: PostType }) {
+  if (!post.idea) return null;
+  
+  const projectData = (typeof post.idea === 'object' && !Array.isArray(post.idea) ? post.idea : {}) as {
+    title?: string;
+    description?: string;
+  };
   
   return (
     <div className="px-0 md:px-4 pb-2">

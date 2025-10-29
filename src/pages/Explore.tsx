@@ -15,48 +15,48 @@ export default function Explore() {
 
   return (
     <Layout hideLeftSidebar hideRightSidebar>
-      <div className="min-h-screen bg-black pb-24">
+      <div className="min-h-screen bg-background pb-24">
         {/* Sticky search bar */}
-        <div className="sticky top-14 z-40 bg-black border-b border-white/10 px-4 py-3">
+        <div className="sticky top-14 z-40 bg-background border-b border-border px-4 py-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar ideas, proyectos, usuarios..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 rounded-lg bg-[#262626] border-none text-white placeholder:text-gray-400"
+              className="pl-10 h-11 rounded-lg bg-muted border-none text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>
 
         {/* Content tabs - 4 tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-around h-12 rounded-none border-b border-white/10 bg-black sticky top-[118px] z-30">
+          <TabsList className="w-full justify-around h-12 rounded-none border-b border-border bg-background sticky top-[118px] z-30">
             <TabsTrigger 
               value="ideas" 
-              className="flex-1 gap-2 text-white data-[state=active]:text-[#0095f6] data-[state=active]:border-b-2 data-[state=active]:border-[#0095f6]"
+              className="flex-1 gap-2 text-foreground data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <Lightbulb className="h-4 w-4" />
               IDEAS
             </TabsTrigger>
             <TabsTrigger 
               value="proyectos" 
-              className="flex-1 gap-2 text-white data-[state=active]:text-[#0095f6] data-[state=active]:border-b-2 data-[state=active]:border-[#0095f6]"
+              className="flex-1 gap-2 text-foreground data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <FolderOpen className="h-4 w-4" />
               PROYECTOS
             </TabsTrigger>
             <TabsTrigger 
               value="grupos" 
-              className="flex-1 gap-2 text-white data-[state=active]:text-[#0095f6] data-[state=active]:border-b-2 data-[state=active]:border-[#0095f6]"
+              className="flex-1 gap-2 text-foreground data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <Users className="h-4 w-4" />
               GRUPOS
             </TabsTrigger>
             <TabsTrigger 
               value="lideres" 
-              className="flex-1 gap-2 text-white data-[state=active]:text-[#0095f6] data-[state=active]:border-b-2 data-[state=active]:border-[#0095f6]"
+              className="flex-1 gap-2 text-foreground data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <Trophy className="h-4 w-4" />
               LÍDERES

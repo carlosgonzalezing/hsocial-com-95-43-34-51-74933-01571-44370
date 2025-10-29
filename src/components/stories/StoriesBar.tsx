@@ -54,7 +54,7 @@ export function StoriesBar() {
     <>
       <div className="w-full border-b border-border bg-background">
         <ScrollArea className="w-full">
-          <div className="flex gap-3 py-1 px-3">
+          <div className="flex gap-3 py-3 px-3">
             {user && currentUserProfile && (
               <StoryCircle
                 isCreate
