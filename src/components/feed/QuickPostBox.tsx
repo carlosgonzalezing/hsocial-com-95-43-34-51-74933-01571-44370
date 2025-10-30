@@ -34,7 +34,7 @@ export function QuickPostBox() {
 
   return (
     <>
-      <Card className="p-4 mb-4 hidden md:block">
+      <Card className="p-4 mb-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={profile.avatar_url || ''} />
@@ -45,7 +45,7 @@ export function QuickPostBox() {
             onClick={() => setShowPostModal(true)}
             className="flex-1 px-4 py-2 text-left rounded-full bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
           >
-            ¿Qué estás pensando, {profile.username}?
+            ¿Qué estás pensando, {profile.username} ⭐?
           </button>
         </div>
 
@@ -57,7 +57,7 @@ export function QuickPostBox() {
             onClick={() => setShowPostModal(true)}
           >
             <Image className="h-5 w-5 text-green-600" />
-            <span className="hidden sm:inline">Foto</span>
+            <span>Foto</span>
           </Button>
           <Button 
             variant="ghost" 
@@ -66,7 +66,7 @@ export function QuickPostBox() {
             onClick={() => setShowPostModal(true)}
           >
             <Video className="h-5 w-5 text-red-600" />
-            <span className="hidden sm:inline">Video</span>
+            <span>Video</span>
           </Button>
           <Button 
             variant="ghost" 
@@ -75,7 +75,7 @@ export function QuickPostBox() {
             onClick={() => setShowPostModal(true)}
           >
             <Smile className="h-5 w-5 text-yellow-600" />
-            <span className="hidden sm:inline">Estado</span>
+            <span>Estado</span>
           </Button>
         </div>
       </Card>

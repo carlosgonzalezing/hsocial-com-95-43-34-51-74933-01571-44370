@@ -74,12 +74,6 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
       onClick: handleHomeClick,
       badge: newPosts > 0 ? newPosts : null,
       isActive: location.pathname === "/"
-    },
-    {
-      icon: MessageCircle,
-      label: "Mensajes", 
-      path: "/messages",
-      isActive: location.pathname.startsWith('/messages')
     }
   ];
 

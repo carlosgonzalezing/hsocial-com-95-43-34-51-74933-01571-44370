@@ -21,10 +21,8 @@ const Friends = React.lazy(() => import("@/pages/Friends"));
 const FriendRequestsPage = React.lazy(() => import("@/pages/FriendRequestsPage"));
 const FollowersPage = React.lazy(() => import("@/pages/FollowersPage"));
 const Notifications = React.lazy(() => import("@/pages/Notifications"));
-const Messages = React.lazy(() => import("@/pages/Messages"));
 const Profile = React.lazy(() => import("@/pages/Profile"));
 const Projects = React.lazy(() => import("@/pages/Projects"));
-const Reels = React.lazy(() => import("@/pages/Reels"));
 const PasswordReset = React.lazy(() => import("@/pages/PasswordReset"));
 const Explore = React.lazy(() => import("@/pages/Explore"));
 const Leaderboard = React.lazy(() => import("@/pages/Leaderboard"));
@@ -111,13 +109,6 @@ const App = () => {
                   </Suspense>
                 </AuthGuard>
               } />
-              <Route path="/messages" element={
-                <AuthGuard>
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <Messages />
-                  </Suspense>
-                </AuthGuard>
-              } />
               <Route path="/notifications" element={
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
@@ -129,13 +120,6 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <Projects />
-                  </Suspense>
-                </AuthGuard>
-              } />
-              <Route path="/reels" element={
-                <AuthGuard>
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <Reels />
                   </Suspense>
                 </AuthGuard>
               } />

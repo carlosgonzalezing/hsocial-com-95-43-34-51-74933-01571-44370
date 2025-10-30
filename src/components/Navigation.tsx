@@ -12,7 +12,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const navigationItems = [
   { name: "Inicio", path: "/", icon: Home },
   { name: "Amigos", path: "/friends", icon: Users },
-  { name: "Mensajes", path: "/messages", icon: MessageCircle },
   { name: "Perfil", path: "/profile", icon: User },
 ];
 
@@ -105,12 +104,6 @@ export function Navigation() {
       hideLabel: true,
       onClick: handleHomeClick,
       badge: newPosts > 0 ? newPosts : null 
-    },
-    { 
-      to: "/messages", 
-      icon: MessageCircle, 
-      label: "Mensajes",
-      hideLabel: true
     },
     {
       to: "/followers",
