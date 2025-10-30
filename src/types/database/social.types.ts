@@ -1,5 +1,5 @@
 
-export type ReactionType = "love" | "awesome" | "haha" | "join" | "wow" | "angry" | "interesting";
+export type ReactionType = "love" | "awesome" | "join";
 
 export interface ReactionData {
   id: string;
@@ -8,7 +8,6 @@ export interface ReactionData {
   created_at: string;
   post_id?: string;
   comment_id?: string;
-  story_id?: string;
 }
 
 // Add the missing types that are referenced in database/index.ts

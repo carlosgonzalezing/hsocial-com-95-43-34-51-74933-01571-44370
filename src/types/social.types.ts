@@ -1,4 +1,4 @@
-export type ReactionType = 'love' | 'awesome' | 'haha' | 'join' | 'wow' | 'angry' | 'interesting';
+export type ReactionType = 'love' | 'awesome' | 'join';
 
 export interface LikeTable {
   Row: {
@@ -8,7 +8,6 @@ export interface LikeTable {
     comment_id: string | null;
     reaction_type: ReactionType;
     created_at: string;
-    read: boolean;
   };
   Insert: {
     id?: string;
@@ -17,7 +16,6 @@ export interface LikeTable {
     comment_id?: string | null;
     reaction_type: ReactionType;
     created_at?: string;
-    read?: boolean;
   };
   Update: {
     id?: string;
@@ -26,7 +24,6 @@ export interface LikeTable {
     comment_id?: string | null;
     reaction_type?: ReactionType;
     created_at?: string;
-    read?: boolean;
   };
 }
 
