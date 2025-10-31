@@ -39,6 +39,12 @@ export function ActionsButtons({
   sharesCount = 0
 }: ActionsButtonsProps) {
   
+  const reactionEmojis: Record<ReactionType, string> = {
+    love: '❤️',
+    awesome: '🔥',
+    join: '🤝',
+  };
+  
   // Handler para la selección final de la reacción
   const handleReactionClick = (type: ReactionType) => {
     if (onReaction) {

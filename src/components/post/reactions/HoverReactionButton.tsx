@@ -14,7 +14,17 @@ interface HoverReactionButtonProps {
   isSubmitting?: boolean;
 }
 
-export function HoverReactionButton({ 
+const availableReactions: Array<{
+  type: ReactionType;
+  emoji: string;
+  label: string;
+}> = [
+  { type: 'love', emoji: '❤️', label: 'Me encanta' },
+  { type: 'awesome', emoji: '🔥', label: 'Increíble' },
+  { type: 'join', emoji: '🤝', label: 'Me uno' },
+];
+
+export function HoverReactionButton({
   postId, 
   userReaction, 
   onReactionClick,

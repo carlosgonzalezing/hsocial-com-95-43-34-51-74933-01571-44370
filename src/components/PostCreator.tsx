@@ -77,12 +77,6 @@ export function PostCreator({
   const [postType, setPostType] = useState<PostType>("regular");
   const [selectedFile, setSelectedFile] = useState<File | null>(initialFile);
   const [isUploading, setIsUploading] = useState(false);
-  // Simplified - no progress tracking
-  const [contentStyle, setContentStyle] = useState<ContentStyle>({
-    backgroundKey: 'none',
-    textColor: 'text-foreground',
-    isTextOnly: false
-  });
   const [idea, setIdea] = useState<Idea>({
     title: "",
     description: "",
@@ -250,8 +244,7 @@ export function PostCreator({
         visibility: visibilityValue,
         media_url: mediaUrl,
         media_type: mediaType,
-        post_type: postType,
-        content_style: contentStyle.backgroundKey !== 'none' ? contentStyle : null
+        post_type: postType
       };
 
       // Add type-specific data
