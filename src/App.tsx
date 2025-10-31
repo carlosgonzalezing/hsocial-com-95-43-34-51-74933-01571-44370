@@ -23,6 +23,9 @@ const FollowersPage = React.lazy(() => import("@/pages/FollowersPage"));
 const Notifications = React.lazy(() => import("@/pages/Notifications"));
 const Profile = React.lazy(() => import("@/pages/Profile"));
 const Projects = React.lazy(() => import("@/pages/Projects"));
+const Teams = React.lazy(() => import("@/pages/Teams"));
+const Ideas = React.lazy(() => import("@/pages/Ideas"));
+const Events = React.lazy(() => import("@/pages/Events"));
 const PasswordReset = React.lazy(() => import("@/pages/PasswordReset"));
 const Explore = React.lazy(() => import("@/pages/Explore"));
 const Leaderboard = React.lazy(() => import("@/pages/Leaderboard"));
@@ -120,6 +123,27 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <Projects />
+                  </Suspense>
+                </AuthGuard>
+              } />
+              <Route path="/teams" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Teams />
+                  </Suspense>
+                </AuthGuard>
+              } />
+              <Route path="/ideas" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Ideas />
+                  </Suspense>
+                </AuthGuard>
+              } />
+              <Route path="/events" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Events />
                   </Suspense>
                 </AuthGuard>
               } />
