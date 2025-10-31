@@ -1,7 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Image, Video, Smile } from "lucide-react";
+import { Briefcase, Users, Lightbulb, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,50 @@ export function QuickPostBox() {
   return (
     <>
       <Card className="p-4 mb-4">
+        {/* Icon buttons row - LinkedIn/Facebook style */}
+        <div className="grid grid-cols-4 gap-3 mb-4">
+          <button
+            onClick={() => setShowPostModal(true)}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center">
+              <Briefcase className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-xs font-medium text-foreground">Proyectos</span>
+          </button>
+
+          <button
+            onClick={() => setShowPostModal(true)}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-xs font-medium text-foreground">Equipos</span>
+          </button>
+
+          <button
+            onClick={() => setShowPostModal(true)}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center">
+              <Lightbulb className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-xs font-medium text-foreground">Ideas</span>
+          </button>
+
+          <button
+            onClick={() => setShowPostModal(true)}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center">
+              <Calendar className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-xs font-medium text-foreground">Eventos</span>
+          </button>
+        </div>
+
+        {/* Post input row */}
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={profile.avatar_url || ''} />
@@ -43,40 +87,10 @@ export function QuickPostBox() {
           
           <button
             onClick={() => setShowPostModal(true)}
-            className="flex-1 px-4 py-2 text-left rounded-full bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
+            className="flex-1 px-4 py-3 text-left rounded-full bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
           >
-            ¿Qué estás pensando, {profile.username} ⭐?
+            ¿Qué idea tienes en mente?
           </button>
-        </div>
-
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="flex-1 gap-2"
-            onClick={() => setShowPostModal(true)}
-          >
-            <Image className="h-5 w-5 text-green-600" />
-            <span>Foto</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="flex-1 gap-2"
-            onClick={() => setShowPostModal(true)}
-          >
-            <Video className="h-5 w-5 text-red-600" />
-            <span>Video</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="flex-1 gap-2"
-            onClick={() => setShowPostModal(true)}
-          >
-            <Smile className="h-5 w-5 text-yellow-600" />
-            <span>Estado</span>
-          </Button>
         </div>
       </Card>
 
