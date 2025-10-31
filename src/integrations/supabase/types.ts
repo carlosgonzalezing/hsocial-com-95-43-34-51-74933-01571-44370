@@ -108,6 +108,33 @@ export type Database = {
           },
         ]
       }
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hidden_posts: {
         Row: {
           created_at: string
@@ -130,6 +157,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "hidden_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      idea_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          post_id: string
+          profession: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          post_id: string
+          profession?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          post_id?: string
+          profession?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idea_participants_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
