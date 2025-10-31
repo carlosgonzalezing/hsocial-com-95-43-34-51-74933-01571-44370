@@ -54,6 +54,8 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
   const [selectedBackground, setSelectedBackground] = useState("none");
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (user?.id) {
@@ -70,21 +72,70 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
     }
   }, [user?.id]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFilePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setFilePreview(null);
+      }
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+  };
+
   const handleSubmit = async () => {
-    if (!content.trim() || !user?.id) return;
+    if ((!content.trim() && !selectedFile) || !user?.id) return;
     
     setIsSubmitting(true);
     
     try {
+      let mediaUrl = null;
+      let mediaType: 'image' | 'video' | 'audio' | null = null;
+
+      // Upload file if present
+      if (selectedFile) {
+        const { uploadWithOptimization, getMediaType } = await import("@/lib/storage/cloudflare-r2");
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        mediaUrl = await uploadWithOptimization(selectedFile, fileName);
+        mediaType = getMediaType(selectedFile);
+      }
+
       const postData: any = {
         user_id: user.id,
-        content: content.trim(),
+        content: content.trim() || null,
         visibility,
+        media_url: mediaUrl,
+        media_type: mediaType,
       };
 
-      // Add background if selected
-      if (selectedBackground !== "none") {
+      // Add background if selected and no file
+      if (selectedBackground !== "none" && !selectedFile) {
         postData.background_color = selectedBackground;
+      }
+
+      // Handle different post types
+      if (activeTab === "idea") {
+        postData.post_type = "idea";
+        postData.idea = {
+          title: content.split('\n')[0] || "Nueva Idea",
+          description: content,
+          participants: []
+        };
+      } else if (activeTab === "project") {
+        postData.post_type = "project";
       }
 
       const { data, error } = await supabase
@@ -105,6 +156,8 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
       // Reset form
       setContent("");
       setSelectedBackground("none");
+      setSelectedFile(null);
+      setFilePreview(null);
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -206,11 +259,40 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
 
           {/* Content Input */}
           <Textarea
-            placeholder="¿Qué estás pensando?"
+            placeholder={
+              activeTab === "idea" 
+                ? "Describe tu idea..." 
+                : activeTab === "project" 
+                ? "Comparte tu proyecto..." 
+                : "¿Qué estás pensando?"
+            }
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="min-h-[100px] resize-none border-none focus-visible:ring-0 text-base"
           />
+
+          {/* File Preview */}
+          {filePreview && (
+            <div className="relative">
+              <img src={filePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={removeFile}
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
+              >
+                <X className="h-4 w-4 text-white" />
+              </Button>
+            </div>
+          )}
+          {selectedFile && !filePreview && (
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-sm truncate">{selectedFile.name}</span>
+              <Button variant="ghost" size="icon" onClick={removeFile}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
           {/* Text Background Palette */}
           <div className="space-y-2">
@@ -236,13 +318,25 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
           <div className="space-y-2">
             <p className="text-sm font-medium">Agregar a tu publicación</p>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 rounded-full"
-              >
-                <ImageIcon className="h-5 w-5 text-green-500" />
-              </Button>
+              <label>
+                <input
+                  type="file"
+                  accept="image/*,video/*,.pdf,.doc,.docx"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-full"
+                  asChild
+                >
+                  <span>
+                    <ImageIcon className="h-5 w-5 text-green-500" />
+                  </span>
+                </Button>
+              </label>
               <Button
                 variant="outline"
                 size="icon"
@@ -290,7 +384,7 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
           {/* Submit Button */}
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim() || isSubmitting}
+            disabled={(!content.trim() && !selectedFile) || isSubmitting}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg"
           >
             {isSubmitting ? "Publicando..." : "Publicar"}

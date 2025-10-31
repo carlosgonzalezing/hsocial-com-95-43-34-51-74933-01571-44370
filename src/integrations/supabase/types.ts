@@ -437,7 +437,9 @@ export type Database = {
       }
       posts: {
         Row: {
+          background_color: string | null
           content: string | null
+          content_style: Json | null
           created_at: string
           group_id: string | null
           id: string
@@ -457,7 +459,9 @@ export type Database = {
           visibility: Database["public"]["Enums"]["post_visibility"]
         }
         Insert: {
+          background_color?: string | null
           content?: string | null
+          content_style?: Json | null
           created_at?: string
           group_id?: string | null
           id?: string
@@ -477,7 +481,9 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["post_visibility"]
         }
         Update: {
+          background_color?: string | null
           content?: string | null
+          content_style?: Json | null
           created_at?: string
           group_id?: string | null
           id?: string
