@@ -111,9 +111,9 @@ export function ActionsButtons({
   const reactionData = hasReacted ? reactionIcons[userReaction] : null;
 
   return (
-    <div className="px-4 py-3 border-t border-border/30">
+    <div className="px-4 py-2 border-t border-border">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           
           {/* Reaccionar - Implementación con Long Press */}
           <div className="relative">
@@ -134,7 +134,7 @@ export function ActionsButtons({
               ref={buttonRef}
               variant="ghost"
               size="sm"
-              className="p-0 h-auto hover:bg-transparent"
+              className="p-0 h-auto hover:bg-transparent gap-2 text-muted-foreground hover:text-foreground"
               // Usamos los handlers de puntero para controlar el Long Press
               // El onClick se usa como fallback o para manejar la desreacción.
               onClick={handleReactionButtonClick} 
@@ -149,7 +149,7 @@ export function ActionsButtons({
                 </span>
               ) : (
                 <Heart 
-                  className={`h-7 w-7 transition-all ${userReaction === 'love' || animatingReaction === 'love' ? 'fill-red-500 text-red-500' : 'text-foreground'}`}
+                  className={`h-7 w-7 transition-all ${userReaction === 'love' || animatingReaction === 'love' ? 'fill-red-500 text-red-500' : 'text-muted-foreground hover:text-foreground'}`}
                   strokeWidth={1.5}
                 />
               )}
@@ -160,11 +160,11 @@ export function ActionsButtons({
           <Button
             variant="ghost"
             size="sm"
-            className="p-0 h-auto hover:bg-transparent"
+            className="p-0 h-auto hover:bg-transparent gap-2 text-muted-foreground hover:text-foreground"
             onClick={onComment}
           >
             <MessageCircle 
-              className={`h-7 w-7 ${commentsExpanded ? 'fill-current' : ''}`}
+              className={`h-7 w-7 ${commentsExpanded ? 'fill-current text-foreground' : ''}`}
               strokeWidth={1.5}
             />
           </Button>
@@ -175,7 +175,7 @@ export function ActionsButtons({
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-0 h-auto hover:bg-transparent"
+                className="p-0 h-auto hover:bg-transparent gap-2 text-muted-foreground hover:text-foreground"
               >
                 <Send className="h-6 w-6" strokeWidth={1.5} />
               </Button>
@@ -184,7 +184,7 @@ export function ActionsButtons({
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-auto hover:bg-transparent"
+              className="p-0 h-auto hover:bg-transparent gap-2 text-muted-foreground hover:text-foreground"
               onClick={onShare}
             >
               <Send className="h-6 w-6" strokeWidth={1.5} />

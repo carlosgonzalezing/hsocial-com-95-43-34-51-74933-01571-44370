@@ -172,7 +172,7 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
 
   // Desktop navigation (Facebook style)
   return (
-    <nav className="bg-background shadow-sm border-b border-facebook-gray-200 h-14 fixed top-0 left-0 right-0 z-[70]">
+    <nav className="bg-card shadow-sm border-b border-border h-14 fixed top-0 left-0 right-0 z-[70]">
       <div className="max-w-7xl mx-auto flex items-center justify-between h-full px-4">
         {/* Logo and Search - Left */}
         <div className="flex items-center gap-4 flex-shrink-0 w-80">
@@ -183,7 +183,7 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Button
               variant="outline"
-              className="w-full justify-start pl-10 text-muted-foreground bg-white dark:bg-muted hover:bg-muted/80 border-border rounded-full h-10"
+              className="w-full justify-start pl-10 text-muted-foreground bg-muted/50 hover:bg-muted border-border rounded-full h-10"
               onClick={() => setShowFullScreenSearch(true)}
             >
               Buscar en HSocial
