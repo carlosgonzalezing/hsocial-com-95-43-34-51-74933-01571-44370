@@ -1,6 +1,6 @@
-// Simplified reaction types for H Social
+// 3 tipos de reacciones para H Social
 
-export type SimpleReactionType = "love" | "awesome" | "join";
+export type SimpleReactionType = "love" | "awesome" | "incredible";
 
 export interface ReactionData {
   id: string;

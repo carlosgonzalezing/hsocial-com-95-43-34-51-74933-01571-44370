@@ -2,14 +2,13 @@
 
 import React, { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { ShareOptions } from "./ShareOptions"; // Asegúrate de tener este componente
+import { ShareOptions } from "./ShareOptions";
 import { MessageCircle, Heart, Send } from "lucide-react";
-import { Post } from "@/types/post"; // Asegúrate de tener esta definición de tipo
-import { ReactionType } from "@/types/database/social.types"; // Importa la definición
-import { SavePostButton } from "./SavePostButton"; // Asegúrate de tener este componente
-import { reactionIcons } from "../reactions/ReactionIcons"; // Importa la definición de íconos
-import { ReactionMenu } from "../reactions/ReactionMenu"; // Importa el menú flotante
-import { useLongPress } from "../reactions/hooks/use-long-press"; // Importa el hook que definimos arriba
+import { Post } from "@/types/post";
+import { ReactionType } from "@/types/database/social.types";
+import { reactionIcons } from "../reactions/ReactionIcons";
+import { ReactionMenu } from "../reactions/ReactionMenu";
+import { useLongPress } from "../reactions/hooks/use-long-press";
 
 interface ActionsButtonsProps {
   postId: string;
@@ -41,8 +40,8 @@ export function ActionsButtons({
   
   const reactionEmojis: Record<ReactionType, string> = {
     love: '❤️',
-    awesome: '🔥',
-    join: '🤝',
+    awesome: '💡',
+    incredible: '🚀',
   };
   
   // Handler para la selección final de la reacción
@@ -192,9 +191,6 @@ export function ActionsButtons({
             </Button>
           )}
         </div>
-
-        {/* Guardar - Alineado a la derecha */}
-        <SavePostButton postId={postId} />
       </div>
     </div>
   );

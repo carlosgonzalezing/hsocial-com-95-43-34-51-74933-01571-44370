@@ -21,7 +21,7 @@ export function ReactionMenu({
 }: ReactionMenuProps) {
   if (!show) return null;
 
-  const reactionTypes: ReactionType[] = ["interesting", "love", "awesome", "haha", "join", "wow", "angry"];
+  const reactionTypes: ReactionType[] = ["love", "awesome", "incredible"];
 
   return (
     <div

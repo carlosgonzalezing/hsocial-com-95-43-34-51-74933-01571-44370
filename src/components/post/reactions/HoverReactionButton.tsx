@@ -19,9 +19,9 @@ const availableReactions: Array<{
   emoji: string;
   label: string;
 }> = [
-  { type: 'love', emoji: '❤️', label: 'Me encanta' },
-  { type: 'awesome', emoji: '🔥', label: 'Increíble' },
-  { type: 'join', emoji: '🤝', label: 'Me uno' },
+  { type: 'love', emoji: '❤️', label: 'Me gusta' },
+  { type: 'awesome', emoji: '💡', label: 'Idea brillante' },
+  { type: 'incredible', emoji: '🚀', label: 'Increíble' },
 ];
 
 export function HoverReactionButton({

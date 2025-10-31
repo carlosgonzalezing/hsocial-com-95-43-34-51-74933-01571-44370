@@ -1,4 +1,4 @@
-import { Home, User, PlusSquare, Video, Search } from "lucide-react";
+import { Home, User, PlusSquare, FolderKanban, Search } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -64,9 +64,9 @@ export function MobileBottomNavigation({
       solidFill: false
     },
     {
-      icon: Video,
-      label: "Reels",
-      path: "/reels",
+      icon: FolderKanban,
+      label: "Proyectos",
+      path: "/projects",
       badge: null,
       solidFill: false
     },
