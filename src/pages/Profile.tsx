@@ -78,10 +78,7 @@ export default function Profile() {
             .select('*', { count: 'exact', head: true })
             .eq('friend_id', profileId)
             .eq('status', 'accepted'),
-          supabase
-            .from('profile_hearts')
-            .select('*', { count: 'exact', head: true })
-            .eq('profile_id', profileId)
+          Promise.resolve({ count: 0, error: null })
         ]);
 
         const { data: profileData, error: profileError } = profileResult;

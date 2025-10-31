@@ -7,21 +7,10 @@ export async function getPendingFriendRequests() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuario no autenticado");
 
-    // Obtenemos solicitudes pendientes enviadas al usuario actual
-    const { data: pendingRequests, error } = await supabase
+    // Get pending friendships
+    const { data: friendships, error } = await supabase
       .from('friendships')
-      .select(`
-        id,
-        user_id,
-        friend_id,
-        status,
-        created_at,
-        profiles!friendships_user_id_fkey (
-          id, 
-          username,
-          avatar_url
-        )
-      `)
+      .select('id, user_id, friend_id, status, created_at')
       .eq('friend_id', user.id)
       .eq('status', 'pending');
 
@@ -30,21 +19,26 @@ export async function getPendingFriendRequests() {
       throw error;
     }
 
-    // Get mutual friends count for each request
-    const friendsData = await getMutualFriendsForRequests(pendingRequests);
+    // Fetch profiles separately
+    const requestsArray = await Promise.all((friendships || []).map(async (friendship) => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', friendship.user_id)
+        .single();
 
-    // Convertimos el resultado al formato FriendRequest
-    const requestsArray = (pendingRequests || []).map(request => ({
-      id: request.id,
-      user_id: request.user_id,
-      friend_id: request.friend_id,
-      status: 'pending' as const,
-      created_at: request.created_at,
-      user: {
-        username: request.profiles?.username || '',
-        avatar_url: request.profiles?.avatar_url
-      },
-      mutual_friends: friendsData[request.user_id] || []
+      return {
+        id: friendship.id,
+        user_id: friendship.user_id,
+        friend_id: friendship.friend_id,
+        status: 'pending' as const,
+        created_at: friendship.created_at,
+        user: {
+          username: profile?.username || '',
+          avatar_url: profile?.avatar_url
+        },
+        mutual_friends: []
+      };
     }));
 
     return requestsArray;

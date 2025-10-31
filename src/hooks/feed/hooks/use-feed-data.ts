@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -11,29 +10,14 @@ export function useFeedData(userId?: string) {
   const [searchParams, setSearchParams] = useSearchParams();
   const showNew = searchParams.get("new") === "true";
   const [hiddenPostIds, setHiddenPostIds] = useState<string[]>([]);
-  const [hiddenUserIds, setHiddenUserIds] = useState<string[]>([]);
   const [showHidden, setShowHidden] = useState(false);
 
-  // Get hidden posts
+  // Get hidden posts only (hidden_users table removed)
   useEffect(() => {
     const getHiddenData = async () => {
       try {
-        // Get hidden posts
         const hiddenPostsIds = await getHiddenPosts();
         setHiddenPostIds(hiddenPostsIds);
-        
-        // Get hidden users
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: hiddenUsers } = await supabase
-            .from('hidden_users')
-            .select('hidden_user_id')
-            .eq('user_id', user.id);
-          
-          if (hiddenUsers) {
-            setHiddenUserIds(hiddenUsers.map(h => h.hidden_user_id));
-          }
-        }
       } catch (error) {
         console.error("Error fetching hidden data:", error);
       }
@@ -46,7 +30,6 @@ export function useFeedData(userId?: string) {
     queryKey: ["posts", userId],
     queryFn: () => getPosts(userId),
     select: (data: any[]) => {
-      // Transform the raw post data into properly typed Post objects
       let transformedPosts = data.map(post => {
         const postWithTypes: Post = {
           id: post.id,
@@ -66,7 +49,6 @@ export function useFeedData(userId?: string) {
           visibility: post.visibility as "public" | "friends" | "private" | "incognito",
           user_reaction: post.user_reaction,
           is_pinned: post.is_pinned || false,
-          // Handle optional properties that might cause type errors
           shared_post: post.shared_post as Post | undefined,
           shared_post_id: post.shared_post_id as string | undefined,
           shared_from: post.shared_from as string | undefined,
@@ -96,9 +78,9 @@ export function useFeedData(userId?: string) {
 
       return transformedPosts;
     },
-    refetchInterval: false, // Disable polling since we're using real-time
-    staleTime: 1 * 60 * 1000, // 1 minute - shorter for better real-time experience
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: false,
+    staleTime: 1 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -111,15 +93,9 @@ export function useFeedData(userId?: string) {
 
   const visiblePosts = showHidden 
     ? posts 
-    : posts.filter(post => 
-        !hiddenPostIds.includes(post.id) && 
-        !hiddenUserIds.includes(post.user_id || '')
-      );
+    : posts.filter(post => !hiddenPostIds.includes(post.id));
   
-  const hiddenPosts = posts.filter(post => 
-    hiddenPostIds.includes(post.id) || 
-    hiddenUserIds.includes(post.user_id || '')
-  );
+  const hiddenPosts = posts.filter(post => hiddenPostIds.includes(post.id));
 
   const toggleHiddenPosts = () => setShowHidden(!showHidden);
 

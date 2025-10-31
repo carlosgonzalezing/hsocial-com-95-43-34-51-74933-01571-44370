@@ -35,23 +35,33 @@ export default function Friends() {
   const loadSentRequests = async () => {
     if (!user?.id) return;
 
-    const { data, error } = await supabase
+    const { data: friendships, error } = await supabase
       .from('friendships')
-      .select(`
-        id,
-        friend:profiles!friendships_friend_id_fkey (
-          id,
-          username,
-          avatar_url
-        ),
-        status
-      `)
+      .select('id, friend_id, status')
       .eq('user_id', user.id)
       .eq('status', 'pending');
 
-    if (!error && data) {
-      setSentRequests(data);
-    }
+    if (error) return;
+    
+    const requests = await Promise.all((friendships || []).map(async (f) => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', f.friend_id)
+        .single();
+      
+      return {
+        id: f.id,
+        status: f.status,
+        friend: {
+          id: profile?.id || f.friend_id,
+          username: profile?.username || '',
+          avatar_url: profile?.avatar_url || ''
+        }
+      };
+    }));
+    
+    setSentRequests(requests);
   };
 
   const handleCancelRequest = async (requestId: string) => {

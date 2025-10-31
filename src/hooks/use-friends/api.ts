@@ -7,19 +7,7 @@ export async function getFriendRequests() {
 
     const { data, error } = await supabase
       .from('friendships')
-      .select(`
-        id,
-        user_id,
-        friend_id,
-        status,
-        created_at,
-        profiles!friendships_friend_id_fkey (
-          username,
-          avatar_url,
-          status,
-          last_seen
-        )
-      `)
+      .select('id, user_id, friend_id, status, created_at')
       .eq('friend_id', user.id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
@@ -29,7 +17,21 @@ export async function getFriendRequests() {
       return [];
     }
 
-    return data || [];
+    // Fetch profiles separately
+    const friendRequests = await Promise.all((data || []).map(async (friendship) => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, avatar_url, status, last_seen')
+        .eq('id', friendship.user_id)
+        .single();
+
+      return {
+        ...friendship,
+        profiles: profile
+      };
+    }));
+
+    return friendRequests;
   } catch (error) {
     console.error('Error in getFriendRequests:', error);
     return [];
@@ -71,7 +73,6 @@ export async function sendFriendRequest(friendId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Check if a friendship already exists
     const { data: existingFriendship, error: checkError } = await supabase
       .from('friendships')
       .select('id, status')
@@ -81,12 +82,10 @@ export async function sendFriendRequest(friendId: string) {
 
     if (checkError) throw checkError;
 
-    // If friendship exists, return its status
     if (existingFriendship) {
       return { success: false, status: existingFriendship.status, message: 'Friendship already exists' };
     }
 
-    // Create new friendship request
     const { error } = await supabase
       .from('friendships')
       .insert({
@@ -108,70 +107,37 @@ export async function getFriends() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    // Get friends where user is the requester
-    const { data: sentFriendships, error: sentError } = await supabase
+    // Get friendships where user is involved
+    const { data: friendships, error } = await supabase
       .from('friendships')
-      .select(`
-        id,
-        friend_id,
-        status,
-        created_at,
-        profiles!friendships_friend_id_fkey (
-          id,
-          username,
-          avatar_url,
-          status,
-          last_seen
-        )
-      `)
-      .eq('user_id', user.id)
+      .select('id, user_id, friend_id, status, created_at')
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
       .eq('status', 'accepted');
 
-    if (sentError) throw sentError;
+    if (error) throw error;
 
-    // Get friends where user is the recipient
-    const { data: receivedFriendships, error: receivedError } = await supabase
-      .from('friendships')
-      .select(`
-        id,
-        user_id,
-        status,
-        created_at,
-        profiles!friendships_user_id_fkey (
-          id,
-          username,
-          avatar_url,
-          status,
-          last_seen
-        )
-      `)
-      .eq('friend_id', user.id)
-      .eq('status', 'accepted');
+    // Fetch profiles for each friend
+    const friends = await Promise.all((friendships || []).map(async (friendship) => {
+      const friendUserId = friendship.user_id === user.id ? friendship.friend_id : friendship.user_id;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, status, last_seen')
+        .eq('id', friendUserId)
+        .single();
 
-    if (receivedError) throw receivedError;
-
-    // Combine and format the results
-    const sentFriends = sentFriendships.map(friendship => ({
-      id: friendship.id,
-      userId: friendship.friend_id,
-      username: friendship.profiles.username,
-      avatarUrl: friendship.profiles.avatar_url,
-      status: friendship.profiles.status,
-      last_seen: friendship.profiles.last_seen,
-      createdAt: friendship.created_at
+      return {
+        id: friendship.id,
+        userId: friendUserId,
+        username: profile?.username || '',
+        avatarUrl: profile?.avatar_url || null,
+        status: profile?.status || 'offline',
+        last_seen: profile?.last_seen || null,
+        createdAt: friendship.created_at
+      };
     }));
 
-    const receivedFriends = receivedFriendships.map(friendship => ({
-      id: friendship.id,
-      userId: friendship.user_id,
-      username: friendship.profiles.username,
-      avatarUrl: friendship.profiles.avatar_url,
-      status: friendship.profiles.status,
-      last_seen: friendship.profiles.last_seen,
-      createdAt: friendship.created_at
-    }));
-
-    return [...sentFriends, ...receivedFriends];
+    return friends;
   } catch (error) {
     console.error('Error fetching friends:', error);
     return [];

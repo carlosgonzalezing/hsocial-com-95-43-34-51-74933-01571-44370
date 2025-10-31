@@ -45,32 +45,38 @@ export function RightSidebar({ currentUserId }: RightSidebarProps) {
 
     const loadSidebarData = async () => {
       try {
-        // Load friends (simulate online status for demo)
-        const { data: friendsData, error: friendsError } = await supabase
+        // Load friendships
+        const { data: friendships, error: friendsError } = await supabase
           .from('friendships')
-          .select(`
-            friend:profiles!friendships_friend_id_fkey(
-              id,
-              username,
-              avatar_url
-            )
-          `)
-          .eq('user_id', currentUserId)
+          .select('id, user_id, friend_id, status')
+          .or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`)
           .eq('status', 'accepted')
           .limit(8);
 
         if (friendsError) throw friendsError;
 
-        const friends = friendsData
-          ?.map(item => item.friend)
-          .filter(Boolean)
-          .map(friend => ({
-            ...friend,
-            is_online: Math.random() > 0.5, // Simulate online status
-            last_seen: new Date(Date.now() - Math.random() * 3600000).toISOString()
-          })) || [];
+        // Fetch profiles separately
+        const friends = await Promise.all((friendships || []).map(async (friendship) => {
+          const friendUserId = friendship.user_id === currentUserId ? friendship.friend_id : friendship.user_id;
+          
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .eq('id', friendUserId)
+            .single();
 
-        setOnlineFriends(friends);
+          if (!profile) return null;
+
+          return {
+            id: profile.id,
+            username: profile.username || '',
+            avatar_url: profile.avatar_url,
+            is_online: Math.random() > 0.5,
+            last_seen: new Date(Date.now() - Math.random() * 3600000).toISOString()
+          };
+        }));
+
+        setOnlineFriends(friends.filter(Boolean) as Friend[]);
 
         // Load friend suggestions (users not yet friends with)
         const { data: suggestionsData, error: suggestionsError } = await supabase

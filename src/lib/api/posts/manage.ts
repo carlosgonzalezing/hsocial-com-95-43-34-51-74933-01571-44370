@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export async function deletePost(postId: string) {
@@ -21,12 +20,10 @@ export async function updatePostVisibility(postId: string, visibility: 'public' 
 
 export async function hidePost(postId: string) {
   try {
-    // Obtener el usuario actual
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) throw new Error('Usuario no autenticado');
     
-    // Verificar si la publicación ya está oculta para evitar conflictos
     const { data: existingHiddenPost, error: checkError } = await supabase
       .from('hidden_posts')
       .select('id')
@@ -39,12 +36,10 @@ export async function hidePost(postId: string) {
       throw checkError;
     }
     
-    // Si ya está oculta, no hacer nada
     if (existingHiddenPost) {
       return;
     }
     
-    // Si no está oculta, ocultarla
     const { error } = await supabase
       .from('hidden_posts')
       .insert({ 
@@ -64,7 +59,6 @@ export async function hidePost(postId: string) {
 
 export async function unhidePost(postId: string) {
   try {
-    // Obtener el usuario actual
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) throw new Error('Usuario no autenticado');
@@ -87,10 +81,9 @@ export async function unhidePost(postId: string) {
 
 export async function getHiddenPosts() {
   try {
-    // Obtener el usuario actual
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (!user) return []; // Si no hay usuario autenticado, devolver array vacío
+    if (!user) return [];
     
     const { data, error } = await supabase
       .from('hidden_posts')
@@ -113,7 +106,6 @@ export async function setPostInterest(postId: string, interestLevel: 'interested
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Usuario no autenticado');
   
-  // Check if interest already exists
   const { data: existingInterest } = await supabase
     .from('post_interests')
     .select('id')
@@ -122,7 +114,6 @@ export async function setPostInterest(postId: string, interestLevel: 'interested
     .single();
   
   if (existingInterest) {
-    // Update existing interest
     const { error } = await supabase
       .from('post_interests')
       .update({ interest_level: interestLevel })
@@ -130,7 +121,6 @@ export async function setPostInterest(postId: string, interestLevel: 'interested
     
     if (error) throw error;
   } else {
-    // Create new interest
     const { error } = await supabase
       .from('post_interests')
       .insert({
@@ -148,7 +138,6 @@ export async function updatePost(params: { postId: string; content?: string; vis
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated");
 
-    // Build update object
     const updateData: any = {};
     if (params.content !== undefined) updateData.content = params.content;
     if (params.visibility !== undefined) updateData.visibility = params.visibility;
@@ -167,42 +156,11 @@ export async function updatePost(params: { postId: string; content?: string; vis
   }
 }
 
+// hidden_users table removed - stub functions
 export async function hideUser(userId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Usuario no autenticado');
-  
-  // Check if already hidden
-  const { data: existingHidden } = await supabase
-    .from('hidden_users')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('hidden_user_id', userId)
-    .single();
-  
-  if (existingHidden) {
-    return; // Already hidden
-  }
-  
-  // Add to hidden users
-  const { error } = await supabase
-    .from('hidden_users')
-    .insert({
-      user_id: user.id,
-      hidden_user_id: userId
-    });
-  
-  if (error) throw error;
+  console.log('Hide user feature disabled');
 }
 
 export async function unhideUser(userId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Usuario no autenticado');
-  
-  const { error } = await supabase
-    .from('hidden_users')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('hidden_user_id', userId);
-  
-  if (error) throw error;
+  console.log('Unhide user feature disabled');
 }

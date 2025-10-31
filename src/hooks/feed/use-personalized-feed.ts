@@ -9,7 +9,6 @@ export function usePersonalizedFeed(userId?: string) {
   const [isPersonalized, setIsPersonalized] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Get current user ID
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -18,7 +17,6 @@ export function usePersonalizedFeed(userId?: string) {
     getCurrentUser();
   }, []);
 
-  // Fetch raw posts
   const { 
     data: rawPosts = [], 
     isLoading: postsLoading, 
@@ -29,7 +27,6 @@ export function usePersonalizedFeed(userId?: string) {
     enabled: !!currentUserId,
   });
 
-  // Generate personalized feed
   const { 
     data: personalizedPosts = [], 
     isLoading: algorithLoading 
@@ -45,7 +42,6 @@ export function usePersonalizedFeed(userId?: string) {
         );
       } catch (error) {
         console.error('Error generating personalized feed:', error);
-        // Fallback to chronological
         return rawPosts.sort((a: any, b: any) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
@@ -54,10 +50,8 @@ export function usePersonalizedFeed(userId?: string) {
     enabled: !!currentUserId && rawPosts.length > 0 && isPersonalized,
   });
 
-  // Choose which feed to show
   const feedPosts = useMemo(() => {
     if (!isPersonalized) {
-      // Chronological feed
       return rawPosts.sort((a: any, b: any) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
@@ -65,28 +59,19 @@ export function usePersonalizedFeed(userId?: string) {
     return personalizedPosts;
   }, [isPersonalized, rawPosts, personalizedPosts]);
 
-  // Filter hidden posts
   const [hiddenPostIds, setHiddenPostIds] = useState<string[]>([]);
-  const [hiddenUserIds, setHiddenUserIds] = useState<string[]>([]);
 
   useEffect(() => {
     const getHiddenData = async () => {
       if (!currentUserId) return;
       
       try {
-        const [hiddenPosts, hiddenUsers] = await Promise.all([
-          supabase
-            .from('hidden_posts')
-            .select('post_id')
-            .eq('user_id', currentUserId),
-          supabase
-            .from('hidden_users') 
-            .select('hidden_user_id')
-            .eq('user_id', currentUserId)
-        ]);
+        const { data: hiddenPosts } = await supabase
+          .from('hidden_posts')
+          .select('post_id')
+          .eq('user_id', currentUserId);
 
-        setHiddenPostIds(hiddenPosts.data?.map(h => h.post_id) || []);
-        setHiddenUserIds(hiddenUsers.data?.map(h => h.hidden_user_id) || []);
+        setHiddenPostIds(hiddenPosts?.map(h => h.post_id) || []);
       } catch (error) {
         console.error("Error fetching hidden data:", error);
       }
@@ -96,11 +81,9 @@ export function usePersonalizedFeed(userId?: string) {
   }, [currentUserId]);
 
   const visiblePosts = feedPosts.filter((post: any) => 
-    !hiddenPostIds.includes(post.id) && 
-    !hiddenUserIds.includes(post.user_id || '')
+    !hiddenPostIds.includes(post.id)
   );
 
-  // Track when user views posts (for algorithm learning)
   const trackPostView = async (postId: string, durationSeconds?: number) => {
     if (currentUserId) {
       await personalizedFeedAlgorithm.trackInteraction(
@@ -128,53 +111,17 @@ export function usePersonalizedFeed(userId?: string) {
     refetch,
     trackPostView,
     trackPostInteraction,
-    // Analytics for debugging
     rawPostsCount: rawPosts.length,
     personalizedPostsCount: personalizedPosts.length,
-    hiddenPostsCount: hiddenPostIds.length + hiddenUserIds.length
+    hiddenPostsCount: hiddenPostIds.length
   };
 }
 
-// Hook adicional para estadísticas del algoritmo
+// Stub analytics hook (engagement_rewards_log table removed)
 export function useFeedAnalytics() {
-  const [stats, setStats] = useState({
+  return {
     avgViewTime: 0,
     interactionsToday: 0,
     personalizedAccuracy: 0
-  });
-
-  useEffect(() => {
-    const loadAnalytics = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Get engagement data for today
-        const { data: todayEngagement } = await supabase
-          .from('engagement_rewards_log')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('earned_at', today);
-
-        const interactionsToday = todayEngagement?.filter(
-          r => r.reward_type === 'interaction_tracking'
-        ).length || 0;
-
-        setStats({
-          avgViewTime: 0, // This would need viewport tracking
-          interactionsToday,
-          personalizedAccuracy: 0 // This would need user feedback
-        });
-
-      } catch (error) {
-        console.error('Error loading analytics:', error);
-      }
-    };
-
-    loadAnalytics();
-  }, []);
-
-  return stats;
+  };
 }

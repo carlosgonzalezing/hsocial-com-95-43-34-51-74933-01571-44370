@@ -144,23 +144,8 @@ export async function createPost({
         throw postError;
       }
 
-      // Create incognito entry
-      const anonymousNumber = Math.floor(Math.random() * 9999) + 1;
-      const anonymousNames = ['Usuario Anónimo', 'Persona Anónima', 'Alguien', 'Anónimo'];
-      const anonymousName = anonymousNames[Math.floor(Math.random() * anonymousNames.length)];
-
-      const { error: incognitoError } = await supabase
-        .from('incognito_posts')
-        .insert({
-          post_id: post.id,
-          anonymous_author_name: anonymousName,
-          anonymous_author_number: anonymousNumber,
-        });
-
-      if (incognitoError) {
-        console.error('Error creating incognito entry:', incognitoError);
-        // Don't throw here, as the post was created successfully
-      }
+      // Incognito mode disabled (table removed)
+      console.log("Incognito mode is disabled");
 
       console.log("Incognito post created successfully:", post);
       return { success: true, post };

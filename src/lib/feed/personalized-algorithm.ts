@@ -387,19 +387,8 @@ export class PersonalizedFeedAlgorithm {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Guardamos la interacción (podrías crear una tabla user_interactions)
-      await supabase
-        .from('engagement_rewards_log')
-        .insert({
-          user_id: user.id,
-          reward_type: 'interaction_tracking',
-          description: `${interactionType} on post ${postId}`,
-          metadata: { 
-            post_id: postId, 
-            interaction_type: interactionType,
-            duration_seconds: durationSeconds 
-          }
-        });
+      // Engagement rewards disabled
+      console.log('Tracking interaction:', { postId, interactionType, durationSeconds });
 
     } catch (error) {
       console.error('Error tracking interaction:', error);

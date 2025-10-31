@@ -38,32 +38,39 @@ export function MessageNotificationButton({ currentUserId, className }: MessageN
     try {
       // This is a simplified version - in a real app you'd have a proper messages table
       // For now, we'll load friends as potential conversations
-      const { data: friendsData, error } = await supabase
+      // Get friendships where user is involved
+      const { data: friendships, error } = await supabase
         .from('friendships')
-        .select(`
-          friend:profiles!friendships_friend_id_fkey(
-            id,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('user_id', currentUserId)
+        .select('id, user_id, friend_id, status')
+        .or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`)
         .eq('status', 'accepted')
         .limit(10);
 
       if (error) throw error;
 
-      const conversations = friendsData
-        ?.map(item => item.friend)
-        .filter(Boolean)
-        .map(friend => ({
-          ...friend,
+      // Fetch profiles separately
+      const conversations = await Promise.all((friendships || []).map(async (friendship) => {
+        const friendUserId = friendship.user_id === currentUserId ? friendship.friend_id : friendship.user_id;
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .eq('id', friendUserId)
+          .single();
+
+        if (!profile) return null;
+
+        return {
+          id: profile.id,
+          username: profile.username || '',
+          avatar_url: profile.avatar_url,
           last_message: "Toca para iniciar conversación",
           unread_count: Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
           updated_at: new Date().toISOString()
-        })) || [];
+        };
+      }));
 
-      setRecentConversations(conversations);
+      setRecentConversations(conversations.filter(Boolean) as RecentConversation[]);
     } catch (error) {
       console.error('Error loading conversations:', error);
     } finally {

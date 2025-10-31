@@ -7,18 +7,10 @@ export async function getSentFriendRequests() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuario no autenticado");
 
-    // Obtenemos solicitudes pendientes enviadas por el usuario actual
-    const { data: sentRequests, error } = await supabase
+    // Get sent friendships
+    const { data: friendships, error } = await supabase
       .from('friendships')
-      .select(`
-        id,
-        friend:profiles!friendships_friend_id_fkey (
-          id,
-          username,
-          avatar_url
-        ),
-        created_at
-      `)
+      .select('id, friend_id, created_at')
       .eq('user_id', user.id)
       .eq('status', 'pending');
 
@@ -27,17 +19,25 @@ export async function getSentFriendRequests() {
       throw error;
     }
 
-    // Convertimos el resultado al formato FriendRequest
-    const requestsArray = (sentRequests || []).map(request => ({
-      id: request.id,
-      user_id: user.id,
-      friend_id: request.friend.id,
-      status: 'pending' as const,
-      created_at: request.created_at,
-      user: {
-        username: request.friend.username || '',
-        avatar_url: request.friend.avatar_url
-      }
+    // Fetch profiles separately
+    const requestsArray = await Promise.all((friendships || []).map(async (friendship) => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', friendship.friend_id)
+        .single();
+
+      return {
+        id: friendship.id,
+        user_id: user.id,
+        friend_id: friendship.friend_id,
+        status: 'pending' as const,
+        created_at: friendship.created_at,
+        user: {
+          username: profile?.username || '',
+          avatar_url: profile?.avatar_url
+        }
+      };
     }));
 
     return requestsArray;

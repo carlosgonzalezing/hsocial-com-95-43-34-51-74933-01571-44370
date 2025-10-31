@@ -77,6 +77,11 @@ export function PostCreator({
   const [postType, setPostType] = useState<PostType>("regular");
   const [selectedFile, setSelectedFile] = useState<File | null>(initialFile);
   const [isUploading, setIsUploading] = useState(false);
+  const [contentStyle, setContentStyle] = useState<ContentStyle>({
+    backgroundKey: 'none',
+    textColor: 'text-foreground',
+    isTextOnly: false
+  });
   const [idea, setIdea] = useState<Idea>({
     title: "",
     description: "",
