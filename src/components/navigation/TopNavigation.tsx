@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, MessageCircle, Users, Bell, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen, Star } from "lucide-react";
+import { Home, MessageCircle, Users, Bell, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -125,17 +125,17 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
           
           {/* Action Icons - Right */}
           <div className="flex items-center gap-1">
-            {/* Notifications with Star */}
+            {/* Notifications with Bell */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full relative text-foreground hover:text-muted-foreground"
+              className="h-10 w-10 rounded-full relative text-foreground hover:bg-muted"
               onClick={() => {
                 handleNotificationClick();
                 navigate("/notifications");
               }}
             >
-              <Star className="h-6 w-6" />
+              <Bell className="h-6 w-6" />
               {unreadNotifications > 0 && (
                 <Badge 
                   variant="destructive" 

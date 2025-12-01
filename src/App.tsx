@@ -26,6 +26,7 @@ const Projects = React.lazy(() => import("@/pages/Projects"));
 const Teams = React.lazy(() => import("@/pages/Teams"));
 const Ideas = React.lazy(() => import("@/pages/Ideas"));
 const Events = React.lazy(() => import("@/pages/Events"));
+const Messages = React.lazy(() => import("@/pages/Messages"));
 const PasswordReset = React.lazy(() => import("@/pages/PasswordReset"));
 const Explore = React.lazy(() => import("@/pages/Explore"));
 const Leaderboard = React.lazy(() => import("@/pages/Leaderboard"));
@@ -116,6 +117,13 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <Notifications />
+                  </Suspense>
+                </AuthGuard>
+              } />
+              <Route path="/messages" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Messages />
                   </Suspense>
                 </AuthGuard>
               } />
