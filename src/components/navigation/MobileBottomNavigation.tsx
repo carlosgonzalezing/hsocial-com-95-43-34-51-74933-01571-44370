@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { CreateContentMenu } from "./CreateContentMenu";
+import { SimplePostModal } from "@/components/SimplePostModal";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
 
 interface MobileBottomNavigationProps {
   currentUserId: string | null;
@@ -20,7 +21,8 @@ export function MobileBottomNavigation({
 }: MobileBottomNavigationProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const isVisible = useScrollDirection();
 
   const navItems = [
     {
@@ -58,7 +60,10 @@ export function MobileBottomNavigation({
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[60] md:hidden">
+      <nav className={cn(
+        "fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[60] md:hidden transition-transform duration-300",
+        isVisible ? "translate-y-0" : "translate-y-full"
+      )}>
         <div className="grid grid-cols-5 items-center h-14">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || 
@@ -72,7 +77,7 @@ export function MobileBottomNavigation({
                 key={item.label}
                 onClick={() => {
                   if (item.isAction) {
-                    setShowCreateMenu(true);
+                    setShowPostModal(true);
                   } else {
                     navigate(item.path);
                   }
@@ -108,7 +113,7 @@ export function MobileBottomNavigation({
         </div>
       </nav>
       
-      <CreateContentMenu open={showCreateMenu} onOpenChange={setShowCreateMenu} />
+      <SimplePostModal open={showPostModal} onOpenChange={setShowPostModal} />
     </>
   );
 }

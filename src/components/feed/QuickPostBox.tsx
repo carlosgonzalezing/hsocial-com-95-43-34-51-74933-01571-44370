@@ -4,7 +4,7 @@ import { Image, Video, FileText, Briefcase } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PostCreatorModal } from "@/components/PostCreatorModal";
+import { SimplePostModal } from "@/components/SimplePostModal";
 
 export function QuickPostBox() {
   const { user } = useAuth();
@@ -75,11 +75,7 @@ export function QuickPostBox() {
         </div>
       </Card>
 
-      <PostCreatorModal
-        open={showPostModal}
-        onOpenChange={setShowPostModal}
-        focusOnOpen
-      />
+      <SimplePostModal open={showPostModal} onOpenChange={setShowPostModal} />
     </>
   );
 }
