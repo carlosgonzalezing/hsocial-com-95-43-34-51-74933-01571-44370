@@ -1,11 +1,9 @@
-import { Home, User, PlusSquare, FolderKanban, Search } from "lucide-react";
+import { Home, Users, PlusSquare, Bell, Briefcase } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CreateContentMenu } from "./CreateContentMenu";
-import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface MobileBottomNavigationProps {
   currentUserId: string | null;
@@ -23,22 +21,6 @@ export function MobileBottomNavigation({
   const navigate = useNavigate();
   const location = useLocation();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (currentUserId) {
-      supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', currentUserId)
-        .single()
-        .then(({ data }) => {
-          if (data?.avatar_url) {
-            setAvatarUrl(data.avatar_url);
-          }
-        });
-    }
-  }, [currentUserId]);
 
   const navItems = [
     {
@@ -46,47 +28,44 @@ export function MobileBottomNavigation({
       label: "Inicio",
       path: "/",
       badge: newPosts > 0 ? newPosts : null,
-      solidFill: false
     },
     {
-      icon: Search,
-      label: "Explorar",
-      path: "/explore",
-      badge: null,
-      solidFill: false
+      icon: Users,
+      label: "Mi red",
+      path: "/friends",
+      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
     },
     {
       icon: PlusSquare,
-      label: "Crear",
+      label: "Publicar",
       path: "/",
       badge: null,
       isAction: true,
-      solidFill: false
     },
     {
-      icon: FolderKanban,
+      icon: Bell,
+      label: "Notificaciones",
+      path: "/notifications",
+      badge: unreadNotifications > 0 ? unreadNotifications : null,
+    },
+    {
+      icon: Briefcase,
       label: "Proyectos",
       path: "/projects",
       badge: null,
-      solidFill: false
-    },
-    {
-      icon: User,
-      label: "Perfil",
-      path: currentUserId ? `/profile/${currentUserId}` : "/auth",
-      badge: null,
-      solidFill: false,
-      isProfile: true
     }
   ];
 
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[60] md:hidden">
-        <div className="grid grid-cols-5 items-center h-16">
+        <div className="grid grid-cols-5 items-center h-14">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || 
-              (item.label === "Perfil" && location.pathname.startsWith('/profile'));
+              (item.label === "Mi red" && location.pathname.startsWith('/friends')) ||
+              (item.label === "Proyectos" && location.pathname.startsWith('/projects'));
+            
+            const Icon = item.icon;
             
             return (
               <button
@@ -98,49 +77,38 @@ export function MobileBottomNavigation({
                     navigate(item.path);
                   }
                 }}
-                className="flex flex-col items-center justify-center h-full relative"
+                className="flex flex-col items-center justify-center h-full relative gap-0.5"
               >
-              {item.isProfile ? (
-                <Avatar className={cn(
-                  "h-7 w-7",
-                  isActive && "ring-2 ring-[#0095f6]"
+                <div className="relative">
+                  <Icon 
+                    className={cn(
+                      "h-6 w-6",
+                      isActive ? "text-foreground" : "text-muted-foreground"
+                    )}
+                    strokeWidth={isActive ? 2 : 1.5}
+                  />
+                  {item.badge && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
+                    >
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </Badge>
+                  )}
+                </div>
+                <span className={cn(
+                  "text-[10px]",
+                  isActive ? "text-foreground font-medium" : "text-muted-foreground"
                 )}>
-                  <AvatarImage src={avatarUrl || undefined} />
-                  <AvatarFallback>
-                    <User className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-              ) : (
-                (() => {
-                  const Icon = item.icon as any;
-                  return (
-                    <Icon 
-                      className={cn(
-                        "h-7 w-7",
-                        isActive ? "text-[#0095f6]" : "text-muted-foreground"
-                      )}
-                      strokeWidth={1.5}
-                      fill={isActive && !item.isAction ? "currentColor" : "none"}
-                    />
-                  );
-                })()
-              )}
-              
-              {item.badge && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {item.badge}
-                </Badge>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-    
-    <CreateContentMenu open={showCreateMenu} onOpenChange={setShowCreateMenu} />
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+      
+      <CreateContentMenu open={showCreateMenu} onOpenChange={setShowCreateMenu} />
     </>
   );
 }

@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      canales: {
+        Row: {
+          created_at: string | null
+          es_privado: boolean
+          id: string
+          nombre: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          es_privado?: boolean
+          id?: string
+          nombre?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          es_privado?: boolean
+          id?: string
+          nombre?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -241,6 +262,105 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensajes: {
+        Row: {
+          contenido: string
+          created_at: string | null
+          id: string
+          id_autor: string | null
+          id_canal: string | null
+        }
+        Insert: {
+          contenido: string
+          created_at?: string | null
+          id?: string
+          id_autor?: string | null
+          id_canal?: string | null
+        }
+        Update: {
+          contenido?: string
+          created_at?: string | null
+          id?: string
+          id_autor?: string | null
+          id_canal?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensajes_id_canal_fkey"
+            columns: ["id_canal"]
+            isOneToOne: false
+            referencedRelation: "canales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          chat_id: string | null
+          content: string
+          created_at: string | null
+          group_id: string | null
+          id: string
+          media_type: string | null
+          media_url: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_id?: string | null
+          content: string
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_id?: string | null
+          content?: string
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      miembros_canal: {
+        Row: {
+          id: number
+          id_canal: string | null
+          id_usuario: string | null
+        }
+        Insert: {
+          id?: number
+          id_canal?: string | null
+          id_usuario?: string | null
+        }
+        Update: {
+          id?: number
+          id_canal?: string | null
+          id_usuario?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "miembros_canal_id_canal_fkey"
+            columns: ["id_canal"]
+            isOneToOne: false
+            referencedRelation: "canales"
             referencedColumns: ["id"]
           },
         ]
