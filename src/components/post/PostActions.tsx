@@ -107,7 +107,7 @@ export function PostActions({
 
   return (
     <div className="pt-0">
-      {/* Activity Summary - reactions, comments, shares */}
+      {/* Activity Summary - reactions, comments, shares counters */}
       <PostActivitySummary
         post={post}
         reactionsByType={reactionsByType}
@@ -115,6 +115,9 @@ export function PostActions({
         sharesCount={sharesCount}
         onCommentsClick={onCommentsClick}
       />
+      
+      {/* LinkedIn-style action buttons separator */}
+      <div className="border-t border-border/50" />
       
       {/* Standard action buttons (like, comments, share) */}
       <ActionsButtons

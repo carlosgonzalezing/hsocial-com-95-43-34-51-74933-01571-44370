@@ -10,7 +10,8 @@ export async function fetchRawPosts(userId?: string) {
       .select(`
         *,
         profiles:profiles(*),
-        comments:comments(count)
+        comments:comments(count),
+        reactions:reactions(reaction_type)
       `);
 
     // Si hay un userId, solo obtener los posts de ese usuario
