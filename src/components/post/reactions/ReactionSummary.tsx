@@ -30,25 +30,26 @@ export function ReactionSummary({ reactions, postId }: ReactionSummaryProps) {
 
   return (
     <>
-      {/* Instagram style: emojis in a row with total count */}
+      {/* LinkedIn style: reaction emojis with total count */}
       <button 
-        className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+        className="flex items-center gap-1.5 cursor-pointer hover:underline transition-all group"
         onClick={() => setShowDialog(true)}
       >
-        {/* Emoji row */}
-        <span className="flex items-center -space-x-1">
+        {/* Emoji badges overlapping */}
+        <div className="flex items-center -space-x-1">
           {topReactionEmojis.map((emoji, idx) => (
-            <span 
+            <div 
               key={idx} 
-              className="text-base inline-flex items-center justify-center w-5 h-5 rounded-full bg-white dark:bg-gray-800 border border-border"
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-card border-2 border-background text-sm transition-transform group-hover:scale-110"
+              style={{ zIndex: topReactionEmojis.length - idx }}
             >
               {emoji}
-            </span>
+            </div>
           ))}
-        </span>
+        </div>
         
-        {/* Total count */}
-        <span className="text-sm font-medium text-muted-foreground">
+        {/* Total count - LinkedIn blue on hover */}
+        <span className="text-sm text-muted-foreground group-hover:text-primary font-medium transition-colors">
           {totalCount}
         </span>
       </button>

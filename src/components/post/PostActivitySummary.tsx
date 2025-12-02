@@ -25,18 +25,18 @@ export function PostActivitySummary({
   }
 
   return (
-    <div className="px-4 py-3 border-b border-border/30">
-      {/* Reactions and activity counters - Instagram style */}
-      <div className="flex items-center justify-between">
-        {/* Left: Reactions with emojis and total count */}
+    <div className="px-4 py-3">
+      {/* LinkedIn-style counters between content and action buttons */}
+      <div className="flex items-center justify-between text-sm">
+        {/* Left: Reactions with emoji icons and total count */}
         {totalReactions > 0 && (
           <div className="flex items-center gap-2">
             <ReactionSummary reactions={reactionsByType} postId={post.id} />
           </div>
         )}
         
-        {/* Right: Comments and shares count */}
-        <div className="flex items-center gap-3 text-sm text-muted-foreground ml-auto">
+        {/* Right: Comments and shares text counters */}
+        <div className="flex items-center gap-1 text-muted-foreground ml-auto">
           {commentsCount > 0 && (
             <button 
               onClick={onCommentsClick} 
@@ -45,9 +45,12 @@ export function PostActivitySummary({
               {commentsCount} {commentsCount === 1 ? 'comentario' : 'comentarios'}
             </button>
           )}
+          {commentsCount > 0 && sharesCount > 0 && (
+            <span className="mx-1">·</span>
+          )}
           {sharesCount > 0 && (
             <span>
-              {sharesCount} {sharesCount === 1 ? 'compartido' : 'compartidos'}
+              {sharesCount} {sharesCount === 1 ? 'vez compartido' : 'veces compartido'}
             </span>
           )}
         </div>

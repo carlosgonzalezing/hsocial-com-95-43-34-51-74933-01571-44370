@@ -89,7 +89,7 @@ export function ActionsButtons({
   const reactionData = hasReacted ? reactionIcons[userReaction] : null;
 
   return (
-    <div className="px-3 py-1 border-t border-border/50">
+    <div className="px-3 py-2">
       <div className="flex items-center justify-between">
         {/* Reaction button */}
         <div className="relative flex-1">
