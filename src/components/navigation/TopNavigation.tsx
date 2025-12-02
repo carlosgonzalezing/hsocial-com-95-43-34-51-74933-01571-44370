@@ -128,40 +128,31 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
           {/* Logo - "H Social" */}
           <HSocialLogo size="md" showText={true} />
           
-          {/* Action Icons - Right */}
+          {/* Search + Actions - Right */}
           <div className="flex items-center gap-1">
-            {/* Notifications with Bell */}
+            {/* Search button (abre buscador de pantalla completa) */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full relative text-foreground hover:bg-muted"
-              onClick={() => {
-                handleNotificationClick();
-                navigate("/notifications");
-              }}
+              className="h-10 w-10 rounded-full text-foreground hover:bg-muted"
+              onClick={() => setShowFullScreenSearch(true)}
+              aria-label="Buscar"
             >
-              <Bell className="h-6 w-6" />
-              {unreadNotifications > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                >
-                  {unreadNotifications}
-                </Badge>
-              )}
+              <Search className="h-6 w-6" />
             </Button>
             
-            {/* Messages */}
+            {/* Mensajes */}
             <Button
               variant="ghost" 
               size="icon"
               className="h-10 w-10 rounded-full text-foreground hover:text-muted-foreground"
               onClick={() => navigate("/messages")}
+              aria-label="Mensajes"
             >
               <MessageCircle className="h-6 w-6" />
             </Button>
             
-            {/* Hamburger Menu */}
+            {/* Menú de usuario */}
             <UserMenu />
           </div>
         </div>

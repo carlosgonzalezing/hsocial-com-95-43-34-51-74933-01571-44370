@@ -24,7 +24,6 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ profile, currentUserId, onImageUpload, onProfileUpdate }: ProfileHeaderProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState<{url: string, type: 'avatar' | 'cover'} | null>(null);
   const { hasGivenHeart, heartsCount, isLoading: heartLoading, toggleHeart } = useProfileHeart(profile.id);
   const isMobile = useIsMobile();
@@ -44,9 +43,6 @@ export function ProfileHeader({ profile, currentUserId, onImageUpload, onProfile
     onProfileUpdate?.(updatedProfile);
   };
 
-  const handleMessageClick = () => {
-    setIsChatOpen(true);
-  };
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     return onImageUpload('avatar', e);
@@ -98,19 +94,21 @@ export function ProfileHeader({ profile, currentUserId, onImageUpload, onProfile
                 </div>
                 <ProfileStats 
                   followersCount={profile.followers_count}
-                  postsCount={42}
-                  followingCount={324}
+                  postsCount={profile.posts_count}
+                  followingCount={profile.following_count}
                 />
               </div>
               
               <ProfileActions
                 isOwner={isOwner}
                 profileId={profile.id}
+                username={profile.username || undefined}
+                avatarUrl={profile.avatar_url}
                 hasGivenHeart={hasGivenHeart}
                 heartLoading={heartLoading}
                 currentUserId={currentUserId}
                 onEditClick={() => setIsEditDialogOpen(true)}
-                onMessageClick={handleMessageClick}
+                onMessageClick={() => {}}
                 onToggleHeart={toggleHeart}
               />
             </div>

@@ -12,6 +12,7 @@ import { EventModal } from "./EventModal";
 import { PostImage } from "@/components/ui/optimized-image";
 import { backgroundPresets } from "./TextBackgroundPalette";
 import { MentionsText } from "./MentionsText";
+import { MediaCarousel } from "./MediaCarousel";
 
 interface PostContentProps {
   post: Post;
@@ -24,8 +25,22 @@ export function PostContent({ post, postId }: PostContentProps) {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [showFullText, setShowFullText] = useState(false);
   
-  // Check if the post has media
-  const hasMedia = !!post.media_url;
+  // Check if the post has media (single or multiple)
+  const hasMedia = !!post.media_url || (post.media_urls && post.media_urls.length > 0);
+  
+  // Preparar items para MediaCarousel
+  const mediaItems: Array<{ url: string; type: 'image' | 'video' }> = [];
+  if (post.media_urls && Array.isArray(post.media_urls) && post.media_urls.length > 0) {
+    // Múltiples archivos desde media_urls
+    post.media_urls.forEach((url: string, index: number) => {
+      const type = post.media_type?.startsWith('video') || url.match(/\.(mp4|webm|ogg)$/i) ? 'video' : 'image';
+      mediaItems.push({ url, type });
+    });
+  } else if (post.media_url) {
+    // Un solo archivo desde media_url (compatibilidad)
+    const type = post.media_type?.startsWith('video') || post.media_url.match(/\.(mp4|webm|ogg)$/i) ? 'video' : 'image';
+    mediaItems.push({ url: post.media_url, type });
+  }
   
   // Check if the post has a poll
   const hasPoll = post.poll && post.poll.options?.length > 0;
@@ -99,47 +114,45 @@ export function PostContent({ post, postId }: PostContentProps) {
       )}
       
       {hasMedia && !hasMarketplace && (
-        <div className="mt-2 mb-0 w-full flex justify-center">
-          {post.media_type?.startsWith('image') || post.media_type === 'image' ? (
-            <PostImage
-              src={post.media_url || ''}
-              alt="Contenido multimedia del post"
-              className="w-full h-auto rounded-none cursor-zoom-in"
-              onClick={() => setIsImageModalOpen(true)}
-            />
-          ) : post.media_type?.startsWith('video') || post.media_type === 'video' ? (
-            <video
-              src={post.media_url || ''}
-              className="max-w-full max-h-[400px] object-contain rounded-lg cursor-pointer shadow-md"
-              onClick={() => setIsVideoModalOpen(true)}
-              onError={(e) => {
-                console.error('Error cargando video:', e);
-                console.log('URL fallida:', post.media_url);
-                // Show fallback content
-                const target = e.target as HTMLVideoElement;
-                target.style.display = 'none';
-                const parent = target.parentElement;
-                if (parent) {
-                  parent.innerHTML = `
-                    <div class="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-                      <p class="text-muted-foreground text-sm">No se pudo cargar el video</p>
-                    </div>
-                  `;
-                }
-              }}
-              onLoadedData={() => {
-                console.log('Video cargado exitosamente:', post.media_url);
-              }}
-              controls
-              preload="metadata"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <FilePreview 
-              url={post.media_url || ''} 
-              type={post.media_type ?? 'file'}
-            />
-          )}
+        <div className="mt-2 mb-0 w-full">
+          {mediaItems.length > 1 ? (
+            // Múltiples archivos: usar MediaCarousel estilo LinkedIn
+            <MediaCarousel mediaItems={mediaItems} />
+          ) : mediaItems.length === 1 ? (
+            // Un solo archivo: mostrar directamente
+            <div className="w-full flex justify-center">
+              {mediaItems[0].type === 'image' ? (
+                <PostImage
+                  src={mediaItems[0].url}
+                  alt="Contenido multimedia del post"
+                  className="w-full h-auto rounded-none cursor-zoom-in"
+                  onClick={() => setIsImageModalOpen(true)}
+                />
+              ) : (
+                <video
+                  src={mediaItems[0].url}
+                  className="max-w-full max-h-[600px] object-contain rounded-none cursor-pointer"
+                  onClick={() => setIsVideoModalOpen(true)}
+                  onError={(e) => {
+                    console.error('Error cargando video:', e);
+                    const target = e.target as HTMLVideoElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
+                          <p class="text-muted-foreground text-sm">No se pudo cargar el video</p>
+                        </div>
+                      `;
+                    }
+                  }}
+                  controls
+                  preload="metadata"
+                  crossOrigin="anonymous"
+                />
+              )}
+            </div>
+          ) : null}
         </div>
       )}
       
@@ -166,22 +179,22 @@ export function PostContent({ post, postId }: PostContentProps) {
 
       {/* Marketplace display removed for performance */}
       
-      {/* Image Modal */}
-      {post.media_type?.startsWith('image') && (
+      {/* Image Modal - solo si hay un solo archivo (MediaCarousel maneja sus propios modales) */}
+      {mediaItems.length === 1 && mediaItems[0].type === 'image' && (
         <ImageModal 
           isOpen={isImageModalOpen} 
           onClose={() => setIsImageModalOpen(false)}
-          imageUrl={post.media_url || ''}
+          imageUrl={mediaItems[0].url}
           altText="Post image"
         />
       )}
       
-      {/* Video Modal */}
-      {post.media_type?.startsWith('video') && (
+      {/* Video Modal - solo si hay un solo archivo */}
+      {mediaItems.length === 1 && mediaItems[0].type === 'video' && (
         <VideoModal 
           isOpen={isVideoModalOpen} 
           onClose={() => setIsVideoModalOpen(false)}
-          videoUrl={post.media_url || ''}
+          videoUrl={mediaItems[0].url}
           altText="Post video"
         />
       )}

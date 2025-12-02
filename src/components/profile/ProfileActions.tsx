@@ -2,11 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Edit2, Heart, MessageCircle } from "lucide-react";
 import { FollowButton } from "@/components/FollowButton";
 import { ProfileOptionsMenu } from "./ProfileOptionsMenu";
+import { useNavigate } from "react-router-dom";
+import { useChatSystem } from "@/hooks/use-chat-system";
 
 interface ProfileActionsProps {
   isOwner: boolean;
   profileId: string;
   username?: string;
+  avatarUrl?: string | null;
   hasGivenHeart: boolean;
   heartLoading: boolean;
   currentUserId: string | null;
@@ -19,6 +22,7 @@ export function ProfileActions({
   isOwner,
   profileId,
   username = 'usuario',
+  avatarUrl,
   hasGivenHeart,
   heartLoading,
   currentUserId,
@@ -26,6 +30,13 @@ export function ProfileActions({
   onMessageClick,
   onToggleHeart
 }: ProfileActionsProps) {
+  const navigate = useNavigate();
+
+  const handleMessageClick = () => {
+    // Navegar a la página de mensajes con el parámetro user para abrir el chat privado
+    navigate(`/messages?user=${profileId}`);
+  };
+
   if (isOwner) {
     return (
       <Button variant="outline" onClick={onEditClick}>
@@ -37,7 +48,7 @@ export function ProfileActions({
 
   return (
     <div className="flex gap-2">
-      <Button variant="outline" onClick={onMessageClick}>
+      <Button variant="outline" onClick={handleMessageClick}>
         <MessageCircle className="h-4 w-4 mr-2" />
         Mensaje
       </Button>

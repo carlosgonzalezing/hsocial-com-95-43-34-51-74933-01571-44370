@@ -24,6 +24,8 @@ export type Profile = {
   birth_date: string | null;
   relationship_status: string | null;
   followers_count: number;
+  following_count: number;
+  posts_count: number;
   hearts_count: number;
   created_at: string;
   updated_at: string;
@@ -67,22 +69,34 @@ export default function Profile() {
         }
 
         // Ejecutar todas las consultas en paralelo para mejorar velocidad
-        const [profileResult, followersResult, heartsResult] = await Promise.all([
+        const [profileResult, followersResult, followingResult, postsResult, heartsResult] = await Promise.all([
           supabase
             .from('profiles')
             .select('*')
             .eq('id', profileId)
             .single(),
+          // Seguidores: usuarios que siguen a este perfil (following_id = profileId)
           supabase
-            .from('friendships')
+            .from('followers')
             .select('*', { count: 'exact', head: true })
-            .eq('friend_id', profileId)
-            .eq('status', 'accepted'),
+            .eq('following_id', profileId),
+          // Seguidos: usuarios que este perfil sigue (follower_id = profileId)
+          supabase
+            .from('followers')
+            .select('*', { count: 'exact', head: true })
+            .eq('follower_id', profileId),
+          // Posts: publicaciones de este usuario
+          supabase
+            .from('posts')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', profileId),
           Promise.resolve({ count: 0, error: null })
         ]);
 
         const { data: profileData, error: profileError } = profileResult;
         const { count: followersCount, error: followersError } = followersResult;
+        const { count: followingCount, error: followingError } = followingResult;
+        const { count: postsCount, error: postsError } = postsResult;
         const { count: heartsCount, error: heartsError } = heartsResult;
 
         if (profileError || !profileData) {
@@ -93,6 +107,14 @@ export default function Profile() {
 
         if (followersError) {
           console.error('Error fetching followers:', followersError);
+        }
+
+        if (followingError) {
+          console.error('Error fetching following:', followingError);
+        }
+
+        if (postsError) {
+          console.error('Error fetching posts:', postsError);
         }
 
         if (heartsError) {
@@ -115,6 +137,8 @@ export default function Profile() {
           birth_date: typedProfileData.birth_date,
           relationship_status: typedProfileData.relationship_status,
           followers_count: followersCount || 0,
+          following_count: followingCount || 0,
+          posts_count: postsCount || 0,
           hearts_count: heartsCount || 0,
           created_at: typedProfileData.created_at,
           updated_at: typedProfileData.updated_at

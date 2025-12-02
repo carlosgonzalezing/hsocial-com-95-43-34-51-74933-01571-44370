@@ -34,14 +34,14 @@ export function GlobalChat() {
   // Cargar mensajes históricos
   const loadMessages = async () => {
     try {
+      // Primero obtener los mensajes
       const { data: messagesData, error } = await supabase
         .from("mensajes")
         .select(`
           id,
           contenido,
           created_at,
-          id_autor,
-          author:profiles!mensajes_id_autor_fkey(username, avatar_url)
+          id_autor
         `)
         .eq("id_canal", GLOBAL_CHANNEL_ID)
         .order("created_at", { ascending: true })
@@ -49,7 +49,35 @@ export function GlobalChat() {
 
       if (error) throw error;
 
-      setMessages(messagesData as any || []);
+      // Obtener IDs únicos de autores
+      const authorIds = [...new Set(messagesData?.map(m => m.id_autor).filter(Boolean) || [])];
+      
+      // Obtener perfiles de los autores
+      let profilesMap: Record<string, { username: string; avatar_url: string }> = {};
+      if (authorIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .in("id", authorIds);
+        
+        if (!profilesError && profiles) {
+          profilesMap = profiles.reduce((acc, profile) => {
+            acc[profile.id] = {
+              username: profile.username || "Usuario",
+              avatar_url: profile.avatar_url || ""
+            };
+            return acc;
+          }, {} as Record<string, { username: string; avatar_url: string }>);
+        }
+      }
+
+      // Combinar mensajes con sus autores
+      const messagesWithAuthors = (messagesData || []).map(message => ({
+        ...message,
+        author: profilesMap[message.id_autor || ""] || { username: "Usuario", avatar_url: "" }
+      }));
+
+      setMessages(messagesWithAuthors as Message[]);
     } catch (error) {
       console.error("Error loading messages:", error);
       toast({

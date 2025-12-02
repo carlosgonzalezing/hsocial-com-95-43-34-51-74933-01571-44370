@@ -57,43 +57,68 @@ export function SendPostModal({ isOpen, onClose, post }: SendPostModalProps) {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Get accepted friendships
-      const { data: friendships, error } = await supabase
-        .from("friendships")
-        .select(`
-          friend_id,
-          user_id
-        `)
-        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
-        .eq("status", "accepted");
-
-      if (error) throw error;
-
-      // Get friend IDs
-      const friendIds = friendships?.map((f) =>
-        f.user_id === user.id ? f.friend_id : f.user_id
-      ) || [];
-
-      if (friendIds.length === 0) {
+      if (!user) {
         setFriends([]);
         setFilteredFriends([]);
         return;
       }
 
-      // Get friend profiles
+      // MODELO SIMPLE TIPO INSTAGRAM:
+      // contacto = persona a la que SIGO y que TAMBIÉN me sigue (mutuo)
+
+      // Usuarios que SIGUES (following)
+      const { data: following, error: followingError } = await supabase
+        .from("followers")
+        .select("following_id")
+        .eq("follower_id", user.id);
+
+      if (followingError) throw followingError;
+
+      // Usuarios que te SIGUEN (followers)
+      const { data: followers, error: followersError } = await supabase
+        .from("followers")
+        .select("follower_id")
+        .eq("following_id", user.id);
+
+      if (followersError) throw followersError;
+
+      const followingIds = new Set(
+        following?.map((f: { following_id: string }) => f.following_id) || []
+      );
+      const followerIds = new Set(
+        followers?.map((f: { follower_id: string }) => f.follower_id) || []
+      );
+
+      // IDs que están en ambos sets = se siguen mutuamente
+      const mutualIds = Array.from(followingIds).filter((id) => followerIds.has(id));
+
+      if (mutualIds.length === 0) {
+        setFriends([]);
+        setFilteredFriends([]);
+        return;
+      }
+
+      // Cargar perfiles de esos contactos mutuos
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("id, username, avatar_url")
-        .in("id", friendIds);
+        .in("id", mutualIds);
 
       if (profilesError) throw profilesError;
 
-      setFriends(profiles || []);
-      setFilteredFriends(profiles || []);
+      const contacts: Friend[] =
+        profiles?.map((p) => ({
+          id: p.id,
+          username: p.username || "Usuario",
+          avatar_url: p.avatar_url,
+        })) || [];
+
+      setFriends(contacts);
+      setFilteredFriends(contacts);
     } catch (error) {
       console.error("Error fetching friends:", error);
+      setFriends([]);
+      setFilteredFriends([]);
     } finally {
       setIsLoading(false);
     }

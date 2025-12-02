@@ -32,8 +32,8 @@ export async function createIdeaNotification(userId: string, postId: string, use
           receiver_id: postData.user_id,
           sender_id: userId,
           type: "idea_join",
-          related_id: postId,
-          content: `${username || "Usuario"} se ha unido a tu idea: "${ideaTitle}"`,
+          post_id: postId,
+          message: `${username || "Usuario"} se ha unido a tu idea: "${ideaTitle}"`,
         });
     }
   } catch (error) {
@@ -71,8 +71,8 @@ export async function createIdeaLeaveNotification(userId: string, postId: string
           receiver_id: postData.user_id,
           sender_id: userId,
           type: "idea_leave",
-          related_id: postId,
-          content: `${username || "Usuario"} ha abandonado tu idea: "${ideaTitle}"`,
+          post_id: postId,
+          message: `${username || "Usuario"} ha abandonado tu idea: "${ideaTitle}"`,
         });
     }
   } catch (error) {

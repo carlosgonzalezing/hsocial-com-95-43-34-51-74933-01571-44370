@@ -31,8 +31,8 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
   const { user } = useAuth();
   const [content, setContent] = useState("");
   const [visibility, setVisibility] = useState<Visibility>('public');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profile, setProfile] = useState<{ avatar_url: string | null; username: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -62,20 +62,37 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
   }, [open]);
 
   useEffect(() => {
-    if (selectedFile) {
-      if (selectedFile.type.startsWith('image/')) {
-        const url = URL.createObjectURL(selectedFile);
-        setFilePreview(url);
-        return () => URL.revokeObjectURL(url);
+    // Crear previews para todos los archivos
+    const previews: string[] = [];
+    selectedFiles.forEach((file) => {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        previews.push(URL.createObjectURL(file));
+      } else {
+        previews.push('');
       }
-    } else {
-      setFilePreview(null);
-    }
-  }, [selectedFile]);
+    });
+    setFilePreviews(previews);
+    
+    // Cleanup function
+    return () => {
+      previews.forEach(url => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [selectedFiles]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setSelectedFile(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      const newFiles = [...selectedFiles, ...files].slice(0, 10);
+      setSelectedFiles(newFiles);
+    }
+    e.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
   };
 
   const handleSubmit = async () => {
@@ -109,8 +126,8 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       
       setContent("");
-      setSelectedFile(null);
-      setFilePreview(null);
+      setSelectedFiles([]);
+      setFilePreviews([]);
       onOpenChange(false);
     } catch (error) {
       console.error('Error:', error);
@@ -167,7 +184,7 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
           <Button
             size="sm"
             onClick={handleSubmit}
-            disabled={isSubmitting || (!content.trim() && !selectedFile)}
+            disabled={isSubmitting || (!content.trim() && selectedFiles.length === 0)}
             className="rounded-full px-4"
           >
             {isSubmitting ? "..." : "Publicar"}
@@ -214,7 +231,8 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
           ref={fileInputRef}
           type="file"
           className="hidden"
-          accept="image/*,video/*,.pdf,.doc,.docx"
+          accept="image/*,video/*"
+          multiple
           onChange={handleFileSelect}
         />
         <button 

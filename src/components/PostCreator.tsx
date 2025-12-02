@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { mobileToasts } from "@/components/ui/mobile-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,7 +76,8 @@ export function PostCreator({
   const [content, setContent] = useState(initialContent);
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [postType, setPostType] = useState<PostType>("regular");
-  const [selectedFile, setSelectedFile] = useState<File | null>(initialFile);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>(initialFile ? [initialFile] : []);
+  const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [contentStyle, setContentStyle] = useState<ContentStyle>({
     backgroundKey: 'none',
@@ -124,8 +126,8 @@ export function PostCreator({
     if (initialContent && !content) {
       setContent(initialContent);
     }
-    if (initialFile && !selectedFile) {
-      setSelectedFile(initialFile);
+    if (initialFile && selectedFiles.length === 0) {
+      setSelectedFiles([initialFile]);
     }
   }, [initialContent, initialFile]);
 
@@ -142,18 +144,50 @@ export function PostCreator({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [content, selectedFile, postType, idea, evento, isUploading]);
+  }, [content, selectedFiles, postType, idea, evento, isUploading]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      console.log('File selected:', { name: file.name, size: file.size, type: file.type });
-      setSelectedFile(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      // Combinar con archivos existentes (máximo 10 archivos)
+      const newFiles = [...selectedFiles, ...files].slice(0, 10);
+      setSelectedFiles(newFiles);
+      
+      // Crear previews para todos los archivos nuevos
+      const newPreviews: Promise<string>[] = newFiles.map((file) => {
+        return new Promise((resolve) => {
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              resolve(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+          } else {
+            // Para videos y otros, usar URL.createObjectURL
+            resolve(URL.createObjectURL(file));
+          }
+        });
+      });
+      
+      Promise.all(newPreviews).then((previews) => {
+        setFilePreviews(previews);
+      });
+      
+      console.log('Files selected:', newFiles.map(f => ({ name: f.name, size: f.size, type: f.type })));
     }
+    // Resetear el input para permitir seleccionar el mismo archivo de nuevo
+    e.target.value = '';
   };
 
-  const removeAttachment = () => {
-    setSelectedFile(null);
+  const removeAttachment = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
+    setFilePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeAllAttachments = () => {
+    setSelectedFiles([]);
+    setFilePreviews([]);
   };
 
   const handleSubmit = async () => {
@@ -201,7 +235,7 @@ export function PostCreator({
       
       console.log('✅ User authenticated:', { userId: session.user.id, email: session.user.email });
 
-      if (!content.trim() && !selectedFile && postType === 'regular') {
+      if (!content.trim() && selectedFiles.length === 0 && postType === 'regular') {
         mobileToasts.validationError("Contenido o archivo");
         return;
       }
@@ -214,26 +248,42 @@ export function PostCreator({
       setIsUploading(true);
       
 
-      let mediaUrl: string | null = null;
-      let mediaType: string | null = null;
+      // Upload multiple files if present
+      const mediaUrls: string[] = [];
+      const mediaTypes: string[] = [];
 
-      // Upload file if present
-      if (selectedFile) {
-        console.log('Uploading file:', selectedFile.name);
-        
+      if (selectedFiles.length > 0) {
+        console.log(`Uploading ${selectedFiles.length} file(s)...`);
         
         try {
-          mediaUrl = await uploadMediaFile(selectedFile);
-          mediaType = getMediaType(selectedFile);
+          // Subir todos los archivos en paralelo
+          const uploadPromises = selectedFiles.map(async (file) => {
+            const url = await uploadMediaFile(file);
+            const type = getMediaType(file);
+            return { url, type };
+          });
+
+          const uploadResults = await Promise.all(uploadPromises);
           
-          console.log('File uploaded successfully:', { mediaUrl, mediaType });
+          uploadResults.forEach(({ url, type }) => {
+            if (url) {
+              mediaUrls.push(url);
+              mediaTypes.push(type || 'image');
+            }
+          });
+          
+          console.log(`Files uploaded successfully: ${mediaUrls.length} files`);
         } catch (uploadError) {
           console.error('File upload failed:', uploadError);
-          mobileToasts.error("Error al subir el archivo");
+          mobileToasts.error("Error al subir los archivos");
           setIsUploading(false);
           return;
         }
       }
+
+      // Para compatibilidad con código existente, usar el primer archivo como media_url
+      const mediaUrl = mediaUrls.length > 0 ? mediaUrls[0] : null;
+      const mediaType = mediaTypes.length > 0 ? mediaTypes[0] : null;
 
       
 
@@ -247,8 +297,9 @@ export function PostCreator({
         user_id: session.user.id,
         content: content.trim() || null,
         visibility: visibilityValue,
-        media_url: mediaUrl,
-        media_type: mediaType,
+        media_url: mediaUrl, // Primera URL para compatibilidad
+        media_type: mediaType, // Primer tipo para compatibilidad
+        media_urls: mediaUrls.length > 0 ? mediaUrls : null, // Array de URLs para múltiples archivos
         post_type: postType
       };
 
@@ -398,8 +449,8 @@ export function PostCreator({
           console.log('❌ Regular post validation failed: text too long for background');
           return false;
         }
-        const isValid = Boolean(content.trim() || selectedFile);
-        console.log('✅ Regular post validation:', { isValid, hasContent: !!content.trim(), hasFile: !!selectedFile });
+        const isValid = Boolean(content.trim() || selectedFiles.length > 0);
+        console.log('✅ Regular post validation:', { isValid, hasContent: !!content.trim(), hasFiles: selectedFiles.length });
         return isValid;
       } else if (postType === 'idea') {
         const validation = {
@@ -445,12 +496,91 @@ export function PostCreator({
         />
       )}
 
-      {postType === 'regular' && !selectedFile && (
+      {postType === 'regular' && selectedFiles.length === 0 && (
         <TextBackgroundPalette
           selectedBackground={contentStyle.backgroundKey}
           onBackgroundChange={setContentStyle}
-          disabled={!!selectedFile}
+          disabled={selectedFiles.length > 0}
         />
+      )}
+
+      {/* Preview de múltiples archivos */}
+      {postType === 'regular' && selectedFiles.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              {selectedFiles.length} archivo{selectedFiles.length > 1 ? 's' : ''} seleccionado{selectedFiles.length > 1 ? 's' : ''}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={removeAllAttachments}
+              className="text-xs h-6"
+            >
+              Eliminar todos
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {selectedFiles.map((file, index) => (
+              <div key={index} className="relative">
+                {file.type.startsWith('image/') ? (
+                  <img
+                    src={filePreviews[index] || URL.createObjectURL(file)}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-md"
+                    onLoad={(e) => {
+                      // Cleanup object URL after load
+                      const url = filePreviews[index] || (e.target as HTMLImageElement).src;
+                      if (url.startsWith('blob:')) {
+                        // URL.createObjectURL ya está siendo usado, no necesitamos cleanup aquí
+                      }
+                    }}
+                  />
+                ) : file.type.startsWith('video/') ? (
+                  <div className="relative w-full h-24 bg-black rounded-md flex items-center justify-center">
+                    <video
+                      src={filePreviews[index] || URL.createObjectURL(file)}
+                      className="w-full h-full object-cover rounded-md"
+                      muted
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-black/50 rounded-full p-1">
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-24 bg-muted rounded-md flex items-center justify-center">
+                    <span className="text-xs text-center px-2">{file.name}</span>
+                  </div>
+                )}
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-1 right-1 h-5 w-5 rounded-full"
+                  onClick={() => removeAttachment(index)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Botón para agregar más archivos */}
+      {postType === 'regular' && selectedFiles.length > 0 && selectedFiles.length < 10 && (
+        <div>
+          <AttachmentInput
+            type="image"
+            onFileSelect={handleFileSelect}
+            accept="image/*,video/*"
+            showLabel={true}
+            label={`Agregar más (${selectedFiles.length}/10)`}
+          />
+        </div>
       )}
 
       {/* Poll creator removed for performance */}

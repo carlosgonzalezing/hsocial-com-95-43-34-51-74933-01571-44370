@@ -4,6 +4,7 @@ export interface Post {
   user_id: string;
   author_id?: string; // Add author_id as optional since some code uses it
   media_url?: string | null;
+  media_urls?: string[] | null; // Array de URLs para múltiples archivos
   media_type?: string | null;
   visibility: 'public' | 'friends' | 'private' | 'incognito';
   created_at: string;

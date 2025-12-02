@@ -15,6 +15,7 @@ import { EventDetailModal } from "./events/EventDetailModal";
 import { ShareModal } from "./post/actions/ShareModal";
 import { SendPostModal } from "./post/actions/SendPostModal";
 import { usePostReactions } from "@/hooks/posts/use-post-reactions";
+import { PostActivitySummary } from "./post/PostActivitySummary";
 
 interface PostProps {
   post: PostType;
@@ -32,8 +33,20 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
   // Detectar si es un post de demostración (no permite interacciones)
   const isDemoPost = post.id.startsWith('demo-');
 
-  // Hook para manejar reacciones
+  // Hook para manejar reacciones del usuario
   const { userReaction, onReaction } = usePostReactions(post.id);
+
+  // Resumen de reacciones (para contadores)
+  const reactionsByType: Record<string, number> = {};
+  if (Array.isArray(post.reactions)) {
+    post.reactions.forEach((reaction: any) => {
+      const type = reaction.reaction_type || reaction.type || "love";
+      reactionsByType[type] = (reactionsByType[type] || 0) + 1;
+    });
+  } else if (post.reactions?.by_type) {
+    Object.assign(reactionsByType, post.reactions.by_type);
+  }
+  const sharesCount = post.shares_count || 0;
 
   // Estados para modales
   const [showShareModal, setShowShareModal] = useState(false);
@@ -93,16 +106,28 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
       )}
       
       {!isDemoPost && (
-        <ActionsButtons 
-          post={post}
-          postId={post.id}
-          userReaction={userReaction}
-          onReaction={onReaction}
-          onComment={toggleComments}
-          onShare={() => setShowShareModal(true)}
-          onSend={() => setShowSendModal(true)}
-          commentsExpanded={showComments}
-        />
+        <>
+          {/* Contadores de reacciones / comentarios / compartidos */}
+          <PostActivitySummary
+            post={post}
+            reactionsByType={reactionsByType}
+            commentsCount={post.comments_count || 0}
+            sharesCount={sharesCount}
+            onCommentsClick={toggleComments}
+          />
+
+          {/* Botones: reaccionar, comentar, compartir, enviar */}
+          <ActionsButtons 
+            post={post}
+            postId={post.id}
+            userReaction={userReaction}
+            onReaction={onReaction}
+            onComment={toggleComments}
+            onShare={() => setShowShareModal(true)}
+            onSend={() => setShowSendModal(true)}
+            commentsExpanded={showComments}
+          />
+        </>
       )}
       
       {!isDemoPost && !hideComments && showComments && (

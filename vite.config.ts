@@ -10,10 +10,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    headers: {
-      // Ensure correct MIME types for JS modules
-      'Content-Type': 'application/javascript; charset=utf-8',
-    },
+    // Headers removidos para evitar conflictos con el servidor de Vite
+    // Vite maneja automáticamente los tipos MIME correctos
   },
   plugins: [
     react(),

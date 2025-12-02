@@ -168,16 +168,16 @@ export function useNavigation() {
     // Resetear contador de nuevas publicaciones
     setNewPosts(0);
 
-    // Si ya estamos en la página principal, forzar scroll al inicio y mostrar publicaciones recientes
-    if (location.pathname === "/") {
-      // Usar searchParams para indicar que queremos mostrar publicaciones recientes
-      navigate("/?new=true");
-      // Hacer scroll al inicio de la página
-      window.scrollTo(0, 0);
-    } else {
-      // Si no estamos en la página principal, navegar allí con el parámetro
-      navigate("/?new=true");
+    // Navegar siempre al inicio del feed
+    if (location.pathname !== "/") {
+      navigate("/");
     }
+    
+    // Hacer scroll hasta la primera publicación
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const handleNotificationClick = async () => {

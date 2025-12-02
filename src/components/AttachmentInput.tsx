@@ -127,6 +127,7 @@ export function AttachmentInput({
         onChange={handleFileSelect}
         accept={getAccept()}
         className="hidden"
+        multiple={type === 'image' || type === 'video'}
         capture={type === 'image' || type === 'video' ? 'environment' : undefined}
       />
     </>

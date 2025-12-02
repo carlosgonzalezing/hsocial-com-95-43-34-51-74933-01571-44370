@@ -162,9 +162,9 @@ export function FacebookLayout({
             </div>
           )}
           
-          {/* Center Content - Flexible width with max constraints */}
+          {/* Center Content - Full width estilo LinkedIn */}
           <main className={`flex-1 min-h-screen w-full ${!hideLeftSidebar ? 'lg:ml-[280px]' : ''} ${!hideRightSidebar ? 'xl:mr-[320px]' : ''}`}>
-            <div className="max-w-[750px] mx-auto px-4 lg:px-6 py-2 lg:py-4 w-full">
+            <div className="w-full px-0 py-2 lg:py-4">
               {/* Notification banner */}
               {currentUserId && <NotificationPermissionBanner />}
               {children}

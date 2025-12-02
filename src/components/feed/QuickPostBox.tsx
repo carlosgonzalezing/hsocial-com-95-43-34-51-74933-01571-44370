@@ -40,7 +40,7 @@ export function QuickPostBox() {
 
   return (
     <>
-      <Card className="p-4 mb-2 border-border/50">
+      <Card className="p-4 mb-0 rounded-none border-x-0 border-t border-b border-border/50 shadow-none">
         {/* LinkedIn-style post input */}
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 shrink-0">
