@@ -38,10 +38,15 @@ export function ActionsButtons({
 }: ActionsButtonsProps) {
   
   const handleReactionClick = (type: ReactionType) => {
+    console.log('🎯 [ActionsButtons] handleReactionClick llamado:', { postId, type, userReaction });
     if (onReaction) {
+      console.log('🔄 [ActionsButtons] Llamando onReaction...');
       onReaction(postId, type);
     } else if (handleReaction) {
+      console.log('🔄 [ActionsButtons] Llamando handleReaction...');
       handleReaction(type);
+    } else {
+      console.warn('⚠️ [ActionsButtons] No hay handler de reacción disponible');
     }
   };
 
