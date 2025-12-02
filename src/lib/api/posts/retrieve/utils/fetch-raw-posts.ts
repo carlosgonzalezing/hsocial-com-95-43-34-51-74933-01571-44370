@@ -12,6 +12,8 @@ export async function fetchRawPosts(userId?: string) {
         profiles:profiles(*),
         comments:comments(count),
         post_reports:post_reports(count),
+        post_shares:post_shares(count),
+        reactions:reactions(reaction_type, user_id),
         academic_events:academic_events(*),
         shared_post:posts!shared_post_id(
           *,

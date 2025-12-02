@@ -16,7 +16,7 @@ export function transformPostData(post: any): Post {
     profiles: post.profiles,
     media_url: post.media_url,
     media_type: post.media_type,
-    reactions: post.reactions,
+    reactions: post.reactions || [],
     poll: post.poll,
     idea: post.idea,
     post_type: post.post_type,
@@ -37,6 +37,7 @@ export function transformPostData(post: any): Post {
       organizer_id: post.user_id
     } : undefined,
     comments_count: post.comments?.[0]?.count || 0,
+    shares_count: post.post_shares?.[0]?.count || 0,
     shared_post_id: post.shared_post_id,
     shared_from: post.shared_from,
     visibility: post.visibility,

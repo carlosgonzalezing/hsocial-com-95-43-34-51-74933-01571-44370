@@ -1,7 +1,5 @@
 import { Card } from "@/components/ui/card";
 import { Comments } from "@/components/post/Comments";
-// CAMBIO: Se elimina la importación de PostActions y se usa ActionsButtons
-// import { PostActions } from "@/components/post/PostActions";
 import { ActionsButtons } from "@/components/post/actions/ActionsButtons";
 import { PostContent } from "@/components/post/PostContent";
 import { PostHeader } from "@/components/post/PostHeader";
@@ -9,11 +7,14 @@ import { type Post as PostType } from "@/types/post";
 import { SharedPostContent } from "./post/SharedPostContent";
 import { usePost } from "@/hooks/use-post";
 import { PostWrapper } from "./post/PostWrapper";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { IdeaContent } from "./post/IdeaContent";
 import { PostOptionsMenu } from "./post/actions/PostOptionsMenu";
 import { EventCard } from "./events/EventCard";
 import { EventDetailModal } from "./events/EventDetailModal";
+import { ShareModal } from "./post/actions/ShareModal";
+import { SendPostModal } from "./post/actions/SendPostModal";
+import { usePostReactions } from "@/hooks/posts/use-post-reactions";
 
 interface PostProps {
   post: PostType;
@@ -30,6 +31,13 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
   
   // Detectar si es un post de demostración (no permite interacciones)
   const isDemoPost = post.id.startsWith('demo-');
+
+  // Hook para manejar reacciones
+  const { userReaction, onReaction } = usePostReactions(post.id);
+
+  // Estados para modales
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
 
   const {
     showComments,
@@ -88,8 +96,11 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
         <ActionsButtons 
           post={post}
           postId={post.id}
-          userReaction={null}
+          userReaction={userReaction}
+          onReaction={onReaction}
           onComment={toggleComments}
+          onShare={() => setShowShareModal(true)}
+          onSend={() => setShowSendModal(true)}
           commentsExpanded={showComments}
         />
       )}
@@ -112,11 +123,23 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
           postAuthorId={post.user_id}
         />
       )}
+
+      {/* Share Modal */}
+      <ShareModal 
+        isOpen={showShareModal} 
+        onClose={() => setShowShareModal(false)} 
+        post={post} 
+      />
+
+      {/* Send Modal */}
+      <SendPostModal
+        isOpen={showSendModal}
+        onClose={() => setShowSendModal(false)}
+        post={post}
+      />
     </PostWrapper>
   );
 }
-
-// ... (El resto de las funciones auxiliares EventPostView, SharedPostView, IdeaPostView, StandardPostView) permanecen INALTERADAS.
 
 // Componente de ayuda para la vista de publicación compartida
 function SharedPostView({ post }: { post: PostType }) {
@@ -159,9 +182,9 @@ function EventPostView({ post }: { post: PostType }) {
         location={post.event.location}
         isVirtual={post.event.location_type === 'virtual'}
         maxAttendees={post.event.max_attendees}
-        currentAttendees={0} // TODO: Get from registrations
+        currentAttendees={0}
         category={post.event.category}
-        gradientColor="gradient-1" // TODO: Get from event data
+        gradientColor="gradient-1"
         onClick={() => setShowEventDetail(true)}
       />
       
@@ -178,7 +201,7 @@ function EventPostView({ post }: { post: PostType }) {
             location: post.event.location,
             isVirtual: post.event.location_type === 'virtual',
             maxAttendees: post.event.max_attendees,
-            currentAttendees: 0, // TODO: Get from registrations
+            currentAttendees: 0,
             category: post.event.category,
             organizer: post.profiles?.username || 'Organizador'
           }}
@@ -205,11 +228,6 @@ function IdeaPostView({ post }: { post: PostType }) {
 // Componente para las publicaciones de tipo Proyecto
 function ProjectPostView({ post }: { post: PostType }) {
   if (!post.idea) return null;
-  
-  const projectData = (typeof post.idea === 'object' && !Array.isArray(post.idea) ? post.idea : {}) as {
-    title?: string;
-    description?: string;
-  };
   
   return (
     <div className="px-0 md:px-4 pb-2">

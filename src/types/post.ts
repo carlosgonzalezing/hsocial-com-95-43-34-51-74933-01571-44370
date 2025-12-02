@@ -26,6 +26,7 @@ export interface Post {
   reactions_count?: number;
   user_reaction?: string | null;
   comments_count?: number;
+  shares_count?: number; // Count of times shared
   userHasReacted?: boolean; // Add missing property
   content_style?: ContentStyle | null; // Add content style for background/text formatting
   project_status?: 'idea' | 'in_progress' | 'completed' | null; // Ideas → Projects flow
