@@ -12,6 +12,7 @@ import { FriendSearch } from "@/components/FriendSearch";
 import { FullScreenSearch } from "@/components/search/FullScreenSearch";
 import { UserMenu } from "@/components/user-menu/UserMenu";
 import { HSocialLogo } from "./HSocialLogo";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
 
 interface TopNavigationProps {
   pendingRequestsCount: number;
@@ -32,6 +33,7 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showFullScreenSearch, setShowFullScreenSearch] = useState(false);
   const isMobile = useIsMobile();
+  const isVisible = useScrollDirection();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -117,7 +119,10 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
   // Mobile navigation (Instagram-style top bar)
   if (isMobile) {
     return (
-      <nav className="bg-background border-b border-border fixed top-0 left-0 right-0 z-[70]">
+      <nav className={cn(
+        "bg-background border-b border-border fixed top-0 left-0 right-0 z-[70] transition-transform duration-300",
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      )}>
         {/* Simplified top bar - Instagram Style */}
         <div className="flex items-center justify-between h-14 px-3">
           {/* Logo - "H Social" */}
