@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -179,6 +180,9 @@ export function SendPostModal({ isOpen, onClose, post }: SendPostModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Enviar publicación</DialogTitle>
+          <DialogDescription>
+            Comparte esta publicación con tus amigos o copia el enlace.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

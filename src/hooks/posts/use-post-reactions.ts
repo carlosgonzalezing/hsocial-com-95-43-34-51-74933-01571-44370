@@ -33,13 +33,19 @@ export function usePostReactions(postId: string) {
   }, [postId]);
 
   const onReaction = useCallback(async (postId: string, type: ReactionType) => {
-    if (isReacting) return;
+    console.log('🚀 [usePostReactions] onReaction iniciado:', { postId, type, isReacting, userReaction });
+    
+    if (isReacting) {
+      console.log('⏳ [usePostReactions] Ya está procesando, ignorando...');
+      return;
+    }
     
     setIsReacting(true);
     
     // Optimistic update: actualizar UI inmediatamente
     const previousReaction = userReaction;
     const newReaction = userReaction === type ? null : type;
+    console.log('🔄 [usePostReactions] Optimistic update:', { previousReaction, newReaction });
     setUserReaction(newReaction);
     
     try {
