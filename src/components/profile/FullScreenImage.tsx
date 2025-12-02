@@ -1,5 +1,5 @@
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X, Download, ZoomIn, ZoomOut, RotateCw, Share2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,10 @@ export function FullScreenImage({ isOpen, onClose, imageUrl, altText = "Imagen" 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden flex flex-col bg-background/95 backdrop-blur-sm border-none sm:rounded-lg">
+        <DialogTitle className="sr-only">Vista de imagen: {altText}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Visualización de imagen en pantalla completa con controles de zoom y rotación
+        </DialogDescription>
         <div className="p-2 flex items-center justify-between bg-black/10 dark:bg-white/5">
           <div className="flex gap-2">
             <Button 

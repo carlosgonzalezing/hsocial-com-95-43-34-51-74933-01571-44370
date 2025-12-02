@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X, Download, Share2, Volume2, VolumeX } from "lucide-react";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,9 @@ export function VideoModal({ isOpen, onClose, videoUrl, altText = "Video" }: Vid
         className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden flex flex-col bg-background/95 backdrop-blur-sm border-none sm:rounded-lg [&>button]:hidden"
       >
         <DialogTitle className="sr-only">Vista de video: {altText}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Reproductor de video con controles de volumen
+        </DialogDescription>
         <div className="p-2 flex items-center justify-between bg-black/10 dark:bg-white/5">
           <div className="flex gap-2">
             <Button 

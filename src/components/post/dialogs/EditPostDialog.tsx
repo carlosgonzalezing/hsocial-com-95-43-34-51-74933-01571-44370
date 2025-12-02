@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,6 +51,9 @@ export function EditPostDialog({ postId, isOpen, onOpenChange, onSave }: EditPos
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Editar publicación</DialogTitle>
+          <DialogDescription>
+            Modifica el contenido de tu publicación.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Textarea
