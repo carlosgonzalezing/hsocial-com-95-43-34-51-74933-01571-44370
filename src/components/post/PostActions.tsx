@@ -8,7 +8,6 @@ import { Post } from "@/types/post";
 import { Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getPostSharesCount } from "@/lib/api/posts/queries/shares";
 
 interface PostActionsProps {
   post: Post;
@@ -28,21 +27,9 @@ export function PostActions({
   // Use the centralized hook for reactions
   const { userReaction, onReaction } = usePostReactions(post.id);
   const [participantsCount, setParticipantsCount] = useState(0);
-  const [sharesCount, setSharesCount] = useState(0);
   
-  // Load shares count
-  useEffect(() => {
-    const loadSharesCount = async () => {
-      try {
-        const count = await getPostSharesCount(post.id);
-        setSharesCount(count);
-      } catch (error) {
-        console.error("Error loading shares count:", error);
-      }
-    };
-
-    loadSharesCount();
-  }, [post.id]);
+  // Use shares_count from post data (fetched in query)
+  const sharesCount = post.shares_count || 0;
 
   // Load updated participants
   useEffect(() => {

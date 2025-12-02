@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { ShareOptions } from "./ShareOptions";
 import { MessageCircle, ThumbsUp, Send, Repeat2 } from "lucide-react";
 import { Post } from "@/types/post";
 import { ReactionType } from "@/types/database/social.types";
@@ -13,6 +12,7 @@ interface ActionsButtonsProps {
   userReaction: ReactionType | null;
   onComment: () => void;
   onShare?: () => void;
+  onSend?: () => void;
   compact?: boolean;
   handleReaction?: (type: ReactionType) => void;
   post?: Post;
@@ -29,6 +29,7 @@ export function ActionsButtons({
   postId,
   onComment,
   onShare,
+  onSend,
   compact = false,
   post,
   onReaction,
@@ -147,32 +148,19 @@ export function ActionsButtons({
           onClick={onShare}
         >
           <Repeat2 className="h-5 w-5" strokeWidth={1.5} />
-          <span className="text-sm font-medium hidden sm:inline">Compartir</span>
+          <span className="text-sm font-medium hidden sm:inline">Volver a publicar</span>
         </Button>
         
         {/* Send button */}
-        {post ? (
-          <ShareOptions post={post}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 h-10 hover:bg-muted/50 gap-2 text-muted-foreground"
-            >
-              <Send className="h-5 w-5" strokeWidth={1.5} />
-              <span className="text-sm font-medium hidden sm:inline">Enviar</span>
-            </Button>
-          </ShareOptions>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex-1 h-10 hover:bg-muted/50 gap-2 text-muted-foreground"
-            onClick={onShare}
-          >
-            <Send className="h-5 w-5" strokeWidth={1.5} />
-            <span className="text-sm font-medium hidden sm:inline">Enviar</span>
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-1 h-10 hover:bg-muted/50 gap-2 text-muted-foreground"
+          onClick={onSend}
+        >
+          <Send className="h-5 w-5" strokeWidth={1.5} />
+          <span className="text-sm font-medium hidden sm:inline">Enviar</span>
+        </Button>
       </div>
     </div>
   );
