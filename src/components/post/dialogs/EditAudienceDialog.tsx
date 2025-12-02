@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,9 @@ export function EditAudienceDialog({
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>¿Quién puede ver tu publicación?</DialogTitle>
+          <DialogDescription>
+            Selecciona quién podrá ver esta publicación.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">

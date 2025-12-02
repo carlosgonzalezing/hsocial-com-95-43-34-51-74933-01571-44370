@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -103,6 +104,9 @@ export function CreateContentMenu({ open, onOpenChange }: CreateContentMenuProps
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Crear Contenido</DialogTitle>
+            <DialogDescription>
+              Selecciona el tipo de contenido que deseas crear.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-2 mt-4">

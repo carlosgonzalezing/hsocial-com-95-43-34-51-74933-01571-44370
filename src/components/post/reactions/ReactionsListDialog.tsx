@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,6 +79,9 @@ export function ReactionsListDialog({ postId, open, onOpenChange }: ReactionsLis
       <DialogContent className="max-w-md max-h-[80vh] flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Reacciones ({totalCount})</DialogTitle>
+          <DialogDescription className="sr-only">
+            Lista de usuarios que reaccionaron a esta publicación
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">

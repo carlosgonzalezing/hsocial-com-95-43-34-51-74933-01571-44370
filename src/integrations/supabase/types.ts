@@ -1265,6 +1265,10 @@ export type Database = {
         Args: { profile_id_param: string; viewer_id_param?: string }
         Returns: undefined
       }
+      is_channel_member: {
+        Args: { channel_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       is_group_creator: {
         Args: { group_id_param: string; user_id_param: string }
         Returns: boolean

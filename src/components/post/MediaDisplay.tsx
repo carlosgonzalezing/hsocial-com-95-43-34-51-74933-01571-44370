@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { AudioWaveform, Film } from "lucide-react";
 
@@ -120,6 +120,10 @@ export function MediaDisplay({
       {/* Modal for full-screen view */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl p-0 bg-transparent border-none">
+          <DialogTitle className="sr-only">Vista de medio</DialogTitle>
+          <DialogDescription className="sr-only">
+            Visualización de imagen o video en pantalla completa
+          </DialogDescription>
           {isImage && (
             <img 
               src={finalUrl} 
