@@ -96,7 +96,7 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && !selectedFile) return;
+    if (!content.trim() && selectedFiles.length === 0) return;
     if (!user?.id) return;
 
     setIsSubmitting(true);
@@ -104,9 +104,9 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
       let mediaUrl = null;
       let mediaType = null;
 
-      if (selectedFile) {
-        mediaUrl = await uploadMediaFile(selectedFile);
-        mediaType = getMediaType(selectedFile);
+      if (selectedFiles.length > 0) {
+        mediaUrl = await uploadMediaFile(selectedFiles[0]);
+        mediaType = getMediaType(selectedFiles[0]);
       }
 
       const { error } = await supabase.from('posts').insert({
@@ -202,25 +202,26 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
           className="w-full h-[calc(100vh-180px)] resize-none bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-base"
         />
 
-        {/* File Preview */}
-        {filePreview && (
-          <div className="relative mt-4 inline-block">
-            <img src={filePreview} alt="Preview" className="max-h-40 rounded-lg" />
-            <button
-              onClick={() => { setSelectedFile(null); setFilePreview(null); }}
-              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-        
-        {selectedFile && !filePreview && (
-          <div className="mt-4 p-3 bg-muted rounded-lg flex items-center justify-between">
-            <span className="text-sm text-muted-foreground truncate">{selectedFile.name}</span>
-            <button onClick={() => setSelectedFile(null)}>
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
+        {/* File Previews */}
+        {filePreviews.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {filePreviews.map((preview, index) => (
+              <div key={index} className="relative inline-block">
+                {preview ? (
+                  <img src={preview} alt="Preview" className="max-h-40 rounded-lg" />
+                ) : (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <span className="text-sm text-muted-foreground truncate">{selectedFiles[index]?.name}</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => removeFile(index)}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>
