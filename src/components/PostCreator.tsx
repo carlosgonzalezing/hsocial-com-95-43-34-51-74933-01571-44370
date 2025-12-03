@@ -364,7 +364,7 @@ export function PostCreator({
       setContent("");
       setVisibility("public");
       setPostType("regular");
-      setSelectedFile(null);
+      setSelectedFiles([]);
       setContentStyle({
         backgroundKey: 'none',
         textColor: 'text-foreground',
