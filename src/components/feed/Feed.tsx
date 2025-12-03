@@ -2,7 +2,6 @@ import { FeedSkeleton } from "./FeedSkeleton";
 import { EmptyFeed } from "./EmptyFeed";
 import { Post } from "@/types/post";
 import { FeedContent } from "./FeedContent";
-import { QuickPostBox } from "./QuickPostBox";
 import { usePersonalizedFeed } from "@/hooks/feed/use-personalized-feed";
 import { useRealtimeFeedSimple } from "@/hooks/feed/hooks/use-realtime-feed-simple";
 
@@ -31,7 +30,6 @@ export function Feed({ userId }: FeedProps) {
 
   return (
     <div className="space-y-0 feed-container mx-auto w-full">
-      <QuickPostBox />
       <FeedContent
         posts={posts as Post[]}
         trackPostView={trackPostView}
