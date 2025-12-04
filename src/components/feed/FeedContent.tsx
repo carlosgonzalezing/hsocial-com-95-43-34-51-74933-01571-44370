@@ -55,7 +55,7 @@ export function FeedContent({
   };
 
   return (
-    <div className="space-y-0 w-full">
+    <div className="space-y-2 w-full">
       {renderFeedPosts()}
     </div>
   );

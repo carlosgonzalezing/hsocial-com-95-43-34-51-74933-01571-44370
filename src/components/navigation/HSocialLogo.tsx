@@ -24,15 +24,14 @@ export const HSocialLogo = ({ className = "", showText = true, size = "md", onCl
 
   const content = (
     <div className={`flex items-center gap-1.5 group ${className}`}>
-      {/* 1. CAMBIO: Aplicado el degradado de color (bg-gradient-to-br from-blue-500 to-purple-600) */}
+      {/* Logo minimalista blanco y negro empresarial */}
       <div
-        className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md group-hover:scale-110 transition-transform duration-300`}
+        className={`${sizeClasses[size]} rounded-full bg-foreground flex items-center justify-center`}
       >
-        <span className="text-lg">H</span>
+        <span className="text-lg text-background font-bold">H</span>
       </div>
       {showText && (
-        // 2. CAMBIO: Color del texto 'Social' cambiado a morado (text-purple-600)
-        <span className={`${textSizeClasses[size]} font-bold text-purple-600`}>Social</span>
+        <span className={`${textSizeClasses[size]} font-bold text-foreground`}>Social</span>
       )}
     </div>
   );

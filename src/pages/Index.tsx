@@ -9,7 +9,7 @@ export default function Index() {
 
   return (
     <FacebookLayout>
-      <div className="w-full space-y-0 pb-24">
+      <div className="w-full pb-24 bg-muted/50 min-h-screen">
         <Feed />
       </div>
 
