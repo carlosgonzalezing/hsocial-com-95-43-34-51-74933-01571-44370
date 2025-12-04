@@ -245,6 +245,8 @@ function IdeaPostView({ post }: { post: PostType }) {
       <IdeaContent 
         idea={post.idea} 
         content={post.content || ''}
+        postId={post.id}
+        postOwnerId={post.user_id}
       />
     </div>
   );
@@ -259,6 +261,8 @@ function ProjectPostView({ post }: { post: PostType }) {
       <IdeaContent 
         idea={post.idea} 
         content={post.content || ''}
+        postId={post.id}
+        postOwnerId={post.user_id}
       />
     </div>
   );

@@ -1,8 +1,6 @@
-
 import { Idea, Post } from "@/types/post";
 import { IdeaContent } from "./IdeaContent";
 import { IdeaProjectActions } from "./IdeaProjectActions";
-import { IdeaParticipants } from "./IdeaParticipants";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 
@@ -25,8 +23,11 @@ export function PostIdea({ idea, postId, post }: PostIdeaProps) {
 
   return (
     <div className="space-y-3">
-      <IdeaContent idea={idea} />
-      <IdeaParticipants postId={postId} />
+      <IdeaContent 
+        idea={idea} 
+        postId={postId} 
+        postOwnerId={post.user_id} 
+      />
       <IdeaProjectActions post={post} isAuthor={isAuthor} />
     </div>
   );

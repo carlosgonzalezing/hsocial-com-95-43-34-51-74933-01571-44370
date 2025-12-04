@@ -1,16 +1,52 @@
-
-import { Lightbulb, Users, Clock, Target, MapPin, Briefcase, MessageCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Users, Clock, Target, MapPin, Briefcase, MessageCircle, UserPlus, Check, Loader2 } from "lucide-react";
 import type { Idea } from "@/types/post";
 import { MentionsText } from "./MentionsText";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useIdeaParticipants } from "@/hooks/ideas/use-idea-participants";
+import { useCreateIdeaRequest, useUserRequestStatus } from "@/hooks/ideas/use-idea-requests";
+import { RequestIdeaDialog } from "./idea/RequestIdeaDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface IdeaContentProps {
   idea: Idea;
   content?: string;
+  postId: string;
+  postOwnerId: string;
 }
 
-export function IdeaContent({ idea, content }: IdeaContentProps) {
+export function IdeaContent({ idea, content, postId, postOwnerId }: IdeaContentProps) {
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  const { data: participants = [] } = useIdeaParticipants(postId);
+  const { data: requestStatus } = useUserRequestStatus(postId);
+  const createRequest = useCreateIdeaRequest();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
+
+  const isOwner = currentUserId === postOwnerId;
+  const isParticipant = participants.some(p => p.user_id === currentUserId);
+  const hasPendingRequest = requestStatus === 'pending';
+  const wasRejected = requestStatus === 'rejected';
+  const canRequest = currentUserId && !isOwner && !isParticipant && !hasPendingRequest && !wasRejected;
+
+  const handleSubmitRequest = async (profession: string, message?: string) => {
+    await createRequest.mutateAsync({
+      postId,
+      profession,
+      message,
+      ideaOwnerId: postOwnerId
+    });
+    setShowRequestDialog(false);
+  };
+
   const getPhaseColor = (phase?: string) => {
     switch (phase) {
       case 'ideation': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
@@ -18,7 +54,7 @@ export function IdeaContent({ idea, content }: IdeaContentProps) {
       case 'execution': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'launch': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'scaling': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -27,7 +63,7 @@ export function IdeaContent({ idea, content }: IdeaContentProps) {
       case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'high': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -40,6 +76,9 @@ export function IdeaContent({ idea, content }: IdeaContentProps) {
             <Badge className={getPhaseColor(idea.project_phase)}>
               {idea.project_phase}
             </Badge>
+          )}
+          {isOwner && (
+            <Badge variant="outline" className="text-xs">Tu idea</Badge>
           )}
         </div>
 
@@ -143,10 +182,67 @@ export function IdeaContent({ idea, content }: IdeaContentProps) {
               <span className="font-medium text-foreground">Modalidad:</span> {idea.collaboration_type}
             </div>
           )}
-          
-          {/* Contact Button */}
-          {idea.contact_link && (
-            <div className="pt-2 border-t border-border">
+
+          {/* Participants Section */}
+          {participants.length > 0 && (
+            <div className="pt-3 border-t border-border">
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-2">
+                  {participants.slice(0, 5).map((p) => (
+                    <Avatar key={p.user_id} className="h-8 w-8 border-2 border-background">
+                      <AvatarImage src={p.avatar_url || ''} />
+                      <AvatarFallback className="text-xs">
+                        {p.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {participants.length > 5 && (
+                    <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
+                      +{participants.length - 5}
+                    </div>
+                  )}
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {participants.length} {participants.length === 1 ? 'participante' : 'participantes'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Request Button */}
+          <div className="pt-3 border-t border-border space-y-2">
+            {canRequest && (
+              <Button
+                className="w-full"
+                onClick={() => setShowRequestDialog(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Solicitar ahora
+              </Button>
+            )}
+            
+            {hasPendingRequest && (
+              <Button variant="outline" className="w-full" disabled>
+                <Loader2 className="h-4 w-4 mr-2" />
+                Solicitud pendiente
+              </Button>
+            )}
+            
+            {isParticipant && (
+              <Button variant="outline" className="w-full" disabled>
+                <Check className="h-4 w-4 mr-2" />
+                Ya eres participante
+              </Button>
+            )}
+            
+            {wasRejected && (
+              <Button variant="outline" className="w-full text-muted-foreground" disabled>
+                Solicitud no aceptada
+              </Button>
+            )}
+            
+            {/* Contact Button */}
+            {idea.contact_link && (
               <Button
                 variant="outline"
                 size="sm"
@@ -156,10 +252,18 @@ export function IdeaContent({ idea, content }: IdeaContentProps) {
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Contactar
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
+
+      <RequestIdeaDialog
+        isOpen={showRequestDialog}
+        onOpenChange={setShowRequestDialog}
+        onSubmit={handleSubmitRequest}
+        ideaTitle={idea.title}
+        isLoading={createRequest.isPending}
+      />
     </div>
   );
 }
