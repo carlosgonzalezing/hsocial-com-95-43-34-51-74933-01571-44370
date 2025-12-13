@@ -7,10 +7,6 @@ import { IdeaDisplay } from "./idea/IdeaDisplay";
 import { PostImage } from "@/components/ui/optimized-image";
 import { MentionsText } from "./MentionsText";
 import { EventCard } from "@/components/events/EventCard";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 
 interface SharedPostContentProps {
   post: Post;
@@ -50,30 +46,7 @@ export function SharedPostContent({ post }: SharedPostContentProps) {
   }
   
   return (
-    <div className="space-y-2 p-4">
-      <div className="flex items-start gap-3">
-        <Link to={`/profile/${post.user_id}`}>
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={post.profiles?.avatar_url || undefined} />
-            <AvatarFallback>{post.profiles?.username?.[0]}</AvatarFallback>
-          </Avatar>
-        </Link>
-        <div className="min-w-0">
-          <Link
-            to={`/profile/${post.user_id}`}
-            className="font-semibold text-sm hover:underline block truncate"
-          >
-            {post.profiles?.username || 'Usuario'}
-          </Link>
-          <div className="text-xs text-muted-foreground/70 mt-0.5">
-            {formatDistanceToNow(new Date(post.created_at), {
-              addSuffix: true,
-              locale: es
-            })}
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-2">
       <MentionsText content={post.content} className="text-sm whitespace-pre-wrap break-words" />
       
       {post.media_url && post.media_type && post.media_type.startsWith('image') && (

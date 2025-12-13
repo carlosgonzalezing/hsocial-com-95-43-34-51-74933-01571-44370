@@ -8,8 +8,7 @@ import {
   MessageSquare,
   Monitor,
   Trophy,
-  Bookmark,
-  HeartHandshake
+  Bookmark
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -17,13 +16,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "next-themes";
 import { Separator } from "@/components/ui/separator";
 import { Users } from "lucide-react";
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 interface MenuOptionsProps {
   userId: string | null;
@@ -35,7 +27,6 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
-  const [showDonate, setShowDonate] = useState(false);
   
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -165,14 +156,10 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
         <Button
           variant="ghost"
           className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
-          onClick={() => {
-            window.open('https://wa.me/573014343180', '_blank', 'noopener,noreferrer');
-            onClose();
-            toast({
-              title: "Enviar comentarios",
-              description: "Gracias por ayudar a mejorar. Te abriré WhatsApp para enviarme tu mensaje."
-            });
-          }}
+          onClick={() => toast({
+            title: "Enviar comentarios",
+            description: "Función de comentarios próximamente disponible"
+          })}
         >
           <div className="flex items-center">
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center mr-3">
@@ -183,23 +170,6 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
               <span className="text-xs text-muted-foreground">CTRL B</span>
             </div>
           </div>
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
-          onClick={() => setShowDonate(true)}
-        >
-          <div className="flex items-center">
-            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center mr-3">
-              <HeartHandshake className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="font-medium">Donar al desarrollador (Nequi)</span>
-              <span className="text-xs text-muted-foreground">Gracias por tu apoyo</span>
-            </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Button>
         
         {/* Cerrar sesión */}
@@ -231,42 +201,6 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
           <button className="hover:underline" onClick={() => toast({ title: "Más", description: "Próximamente" })}>Más</button>
         </div>
       </div>
-
-      <Dialog open={showDonate} onOpenChange={setShowDonate}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Donar al desarrollador</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="rounded-lg border border-border bg-muted/30 p-3">
-              <img
-                src="/nequi-qr.png"
-                alt="QR Nequi"
-                className="w-full max-w-[320px] mx-auto rounded-md"
-              />
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Tu apoyo mantiene vivo el proyecto.
-              <br />
-              Gracias por creer en lo que estamos construyendo.
-            </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setShowDonate(false);
-                onClose();
-                toast({
-                  title: "Gracias",
-                  description: "Tu apoyo significa mucho."
-                });
-              }}
-            >
-              Listo
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

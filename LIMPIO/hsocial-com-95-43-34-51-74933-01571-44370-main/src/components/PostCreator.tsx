@@ -64,7 +64,6 @@ interface PostCreatorProps {
   openWithMedia?: boolean;
   initialContent?: string;
   selectedFile?: File | null;
-  initialPostType?: string;
 }
 
 export function PostCreator({ 
@@ -73,7 +72,6 @@ export function PostCreator({
   openWithMedia = false,
   initialContent = "",
   selectedFile: initialFile = null
-  , initialPostType
 }: PostCreatorProps = {}) {
   const [content, setContent] = useState(initialContent);
   const [visibility, setVisibility] = useState<Visibility>("public");
@@ -130,20 +128,6 @@ export function PostCreator({
     }
     if (initialFile && selectedFiles.length === 0) {
       setSelectedFiles([initialFile]);
-    }
-    // If an initial post type was provided (from mobile options), try to set it
-    if (initialPostType) {
-      // map incoming keys to supported postType values where possible
-      if (initialPostType === 'media' || initialPostType === 'document' || initialPostType === 'poll' || initialPostType === 'services') {
-        setPostType('regular');
-      } else if (initialPostType === 'event') {
-        setPostType('regular');
-        // Event uses EventCreatorForm inside PostCreator when a special UI is implemented
-      } else if (initialPostType === 'job') {
-        setPostType('proyecto');
-      } else if (initialPostType === 'celebrate') {
-        setPostType('regular');
-      }
     }
   }, [initialContent, initialFile]);
 

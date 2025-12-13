@@ -1,144 +1,222 @@
-// src/components/Navigation.tsx
 
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FullScreenPageLayout } from "@/components/layout/FullScreenPageLayout";
-import { Card } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
+import { Navigation } from "@/components/Navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Users } from 'lucide-react';
+import { useAuth } from "@/hooks/use-auth";
+import { useFriends } from "@/hooks/use-friends";
+import { FriendSuggestionsList } from "@/components/friends/FriendSuggestionsList";
+import { AllFriendsList } from "@/components/friends/AllFriendsList";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
-// Main Navigation Component
-const Navigation = () => {
-  const navigate = useNavigate();
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [friends, setFriends] = useState<Array<{ id: string; username: string; avatar_url: string | null }>>([]);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+interface SentRequest {
+  id: string;
+  friend: {
+    id: string;
+    username: string | null;
+    avatar_url: string | null;
+  };
+  status: string;
+}
 
-  // Manejador de selección seguro (para mitigar IndexSizeError de extensiones)
+export default function Friends() {
+  const { user } = useAuth();
+  const [sentRequests, setSentRequests] = useState<SentRequest[]>([]);
+  const { friends, following, followers, suggestions, loading, followUser, unfollowUser } = useFriends(user?.id || null);
+
   useEffect(() => {
-    const handleSelectionChange = () => {
-      try {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          // Acceder al rango para prevenir el error
-          selection.rangeCount > 0 && selection.getRangeAt(0);
+    if (user?.id) {
+      loadSentRequests();
+    }
+  }, [user?.id]);
+
+  const loadSentRequests = async () => {
+    if (!user?.id) return;
+
+    const { data: friendships, error } = await supabase
+      .from('friendships')
+      .select('id, friend_id, status')
+      .eq('user_id', user.id)
+      .eq('status', 'pending');
+
+    if (error) return;
+    
+    const requests = await Promise.all((friendships || []).map(async (f) => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', f.friend_id)
+        .single();
+      
+      return {
+        id: f.id,
+        status: f.status,
+        friend: {
+          id: profile?.id || f.friend_id,
+          username: profile?.username || '',
+          avatar_url: profile?.avatar_url || ''
         }
-      } catch (e) {
-        // Ignorar errores de selección
-      }
-    };
+      };
+    }));
+    
+    setSentRequests(requests);
+  };
 
-    document.addEventListener('selectionchange', handleSelectionChange, { passive: true });
-    return () => {
-      document.removeEventListener('selectionchange', handleSelectionChange);
-    };
-  }, []);
+  const handleCancelRequest = async (requestId: string) => {
+    const { error } = await supabase
+      .from('friendships')
+      .delete()
+      .eq('id', requestId);
 
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id ?? null);
-    };
-    loadCurrentUser();
-  }, []);
+    if (!error) {
+      await loadSentRequests();
+    }
+  };
 
-  useEffect(() => {
-    const loadFriends = async () => {
-      if (!currentUserId) return;
-      setLoading(true);
-      try {
-        const { data: accepted, error: acceptedError } = await supabase
-          .from('friendships')
-          .select('user_id, friend_id')
-          .eq('status', 'accepted')
-          .or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`);
-
-        if (acceptedError) throw acceptedError;
-
-        const friendIds = Array.from(new Set((accepted || []).map((r: any) =>
-          r.user_id === currentUserId ? r.friend_id : r.user_id
-        ))).filter(Boolean);
-
-        if (friendIds.length === 0) {
-          setFriends([]);
-        } else {
-          const { data: profiles, error: profilesError } = await supabase
-            .from('profiles')
-            .select('id, username, avatar_url')
-            .in('id', friendIds);
-
-          if (profilesError) throw profilesError;
-          setFriends((profiles || []).map((p: any) => ({
-            id: p.id,
-            username: p.username || 'Usuario',
-            avatar_url: p.avatar_url ?? null,
-          })));
-        }
-
-        const { count } = await supabase
-          .from('friendships')
-          .select('id', { count: 'exact', head: true })
-          .eq('friend_id', currentUserId)
-          .eq('status', 'pending');
-
-        setPendingCount(count || 0);
-      } catch {
-        setFriends([]);
-        setPendingCount(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadFriends();
-  }, [currentUserId]);
-
-  const sortedFriends = useMemo(() => {
-    return [...friends].sort((a, b) => (a.username || '').localeCompare(b.username || ''));
-  }, [friends]);
+  if (!user) {
+    return (
+      <div className="min-h-screen flex bg-muted/30">
+        <Navigation />
+        <main className="flex-1 p-6">
+          <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground">Debes iniciar sesión para ver esta página.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <FullScreenPageLayout title="Amigos">
-      <div className="container px-2 sm:px-4 max-w-4xl pt-4">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            <h1 className="text-lg font-semibold">Mis amigos</h1>
-          </div>
-          <Button variant="outline" onClick={() => navigate('/friends/requests')}>
-            Solicitudes{pendingCount > 0 ? ` (${pendingCount})` : ''}
-          </Button>
-        </div>
+    <div className="min-h-screen flex bg-muted/30">
+      <Navigation />
+      <main className="flex-1 max-w-4xl mx-auto p-6">
+        <Tabs defaultValue="suggestions" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="following">Siguiendo</TabsTrigger>
+            <TabsTrigger value="followers">Seguidores</TabsTrigger>
+            <TabsTrigger value="suggestions">Sugerencias</TabsTrigger>
+            <TabsTrigger value="all">Amigos</TabsTrigger>
+            <TabsTrigger value="sent">Enviadas</TabsTrigger>
+          </TabsList>
 
-        <Card className="p-4">
-          {loading ? (
-            <div className="p-4 text-center text-muted-foreground">Cargando amigos...</div>
-          ) : sortedFriends.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">Aún no tienes amigos</div>
-          ) : (
-            <div className="divide-y">
-              {sortedFriends.map((f) => (
-                <Link
-                  key={f.id}
-                  to={`/profile/${f.id}`}
-                  className="flex items-center gap-3 py-3 px-2 rounded-md hover:bg-accent/50"
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={f.avatar_url || undefined} />
-                    <AvatarFallback>{(f.username || 'U')[0]?.toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="font-medium">{f.username}</div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
-    </FullScreenPageLayout>
+          <TabsContent value="following">
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Usuarios que sigues</h2>
+              {following.length === 0 ? (
+                <p className="text-center text-muted-foreground">
+                  No sigues a ningún usuario todavía
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {following.map((user) => (
+                    <div key={user.friend_id} className="flex items-center justify-between p-4 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={user.friend_avatar_url || undefined} />
+                          <AvatarFallback>
+                            {user.friend_username?.[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="font-medium">{user.friend_username}</div>
+                      </div>
+                      <Button 
+                        variant="outline"
+                        onClick={() => unfollowUser(user.friend_id)}
+                      >
+                        Dejar de seguir
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="followers">
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Usuarios que te siguen</h2>
+              {followers.length === 0 ? (
+                <p className="text-center text-muted-foreground">
+                  Nadie te sigue todavía
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {followers.map((user) => (
+                    <div key={user.friend_id} className="flex items-center justify-between p-4 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={user.friend_avatar_url || undefined} />
+                          <AvatarFallback>
+                            {user.friend_username?.[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="font-medium">{user.friend_username}</div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => followUser(user.friend_id)}
+                      >
+                        Seguir de vuelta
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="suggestions">
+            <FriendSuggestionsList 
+              suggestions={suggestions}
+            />
+          </TabsContent>
+
+          <TabsContent value="all">
+            <AllFriendsList friends={friends} />
+          </TabsContent>
+
+          <TabsContent value="sent">
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Solicitudes enviadas</h2>
+              {sentRequests.length === 0 ? (
+                <p className="text-center text-muted-foreground">
+                  No has enviado ninguna solicitud de amistad
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {sentRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="flex items-center justify-between p-4 rounded-lg border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={request.friend.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {request.friend.username?.[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{request.friend.username}</div>
+                          <div className="text-sm text-muted-foreground">Pendiente</div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleCancelRequest(request.id)}
+                      >
+                        Cancelar solicitud
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
   );
-};
-
-// **SOLAMENTE EXPORTACIÓN POR DEFECTO**
-export default Navigation;
+}

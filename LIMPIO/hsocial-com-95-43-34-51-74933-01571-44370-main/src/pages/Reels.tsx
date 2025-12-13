@@ -1,6 +1,5 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
 import { FacebookLayout } from '@/components/layout/FacebookLayout';
 import { ReelsInfiniteViewer } from '@/components/reels/ReelsInfiniteViewer';
 import { ReelsDesktopLayout } from '@/components/reels/ReelsDesktopLayout';
@@ -8,7 +7,6 @@ import { useReelsFeed } from '@/hooks/reels/use-reels-feed';
 import { useMobileDetection } from '@/hooks/use-mobile-detection';
 
 export default function Reels() {
-  const { reelId } = useParams();
   const { 
     videosPosts, 
     isLoading, 
@@ -29,7 +27,6 @@ export default function Reels() {
       posts={videosPosts} 
       onReaction={trackReelInteraction}
       onViewTracked={trackReelView}
-      initialPostId={reelId}
     />
   ) : (
     <div className="flex items-center justify-center h-screen bg-black">

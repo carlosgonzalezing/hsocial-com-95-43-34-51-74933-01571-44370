@@ -4,15 +4,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useFriends } from "@/hooks/use-friends";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationDropdownHeader } from "./NotificationDropdownHeader";
 import { NotificationGroups } from "./NotificationGroups";
+import { NotificationsSuggestions } from "./NotificationsSuggestions";
 import { NotificationTabs } from "./NotificationTabs";
 
 export function NotificationDropdown() {
   const [open, setOpen] = useState(false);
-  const { notifications, markAsRead, clearAllNotifications, removeNotification } = useNotifications();
+  const { notifications, handleFriendRequest, markAsRead, clearAllNotifications, removeNotification } =
+    useNotifications();
   const [hasUnread, setHasUnread] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { suggestions } = useFriends(currentUserId);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const popoverRef = useRef<HTMLDivElement>(null);

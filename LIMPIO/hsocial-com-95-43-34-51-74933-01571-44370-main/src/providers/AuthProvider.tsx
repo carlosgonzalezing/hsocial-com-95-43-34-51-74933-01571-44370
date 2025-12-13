@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,8 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const presenceIntervalRef = useRef<number | null>(null);
-  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     console.log('🔐 AuthProvider: Setting up auth listener...');
@@ -34,7 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         setSession(session);
         setUser(session?.user ?? null);
-        userIdRef.current = session?.user?.id ?? null;
         
         // Handle profile creation for new users
         if (event === 'SIGNED_IN' && session?.user) {
@@ -46,21 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.error('Error in post-signin tasks:', error);
             }
           }, 0);
-        }
-
-        if (event === 'SIGNED_OUT') {
-          try {
-            const prevUserId = userIdRef.current;
-            if (prevUserId) {
-              await supabase
-                .from('profiles')
-                .update({ status: 'offline', last_seen: new Date().toISOString() })
-                .eq('id', prevUserId);
-            }
-            userIdRef.current = null;
-          } catch {
-            // Best-effort
-          }
         }
         
         setLoading(false);
@@ -78,7 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔐 AuthProvider: Initial session check:', { hasSession: !!session, userEmail: session?.user?.email });
       setSession(session);
       setUser(session?.user ?? null);
-      userIdRef.current = session?.user?.id ?? null;
       setLoading(false);
     });
 
@@ -87,58 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let isCancelled = false;
-
-    const setPresence = async (status: 'online' | 'away' | 'offline') => {
-      try {
-        const now = new Date().toISOString();
-        await supabase
-          .from('profiles')
-          .update({ status, last_seen: now })
-          .eq('id', user.id);
-      } catch {
-        // Best-effort
-      }
-    };
-
-    const syncPresence = async () => {
-      if (isCancelled) return;
-      const status: 'online' | 'away' = document.visibilityState === 'hidden' ? 'away' : 'online';
-      await setPresence(status);
-    };
-
-    const handleVisibility = () => {
-      void syncPresence();
-    };
-
-    const handleBeforeUnload = () => {
-      void setPresence('offline');
-    };
-
-    void setPresence('online');
-
-    presenceIntervalRef.current = window.setInterval(() => {
-      void syncPresence();
-    }, 60_000);
-
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      isCancelled = true;
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (presenceIntervalRef.current) {
-        window.clearInterval(presenceIntervalRef.current);
-        presenceIntervalRef.current = null;
-      }
-      void setPresence('offline');
-    };
-  }, [user?.id]);
 
   const ensureProfileExists = async (user: User) => {
     try {

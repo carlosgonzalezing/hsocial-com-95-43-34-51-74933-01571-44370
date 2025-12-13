@@ -92,10 +92,6 @@ export function PostActions({
     Object.assign(reactionsByType, post.reactions.by_type);
   }
 
-  if (Object.keys(reactionsByType).length === 0 && (post.reactions_count || 0) > 0) {
-    reactionsByType.love = post.reactions_count || 0;
-  }
-
   return (
     <div className="pt-0">
       {/* Activity Summary - reactions, comments, shares counters */}

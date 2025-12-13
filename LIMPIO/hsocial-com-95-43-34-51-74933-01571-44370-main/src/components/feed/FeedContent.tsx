@@ -29,7 +29,7 @@ export function FeedContent({
       
       // Add post with tracking
       feedContent.push(
-        <div key={post.id} className="w-full">
+        <div key={post.id} className="mb-0 w-full">
           <UnifiedPostCard 
             post={post} 
             isInFeed={true}
@@ -42,7 +42,7 @@ export function FeedContent({
       // Add People You May Know after 5 posts on desktop, after 6 on mobile
       if ((isMobile ? i === 6 : i === 4) && !feedContent.some(item => item.key === "people-you-may-know")) {
         feedContent.push(
-          <div key="people-you-may-know" className="w-full px-0 md:px-4">
+          <div key="people-you-may-know" className="mb-0 w-full px-0 md:px-4">
             <PeopleYouMayKnow />
           </div>
         );
@@ -55,7 +55,7 @@ export function FeedContent({
   };
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-2 w-full">
       {renderFeedPosts()}
     </div>
   );

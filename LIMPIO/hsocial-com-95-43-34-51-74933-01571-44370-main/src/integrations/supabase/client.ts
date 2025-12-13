@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://wgbbaxvuuinubkgffpiq.supabase.co";
+export const SUPABASE_URL = "https://wgbbaxvuuinubkgffpiq.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnYmJheHZ1dWludWJrZ2ZmcGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk4MTc4NjgsImV4cCI6MjA1NTM5Mzg2OH0.B_LIb8OHoe5C08YoyS9Lw5NvUlCPJB5zYP6h4klpTuk";
 
 // Import the supabase client like this:
@@ -15,3 +15,15 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// Expose client in development for debugging in the browser console
+if (import.meta.env.DEV) {
+  try {
+    // @ts-ignore
+    (window as any).supabase = supabase;
+    // @ts-ignore
+    (window as any).SUPABASE_URL = SUPABASE_URL;
+  } catch (e) {
+    // ignore in non-browser environments
+  }
+}

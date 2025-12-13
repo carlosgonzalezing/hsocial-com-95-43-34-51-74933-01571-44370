@@ -10,9 +10,6 @@ import { usePostReactions } from "@/hooks/posts/use-post-reactions";
 import { useDoubleClick } from "@/hooks/use-double-click";
 import { useVolumeControl } from "@/hooks/reels/use-volume-control";
 import { VolumeSlider } from "./VolumeSlider";
-import { useReelComments } from "@/hooks/reels/use-reel-comments";
-import { Comments } from "@/components/post/Comments";
-import { useToast } from "@/hooks/use-toast";
 
 interface ReelItemProps {
   post: Post;
@@ -30,23 +27,6 @@ const ReelItem = memo(function ReelItem({ post, isActive, onReaction, onViewTrac
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { userReaction, onReaction: handleReaction } = usePostReactions(post.id);
-  const { toast } = useToast();
-
-  const {
-    comments,
-    newComment,
-    setNewComment,
-    replyTo,
-    commentImage,
-    setCommentImage,
-    showComments,
-    setShowComments,
-    handleSubmitComment,
-    handleCommentLike,
-    handleReply,
-    handleDeleteComment,
-    handleCancelReply
-  } = useReelComments(post.id);
   
   // Control de volumen mejorado
   const { volume, isMuted, showSlider, toggleMute, changeVolume, showSliderTemporarily } = useVolumeControl(videoRef);
@@ -120,24 +100,6 @@ const ReelItem = memo(function ReelItem({ post, isActive, onReaction, onViewTrac
   const handleLike = () => {
     handleReaction(post.id, 'love');
     onReaction(post.id, 'love');
-  };
-
-  const handleShare = async () => {
-    const url = `${window.location.origin}/reels/${post.id}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast({
-        title: "Enlace copiado",
-        description: "El enlace del reel se copió al portapapeles"
-      });
-      onReaction(post.id, 'share');
-    } catch {
-      toast({
-        variant: "destructive",
-        title: "No se pudo copiar",
-        description: "Copia el enlace manualmente desde la barra del navegador"
-      });
-    }
   };
 
   return (
@@ -234,10 +196,7 @@ const ReelItem = memo(function ReelItem({ post, isActive, onReaction, onViewTrac
             variant="ghost"
             size="icon"
             className="h-12 w-12 rounded-full bg-transparent text-white hover:bg-white/10"
-            onClick={() => {
-              setShowComments(true);
-              onReaction(post.id, 'comment');
-            }}
+            onClick={() => onReaction(post.id, 'comment')}
           >
             <MessageCircle className="h-7 w-7" />
           </Button>
@@ -249,50 +208,12 @@ const ReelItem = memo(function ReelItem({ post, isActive, onReaction, onViewTrac
             variant="ghost"
             size="icon"
             className="h-12 w-12 rounded-full bg-transparent text-white hover:bg-white/10"
-            onClick={handleShare}
+            onClick={() => onReaction(post.id, 'share')}
           >
             <Share2 className="h-7 w-7" />
           </Button>
         </div>
       </div>
-
-      {showComments && (
-        <div
-          className="absolute inset-0 z-50 flex items-end bg-black/60"
-          onClick={() => setShowComments(false)}
-        >
-          <div
-            className="w-full max-h-[70vh] bg-background rounded-t-2xl overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <div className="text-sm font-semibold">Comentarios</div>
-              <button
-                className="text-sm text-muted-foreground"
-                onClick={() => setShowComments(false)}
-              >
-                Cerrar
-              </button>
-            </div>
-            <Comments
-              postId={post.id}
-              comments={comments}
-              onReaction={handleCommentLike}
-              onReply={handleReply}
-              onSubmitComment={handleSubmitComment}
-              onDeleteComment={handleDeleteComment}
-              newComment={newComment}
-              onNewCommentChange={setNewComment}
-              replyTo={replyTo}
-              onCancelReply={handleCancelReply}
-              showComments={true}
-              commentImage={commentImage}
-              setCommentImage={setCommentImage}
-              postAuthorId={post.user_id}
-            />
-          </div>
-        </div>
-      )}
 
       {/* User info - Parte inferior izquierda */}
       <div className="absolute bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
@@ -333,23 +254,15 @@ interface ReelsInfiniteViewerProps {
   posts: Post[];
   onReaction: (postId: string, type: string) => void;
   onViewTracked: (postId: string, duration: number) => void;
-  initialPostId?: string;
 }
 
-function ReelsInfiniteViewerComponent({
-  posts,
-  onReaction,
-  onViewTracked,
-  initialPostId
+export const ReelsInfiniteViewer = memo(function ReelsInfiniteViewer({ 
+  posts, 
+  onReaction, 
+  onViewTracked 
 }: ReelsInfiniteViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!initialPostId) return;
-    const index = posts.findIndex((p) => p.id === initialPostId);
-    if (index >= 0) setCurrentIndex(index);
-  }, [initialPostId, posts]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -406,6 +319,4 @@ function ReelsInfiniteViewerComponent({
       ))}
     </div>
   );
-}
-
-export const ReelsInfiniteViewer = memo(ReelsInfiniteViewerComponent);
+});

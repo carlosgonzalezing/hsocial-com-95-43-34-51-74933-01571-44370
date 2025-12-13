@@ -13,7 +13,7 @@ interface Reaction {
   profiles: {
     username: string | null;
     avatar_url: string | null;
-  } | null;
+  };
 }
 
 interface ReactionsListDialogProps {
@@ -42,7 +42,7 @@ export function ReactionsListDialog({ postId, open, onOpenChange }: ReactionsLis
           user_id,
           reaction_type,
           created_at,
-          profiles:profiles!reactions_user_id_fkey (
+          profiles:user_id (
             username,
             avatar_url
           )

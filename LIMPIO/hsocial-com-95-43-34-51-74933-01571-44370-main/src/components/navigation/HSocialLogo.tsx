@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 interface HSocialLogoProps {
@@ -23,15 +22,16 @@ export const HSocialLogo = ({ className = "", showText = true, size = "md", onCl
   };
 
   const content = (
-    <div className={`flex items-center gap-1.5 group ${className}`}>
-      {/* Logo minimalista blanco y negro empresarial */}
+    <div className={`flex items-center gap-2 group ${className}`}>
+      {/* Minimal monochrome logo: blanco/negro, minimalista y profesional */}
       <div
-        className={`${sizeClasses[size]} rounded-full bg-foreground flex items-center justify-center`}
+        className={`${sizeClasses[size]} rounded-full bg-white border border-gray-200 dark:bg-transparent dark:border-gray-600 flex items-center justify-center text-black dark:text-white font-semibold transition-transform duration-200`}
+        aria-hidden
       >
-        <span className="text-lg text-background font-bold">H</span>
+        <span className="text-lg leading-none">H</span>
       </div>
       {showText && (
-        <span className={`${textSizeClasses[size]} font-bold text-foreground`}>Social</span>
+        <span className={`${textSizeClasses[size]} font-medium text-slate-800 dark:text-slate-200`}>Social</span>
       )}
     </div>
   );

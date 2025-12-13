@@ -8,7 +8,6 @@ import { Post } from "@/types/post";
 import { PostIdea } from "./PostIdea";
 import { EventCard } from "./EventCard";
 import { EventModal } from "./EventModal";
-import { usePollVoteMutation } from "@/hooks/post-mutations/use-poll-vote-mutation";
 // Removed marketplace display
 import { PostImage } from "@/components/ui/optimized-image";
 import { backgroundPresets } from "./TextBackgroundPalette";
@@ -25,8 +24,6 @@ export function PostContent({ post, postId }: PostContentProps) {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [showFullText, setShowFullText] = useState(false);
-
-  const { submitVote, isPending: isVoting } = usePollVoteMutation(postId);
   
   // Check if the post has media (single or multiple)
   const hasMedia = !!post.media_url || (post.media_urls && post.media_urls.length > 0);
@@ -123,20 +120,18 @@ export function PostContent({ post, postId }: PostContentProps) {
             <MediaCarousel mediaItems={mediaItems} />
           ) : mediaItems.length === 1 ? (
             // Un solo archivo: mostrar directamente
-            <div className="w-full">
+            <div className="w-full flex justify-center">
               {mediaItems[0].type === 'image' ? (
-                <div className="w-full overflow-hidden h-[420px] sm:h-[520px]">
-                  <PostImage
-                    src={mediaItems[0].url}
-                    alt="Contenido multimedia del post"
-                    className="w-full h-full object-cover rounded-none cursor-zoom-in"
-                    onClick={() => setIsImageModalOpen(true)}
-                  />
-                </div>
+                <PostImage
+                  src={mediaItems[0].url}
+                  alt="Contenido multimedia del post"
+                  className="w-full h-auto rounded-none cursor-zoom-in"
+                  onClick={() => setIsImageModalOpen(true)}
+                />
               ) : (
                 <video
                   src={mediaItems[0].url}
-                  className="w-full max-h-[520px] object-contain rounded-none cursor-pointer"
+                  className="max-w-full max-h-[600px] object-contain rounded-none cursor-pointer"
                   onClick={() => setIsVideoModalOpen(true)}
                   onError={(e) => {
                     console.error('Error cargando video:', e);
@@ -161,57 +156,7 @@ export function PostContent({ post, postId }: PostContentProps) {
         </div>
       )}
       
-      {hasPoll && post.poll && (
-        <div className="mt-4 px-4 md:px-0">
-          <div className="rounded-lg border border-border bg-card p-4">
-            <div className="text-sm font-semibold text-foreground">
-              {post.poll.question}
-            </div>
-            <div className="mt-3 space-y-2">
-              {post.poll.options.map((opt) => {
-                const totalVotes = Number(post.poll?.total_votes || 0);
-                const votes = Number(opt.votes || 0);
-                const pct = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
-                const label = (opt as any).content || (opt as any).text || '';
-                const isSelected = post.poll?.user_vote === opt.id;
-                const hasVoted = Boolean(post.poll?.user_vote);
-                const canVote = !hasVoted && !isVoting;
-
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    disabled={!canVote}
-                    onClick={() => submitVote(String(opt.id))}
-                    className={
-                      "w-full text-left rounded-md border border-border p-2 " +
-                      (canVote ? "hover:bg-muted/40 cursor-pointer" : "opacity-80 cursor-not-allowed")
-                    }
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className={isSelected ? "text-sm font-medium text-foreground" : "text-sm text-foreground"}>
-                        {label}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {pct}%
-                      </div>
-                    </div>
-                    <div className="mt-2 h-2 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={isSelected ? "h-full bg-primary" : "h-full bg-muted-foreground/40"}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-3 text-xs text-muted-foreground">
-              {Number(post.poll.total_votes || 0)} votos
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Poll component removed for performance */}
       
       {hasIdea && (
         <div className="mt-4">

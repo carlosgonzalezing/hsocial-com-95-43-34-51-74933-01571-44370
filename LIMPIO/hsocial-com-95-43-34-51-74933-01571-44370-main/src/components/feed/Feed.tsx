@@ -29,7 +29,7 @@ export function Feed({ userId }: FeedProps) {
   }
 
   return (
-    <div className="feed-container mx-auto w-full max-w-[680px] px-2 lg:px-0">
+    <div className="space-y-0 feed-container mx-auto w-full">
       <FeedContent
         posts={posts as Post[]}
         trackPostView={trackPostView}

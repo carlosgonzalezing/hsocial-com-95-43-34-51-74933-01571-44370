@@ -31,7 +31,6 @@ const PasswordReset = React.lazy(() => import("@/pages/PasswordReset"));
 const Explore = React.lazy(() => import("@/pages/Explore"));
 const Leaderboard = React.lazy(() => import("@/pages/Leaderboard"));
 const Saved = React.lazy(() => import("@/pages/Saved"));
-const Reels = React.lazy(() => import("@/pages/Reels"));
 // Opportunities removed
 const Settings = React.lazy(() => import("@/pages/settings/Settings"));
 const AccountSettings = React.lazy(() => import("@/pages/settings/AccountSettings"));
@@ -65,7 +64,7 @@ const App = () => {
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
             <Toaster />
             <BrowserRouter>
               <AuthProvider>
@@ -174,22 +173,6 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <Saved />
-                  </Suspense>
-                </AuthGuard>
-              } />
-
-              <Route path="/reels" element={
-                <AuthGuard>
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <Reels />
-                  </Suspense>
-                </AuthGuard>
-              } />
-
-              <Route path="/reels/:reelId" element={
-                <AuthGuard>
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <Reels />
                   </Suspense>
                 </AuthGuard>
               } />

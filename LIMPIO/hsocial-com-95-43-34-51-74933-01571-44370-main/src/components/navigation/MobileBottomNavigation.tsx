@@ -2,10 +2,9 @@ import { Home, Users, PlusSquare, Bell, Briefcase } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { SimplePostModal } from "@/components/SimplePostModal";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import ModalPublicacionWeb from "@/components/ModalPublicacionWeb";
-import { supabase } from "@/integrations/supabase/client";
 
 interface MobileBottomNavigationProps {
   currentUserId: string | null;
@@ -23,40 +22,7 @@ export function MobileBottomNavigation({
   const navigate = useNavigate();
   const location = useLocation();
   const [showPostModal, setShowPostModal] = useState(false);
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const isVisible = useScrollDirection();
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProfileAvatar = async () => {
-      if (!currentUserId) {
-        if (isMounted) setProfileAvatarUrl(null);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("avatar_url")
-        .eq("id", currentUserId)
-        .single();
-
-      if (!isMounted) return;
-
-      if (error) {
-        setProfileAvatarUrl(null);
-        return;
-      }
-
-      setProfileAvatarUrl(data?.avatar_url ?? null);
-    };
-
-    loadProfileAvatar();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentUserId]);
 
   const navItems = [
     {
@@ -94,11 +60,10 @@ export function MobileBottomNavigation({
 
   return (
     <>
-      {!showPostModal && (
-        <nav className={cn(
-          "fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[60] md:hidden transition-transform duration-300",
-          isVisible ? "translate-y-0" : "translate-y-full"
-        )}>
+      <nav className={cn(
+        "fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[60] md:hidden transition-transform duration-300",
+        isVisible ? "translate-y-0" : "translate-y-full"
+      )}>
         <div className="grid grid-cols-5 items-center h-14">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || 
@@ -112,7 +77,6 @@ export function MobileBottomNavigation({
                 key={item.label}
                 onClick={() => {
                   if (item.isAction) {
-                    // Show the publication modal directly
                     setShowPostModal(true);
                   } else {
                     navigate(item.path);
@@ -147,14 +111,9 @@ export function MobileBottomNavigation({
             );
           })}
         </div>
-        </nav>
-      )}
+      </nav>
       
-      <ModalPublicacionWeb 
-        isVisible={showPostModal} 
-        onClose={() => setShowPostModal(false)}
-        userAvatar={profileAvatarUrl || undefined}
-      />
+      <SimplePostModal open={showPostModal} onOpenChange={setShowPostModal} />
     </>
   );
 }

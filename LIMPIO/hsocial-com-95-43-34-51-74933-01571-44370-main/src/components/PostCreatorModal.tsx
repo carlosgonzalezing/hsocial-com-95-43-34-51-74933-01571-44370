@@ -16,7 +16,6 @@ interface PostCreatorModalProps {
   openWithMedia?: boolean;
   selectedMood?: any;
   selectedFile?: File | null;
-  initialPostType?: string | null;
 }
 
 export function PostCreatorModal({ 
@@ -26,7 +25,6 @@ export function PostCreatorModal({
   openWithMedia = false,
   selectedMood = null,
   selectedFile = null
-  , initialPostType = null
 }: PostCreatorModalProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [initialContent, setInitialContent] = useState("");
@@ -81,7 +79,6 @@ export function PostCreatorModal({
             openWithMedia={openWithMedia}
             initialContent={initialContent}
             selectedFile={selectedFile}
-            initialPostType={initialPostType || undefined}
           />
         </div>
       </DialogContent>

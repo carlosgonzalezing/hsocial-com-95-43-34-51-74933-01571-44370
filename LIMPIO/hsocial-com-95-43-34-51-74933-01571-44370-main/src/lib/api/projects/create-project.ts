@@ -2,28 +2,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { uploadToSupabase } from "@/lib/storage/cloudflare-r2";
 import type { ProjectFormData } from "@/types/project";
 
-// Accept single File or array of Files for images/documents
-export async function createProject(data: ProjectFormData, files?: File | File[]) {
+export async function createProject(data: ProjectFormData, imageFile?: File) {
   try {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated");
 
-    let imageUrls: string[] = data.image_url ? [data.image_url] : [];
+    let imageUrl = data.image_url;
 
-    // Normalize files to array
-    const filesArray: File[] = Array.isArray(files) ? files : (files ? [files] : []);
-
-    // Upload each file if provided
-    for (const file of filesArray) {
-      try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `projects/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-        const url = await uploadToSupabase(file, fileName);
-        if (url) imageUrls.push(url);
-      } catch (err) {
-        console.warn('Failed to upload project file:', err);
-      }
+    // Upload image if provided
+    if (imageFile) {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `projects/${user.id}/${Date.now()}.${fileExt}`;
+      imageUrl = await uploadToSupabase(imageFile, fileName);
     }
 
     // Create post first
@@ -33,8 +24,7 @@ export async function createProject(data: ProjectFormData, files?: File | File[]
         user_id: user.id,
         content: data.description,
         visibility: 'public',
-        post_type: 'project_showcase',
-        media_urls: imageUrls.length > 0 ? imageUrls : null
+        post_type: 'project_showcase'
       })
       .select()
       .single();
@@ -53,7 +43,7 @@ export async function createProject(data: ProjectFormData, files?: File | File[]
         github_url: data.github_url || null,
         demo_url: data.demo_url || null,
         project_url: data.documentation_url || null,
-        images_urls: imageUrls,
+        images_urls: imageUrl ? [imageUrl] : [],
         seeking_collaborators: data.seeking_collaborators,
         collaboration_roles: data.team_members,
         achievements: data.achievements ? [data.achievements] : [],

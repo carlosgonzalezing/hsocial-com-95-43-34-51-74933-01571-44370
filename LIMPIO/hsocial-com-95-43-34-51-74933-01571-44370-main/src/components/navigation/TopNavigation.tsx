@@ -13,9 +13,6 @@ import { FullScreenSearch } from "@/components/search/FullScreenSearch";
 import { UserMenu } from "@/components/user-menu/UserMenu";
 import { HSocialLogo } from "./HSocialLogo";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import ModalPublicacionWeb from "@/components/ModalPublicacionWeb";
-import { useUser } from "@/hooks/use-user";
-import { toast } from "@/hooks/use-toast";
 
 interface TopNavigationProps {
   pendingRequestsCount: number;
@@ -37,8 +34,6 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
   const [showFullScreenSearch, setShowFullScreenSearch] = useState(false);
   const isMobile = useIsMobile();
   const isVisible = useScrollDirection();
-  const [showPostModal, setShowPostModal] = useState(false);
-  const { user } = useUser();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -174,17 +169,21 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
   // Desktop navigation (Facebook style)
   return (
     <nav className="bg-card shadow-sm border-b border-border h-14 fixed top-0 left-0 right-0 z-[70]">
-      <div className="w-full flex items-center justify-between h-full px-2 lg:px-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between h-full px-4">
         {/* Logo and Search - Left */}
         <div className="flex items-center gap-4 flex-shrink-0 w-80">
           <HSocialLogo size="md" showText={true} />
           
-          {/* Search bar - desktop inline search */}
+          {/* Search bar */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <div className="w-full">
-              <FriendSearch />
-            </div>
+            <Button
+              variant="outline"
+              className="w-full justify-start pl-10 text-muted-foreground bg-muted/50 hover:bg-muted border-border rounded-full h-10"
+              onClick={() => setShowFullScreenSearch(true)}
+            >
+              Buscar en HSocial
+            </Button>
           </div>
         </div>
 
@@ -248,7 +247,6 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
                 size="icon"
                 className="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 hover:scale-105 transition-all"
                 title="Crear"
-                onClick={() => setShowPostModal(true)}
               >
                 <Plus className="h-5 w-5" />
               </Button>
@@ -305,12 +303,6 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
       <FullScreenSearch 
         isOpen={showFullScreenSearch} 
         onClose={() => setShowFullScreenSearch(false)} 
-      />
-      <ModalPublicacionWeb
-        isVisible={showPostModal}
-        onClose={() => setShowPostModal(false)}
-        initialPostType={null}
-        userAvatar={userProfile?.avatar_url || user?.user_metadata?.avatar_url}
       />
     </nav>
   );

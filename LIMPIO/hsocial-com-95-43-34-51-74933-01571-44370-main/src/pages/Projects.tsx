@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectCreatorModal } from '@/components/projects/ProjectCreatorModal';
-import { SimpleProjectCreatorModal } from '@/components/projects/SimpleProjectCreatorModal';
 import { ProjectModal } from '@/components/projects/ProjectModal';
 import { Layout } from '@/components/layout';
 import { PROJECT_CATEGORIES, type Project } from '@/types/project';
@@ -203,7 +202,7 @@ export default function Projects() {
         </div>
 
         {/* Search and Filter Section */}
-        <div className="bg-white dark:bg-card border-b border-border text-foreground dark:text-foreground">
+        <div className="bg-white border-b border-border">
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col md:flex-row gap-4">
               {/* Search Bar */}
@@ -213,7 +212,7 @@ export default function Projects() {
                   placeholder="Buscar proyectos..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 py-3 rounded-lg border-2 focus:border-primary bg-background text-foreground"
+                  className="pl-10 py-3 rounded-lg border-2 focus:border-primary"
                 />
               </div>
               
@@ -290,11 +289,10 @@ export default function Projects() {
         </div>
 
         {/* Modals */}
-          {/* Usar modal simplificado para publicación rápida */}
-          <SimpleProjectCreatorModal
-            open={isCreatorModalOpen}
-            onOpenChange={setIsCreatorModalOpen}
-          />
+        <ProjectCreatorModal
+          open={isCreatorModalOpen}
+          onOpenChange={setIsCreatorModalOpen}
+        />
         
         {selectedProject && (
           <ProjectModal

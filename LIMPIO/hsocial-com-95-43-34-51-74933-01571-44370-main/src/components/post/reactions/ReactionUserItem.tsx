@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, UserPlus, Check } from "lucide-react";
+import { useFriendshipStatus } from "@/hooks/use-friendship-status";
 import { useNavigate } from "react-router-dom";
 
 interface ReactionUserItemProps {
@@ -21,8 +21,7 @@ interface ReactionUserItemProps {
 
 export function ReactionUserItem({ reaction, currentUserId, getReactionEmoji }: ReactionUserItemProps) {
   const navigate = useNavigate();
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { isFriend, isPending, sendFriendRequest } = useFriendshipStatus(reaction.user_id);
   const isOwnProfile = currentUserId === reaction.user_id;
 
   const handleSendMessage = () => {
@@ -73,42 +72,27 @@ export function ReactionUserItem({ reaction, currentUserId, getReactionEmoji }: 
             <MessageCircle className="w-4 h-4 mr-1" />
             Mensaje
           </Button>
-          <div className="flex items-center gap-2">
-            {isFollowing ? (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                disabled={isLoading}
-                onClick={async () => {
-                  setIsLoading(true);
-                  // TODO: Implement unfollow
-                  await new Promise(resolve => setTimeout(resolve, 500));
-                  setIsFollowing(false);
-                  setIsLoading(false);
-                }}
-              >
-                <Check className="h-3.5 w-3.5 mr-1" />
-                <span>Siguiendo</span>
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isLoading}
-                onClick={async () => {
-                  setIsLoading(true);
-                  // TODO: Implement follow
-                  await new Promise(resolve => setTimeout(resolve, 500));
-                  setIsFollowing(true);
-                  setIsLoading(false);
-                }}
-                className="gap-1"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                <span>Seguir</span>
-              </Button>
-            )}
-          </div>
+          
+          {isFriend ? (
+            <Button variant="ghost" size="sm" disabled className="h-8">
+              <Check className="w-4 h-4 mr-1" />
+              Amigos
+            </Button>
+          ) : isPending ? (
+            <Button variant="ghost" size="sm" disabled className="h-8">
+              Solicitud enviada
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={sendFriendRequest}
+              className="h-8"
+            >
+              <UserPlus className="w-4 h-4 mr-1" />
+              Agregar
+            </Button>
+          )}
         </div>
       )}
     </div>

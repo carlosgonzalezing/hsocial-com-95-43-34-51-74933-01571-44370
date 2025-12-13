@@ -21,6 +21,9 @@ export function useReelsFeed() {
       // Verificar que tenga URL de media
       if (!post.media_url) return false;
       
+      // Verificar que sea de Supabase Storage
+      if (!post.media_url.includes('supabase')) return false;
+      
       // Verificar por extensión de archivo
       const videoExtensions = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.m4v'];
       const hasVideoExtension = videoExtensions.some(ext => 

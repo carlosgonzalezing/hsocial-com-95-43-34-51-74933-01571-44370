@@ -13,12 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useEffect, useState } from "react";
-import { toast } from "@/hooks/use-toast";
-import ModalPublicacionWeb from "../ModalPublicacionWeb";
-import { useUser } from "@/hooks/use-user";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { PostCreatorModal } from "../PostCreatorModal";
 import { CreatePostSheet } from "./CreatePostSheet";
+import { toast } from "@/hooks/use-toast";
 
 interface CreateContentMenuProps {
   open: boolean;
@@ -27,59 +25,19 @@ interface CreateContentMenuProps {
 
 export function CreateContentMenu({ open, onOpenChange }: CreateContentMenuProps) {
   const navigate = useNavigate();
-  const [showModalPublicacion, setShowModalPublicacion] = useState(false);
-  const [selectedPostType, setSelectedPostType] = useState<string | null>(null);
-  const { user } = useUser();
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
+  const [showPostCreator, setShowPostCreator] = useState(false);
   const [showPostSheet, setShowPostSheet] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProfileAvatar = async () => {
-      if (!user?.id) {
-        if (isMounted) setProfileAvatarUrl(null);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("avatar_url")
-        .eq("id", user.id)
-        .single();
-
-      if (!isMounted) return;
-
-      if (error) {
-        setProfileAvatarUrl(null);
-        return;
-      }
-
-      setProfileAvatarUrl(data?.avatar_url ?? null);
-    };
-
-    loadProfileAvatar();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.id]);
+  const [postType, setPostType] = useState<'regular' | 'idea' | null>(null);
 
   const handleOptionClick = (option: string) => {
     onOpenChange(false);
     
     switch (option) {
-      case 'media':
-        setSelectedPostType(null);
-        setShowModalPublicacion(true);
-        break;
       case 'idea':
-        setSelectedPostType('idea');
-        setShowModalPublicacion(true);
-        break;
       case 'project':
-        setSelectedPostType('proyecto');
-        setShowModalPublicacion(true);
+      case 'media':
+        // Abrir el nuevo sheet de crear publicación
+        setShowPostSheet(true);
         break;
       case 'group':
         toast({
@@ -143,41 +101,47 @@ export function CreateContentMenu({ open, onOpenChange }: CreateContentMenuProps
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Crear contenido</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Crear Contenido</DialogTitle>
             <DialogDescription>
-              Elige el tipo de contenido que deseas publicar
+              Selecciona el tipo de contenido que deseas crear.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {menuOptions.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => handleOptionClick(option.id)}
-                className="flex items-start p-3 rounded-lg hover:bg-accent transition-colors text-left w-full"
-              >
-                <div className={`p-2 rounded-lg ${option.iconBg} mr-3`}>
-                  <option.icon className={`h-5 w-5 ${option.iconColor}`} />
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">{option.title}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {option.description}
-                  </p>
-                </div>
-              </button>
-            ))}
+          
+          <div className="space-y-2 mt-4">
+            {menuOptions.map((option) => {
+              const Icon = option.icon;
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => handleOptionClick(option.id)}
+                  className="w-full flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                >
+                  <div className={`${option.iconBg} p-3 rounded-full flex-shrink-0`}>
+                    <Icon className={`h-6 w-6 ${option.iconColor}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm mb-1">{option.title}</h3>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
 
-      <ModalPublicacionWeb
-        isVisible={showModalPublicacion}
-        onClose={() => setShowModalPublicacion(false)}
-        initialPostType={(selectedPostType as any) || null}
-        userAvatar={profileAvatarUrl || (user?.user_metadata as any)?.avatar_url}
-      />
+      {showPostCreator && (
+        <PostCreatorModal
+          open={showPostCreator}
+          onOpenChange={(open) => {
+            setShowPostCreator(open);
+            if (!open) setPostType(null);
+          }}
+          focusOnOpen
+        />
+      )}
 
       <CreatePostSheet
         open={showPostSheet}

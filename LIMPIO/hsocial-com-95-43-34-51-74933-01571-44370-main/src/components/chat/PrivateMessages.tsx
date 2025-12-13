@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,8 @@ import { Send, Loader2, MessageCircle, Search, Globe, Users } from "lucide-react
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const GLOBAL_CHANNEL_ID = "2f79759f-c53f-40ae-b786-59f6e69264a6";
 
@@ -56,7 +55,8 @@ export function PrivateMessages() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Obtener usuario actual
   useEffect(() => {
@@ -102,56 +102,63 @@ export function PrivateMessages() {
   // Obtener o crear canal privado entre dos usuarios
   const getOrCreatePrivateChannel = async (userId1: string, userId2: string): Promise<string | null> => {
     try {
-      const { data: user1Channels, error: searchError } = await supabase
-        .from("miembros_canal")
-        .select(`
-          id_canal,
-          canales!inner(id, es_privado)
-        `)
-        .eq("id_usuario", userId1)
-        .eq("canales.es_privado", true);
-
-      if (searchError) throw searchError;
-
-      if (user1Channels && user1Channels.length > 0) {
-        for (const memberChannel of user1Channels) {
-          const channelId = memberChannel.id_canal;
-          const { data: members } = await supabase
-            .from("miembros_canal")
-            .select("id_usuario")
-            .eq("id_canal", channelId);
-
-          if (members && members.length === 2) {
-            const memberIds = members.map((m: any) => m.id_usuario);
-            if (memberIds.includes(userId1) && memberIds.includes(userId2)) {
-              return channelId;
-            }
-          }
-        }
+      // Obtener token del usuario autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = (session as any)?.access_token;
+      if (!token) {
+        console.error('El usuario no está autenticado. No se puede llamar a la función.');
+        return null;
       }
 
-      // Crear nuevo canal privado
-      const { data: newChannel, error: createError } = await supabase
-        .from("canales")
-        .insert({
-          nombre: `Chat privado`,
-          es_privado: true
-        })
-        .select()
-        .single();
+      // Llamada a la Edge Function que crea/retorna el canal privado
+      // Usar la URL pública del proyecto (configurada en Vite as `VITE_SUPABASE_URL`)
+      const functionsBase = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL || "";
+      const functionsUrl = `${functionsBase.replace(/\/$/, '')}/functions/v1/create-private-channel`;
 
-      if (createError) throw createError;
-      if (!newChannel) return null;
+      // Debug: mostrar la URL de la función y longitud del token en consola
+      try {
+        console.log('[PM] create-private-channel URL ->', functionsUrl);
+        console.log('[PM] token length ->', token ? token.length : 0);
+      } catch (e) {
+        // ignore
+      }
 
-      // Agregar ambos usuarios como miembros
-      await supabase.from("miembros_canal").insert([
-        { id_canal: newChannel.id, id_usuario: userId1 },
-        { id_canal: newChannel.id, id_usuario: userId2 }
-      ]);
+      const res = await fetch(functionsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ otherUserId: userId2 }),
+      });
 
-      return newChannel.id;
-    } catch (error) {
-      console.error("Error getting/creating private channel:", error);
+      let bodyText = '';
+      try {
+        bodyText = await res.text();
+      } catch (e) {
+        bodyText = '';
+      }
+
+      let json: any = {};
+      try {
+        json = bodyText ? JSON.parse(bodyText) : {};
+      } catch (e) {
+        // not json
+      }
+
+      if (!res.ok) {
+        console.error('Error al crear el canal privado desde la función:', {
+          status: res.status,
+          statusText: res.statusText,
+          bodyText,
+          json,
+        });
+        return null;
+      }
+
+      return (json.channelId as string) || null;
+    } catch (err) {
+      console.error('Error llamando a create-private-channel:', err);
       return null;
     }
   };
@@ -167,6 +174,10 @@ export function PrivateMessages() {
         setSearchResults([]);
         await loadConversations();
         setSelectedConversation(user.id);
+        // On small screens, navigate with query param so the conversation view opens fullscreen
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+          navigate(`?user=${user.id}`);
+        }
       }
     } catch (error) {
       console.error("Error starting conversation:", error);
@@ -430,11 +441,22 @@ export function PrivateMessages() {
         if (channelId) {
           loadConversations().then(() => {
             setSelectedConversation(userIdParam);
+            if (typeof window !== "undefined" && window.innerWidth < 768) {
+              setIsMobileOpen(true);
+            }
           });
         }
       });
     }
   }, [searchParams.get("user"), currentUserId]);
+
+  // Close mobile chat when URL param removed
+  useEffect(() => {
+    const userIdParam = searchParams.get("user");
+    if (!userIdParam && typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsMobileOpen(false);
+    }
+  }, [searchParams.toString()]);
 
   // Filtrar conversaciones por búsqueda (excluyendo resultados de usuarios nuevos)
   const filteredConversations = searchQuery.trim()
@@ -456,7 +478,7 @@ export function PrivateMessages() {
   return (
     <div className="flex h-[calc(100vh-120px)] border border-border rounded-lg overflow-hidden bg-background">
       {/* Lista de conversaciones */}
-      <div className="w-full md:w-80 border-r border-border flex flex-col">
+      <div className={`${isMobileOpen ? 'hidden' : 'w-full md:w-80'} border-r border-border flex flex-col`}>
         {/* Header con búsqueda */}
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold mb-3">Mensajes</h2>
@@ -512,7 +534,13 @@ export function PrivateMessages() {
               {filteredConversations.map((conv) => (
                 <button
                   key={conv.id}
-                  onClick={() => setSelectedConversation(conv.id)}
+                  onClick={() => {
+                    setSelectedConversation(conv.id);
+                    // If on mobile, navigate to include the user param so the chat panel opens
+                    if (typeof window !== "undefined" && window.innerWidth < 768) {
+                      navigate(`?user=${conv.id}`);
+                    }
+                  }}
                   className={cn(
                     "w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left",
                     selectedConversation === conv.id && "bg-muted"
@@ -557,11 +585,25 @@ export function PrivateMessages() {
       </div>
 
       {/* Área de chat */}
-      <div className="flex-1 flex flex-col hidden md:flex">
+      <div className={`${isMobileOpen ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
         {selectedConv ? (
           <>
             {/* Header del chat */}
             <div className="p-4 border-b border-border flex items-center gap-3">
+              {/* Back button on mobile when chat is open */}
+              {isMobileOpen && (
+                <button
+                  onClick={() => {
+                    // Remove query param and close mobile view
+                    navigate('/messages');
+                    setSelectedConversation(null);
+                    setIsMobileOpen(false);
+                  }}
+                  className="mr-2 p-2 rounded-md hover:bg-muted/50"
+                >
+                  ←
+                </button>
+              )}
               {selectedConv.is_global ? (
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Globe className="h-5 w-5 text-primary" />
@@ -675,117 +717,6 @@ export function PrivateMessages() {
           </div>
         )}
       </div>
-
-      {/* Mobile full-screen chat view */}
-      {isMobile && selectedConversation && (
-        <div className="fixed inset-0 z-60 bg-background flex flex-col">
-          <div className="p-4 border-b border-border flex items-center gap-3">
-            <button onClick={() => setSelectedConversation(null)} className="p-2">
-              Volver
-            </button>
-            {selectedConv?.is_global ? (
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Globe className="h-5 w-5 text-primary" />
-              </div>
-            ) : (
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={selectedConv?.avatar_url || undefined} />
-                <AvatarFallback>
-                  {selectedConv?.username?.[0]?.toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            )}
-            <div>
-              <p className="font-medium">{selectedConv?.username}</p>
-              <p className="text-xs text-muted-foreground">
-                {selectedConv?.is_global ? "Conversación pública" : "En línea"}
-              </p>
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-            <div className="space-y-4">
-              {messages.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>
-                    {selectedConv?.is_global 
-                      ? "Sé el primero en enviar un mensaje" 
-                      : `Inicia una conversación con ${selectedConv?.username}`}
-                  </p>
-                </div>
-              ) : (
-                messages.map((message) => {
-                  const isOwn = message.id_autor === currentUserId;
-                  return (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "flex gap-3",
-                        isOwn ? "flex-row-reverse" : ""
-                      )}
-                    >
-                      <Avatar className="h-8 w-8 flex-shrink-0">
-                        <AvatarImage src={message.author?.avatar_url} />
-                        <AvatarFallback>
-                          {message.author?.username?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className={cn(
-                        "flex flex-col max-w-[70%]",
-                        isOwn ? "items-end" : ""
-                      )}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium">
-                            {message.author?.username}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(message.created_at), {
-                              addSuffix: true,
-                              locale: es,
-                            })}
-                          </span>
-                        </div>
-                        <div className={cn(
-                          "rounded-2xl px-4 py-2",
-                          isOwn
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        )}>
-                          <p className="text-sm break-words">{message.contenido}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </ScrollArea>
-
-          <form onSubmit={handleSendMessage} className="p-4 border-t border-border">
-            <div className="flex gap-2">
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Escribe un mensaje..."
-                className="flex-1"
-                disabled={sending}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                disabled={!newMessage.trim() || sending}
-              >
-                {sending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

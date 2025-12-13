@@ -90,8 +90,21 @@ async function cacheFirstStrategy(request, cacheName) {
 
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+        try {
+          // Only cache http(s) requests. Some browser extensions or internal schemes
+          // (like chrome-extension://) are not supported by the Cache API and
+          // will throw when used with cache.put(). Skip them.
+          const urlObj = new URL(request.url);
+          if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+            const cache = await caches.open(cacheName);
+            await cache.put(request, networkResponse.clone());
+          } else {
+            // Skip caching unsupported schemes
+            console.warn('[SW] Skipping cache for unsupported protocol:', urlObj.protocol, request.url);
+          }
+        } catch (err) {
+          console.warn('[SW] Failed to cache request, skipping:', request.url, err);
+        }
     }
     
     return networkResponse;
@@ -107,8 +120,17 @@ async function networkFirstStrategy(request, cacheName) {
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok && request.method === 'GET') {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+      try {
+        const urlObj = new URL(request.url);
+        if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+          const cache = await caches.open(cacheName);
+          await cache.put(request, networkResponse.clone());
+        } else {
+          console.warn('[SW] Skipping cache for unsupported protocol:', urlObj.protocol, request.url);
+        }
+      } catch (err) {
+        console.warn('[SW] Failed to cache request, skipping:', request.url, err);
+      }
     }
     
     return networkResponse;

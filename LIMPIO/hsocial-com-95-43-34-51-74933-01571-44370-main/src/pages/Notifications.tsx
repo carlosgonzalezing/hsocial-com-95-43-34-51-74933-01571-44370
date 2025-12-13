@@ -57,10 +57,8 @@ const Notifications = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 md:flex">
-      <div className="hidden md:block">
-        <Navigation />
-      </div>
+    <div className="min-h-screen flex bg-muted/30">
+      <Navigation />
       <main className="flex-1 max-w-2xl mx-auto px-4 py-6 md:py-8 pb-20 md:pb-8">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-semibold">Notificaciones</h1>

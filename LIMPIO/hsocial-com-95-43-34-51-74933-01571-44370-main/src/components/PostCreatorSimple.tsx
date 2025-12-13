@@ -14,15 +14,14 @@ interface PostCreatorSimpleProps {
 
 export function PostCreatorSimple({ onPostCreated }: PostCreatorSimpleProps) {
   const [content, setContent] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [postType, setPostType] = useState<'regular' | 'idea' | 'project'>('regular');
   const [isUploading, setIsUploading] = useState(false);
-  const [backgroundKey, setBackgroundKey] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const handleSubmit = async () => {
-    if (!content.trim() && selectedFiles.length === 0 && !backgroundKey) {
+    if (!content.trim() && !selectedFile) {
       toast({ variant: "destructive", title: "Error", description: "Escribe algo o adjunta un archivo" });
       return;
     }
@@ -35,43 +34,22 @@ export function PostCreatorSimple({ onPostCreated }: PostCreatorSimpleProps) {
         return;
       }
 
-      const mediaUrls: string[] = [];
-      let mediaType: 'image' | 'video' | 'audio' | null = null;
+      let mediaUrl = null;
+      let mediaType = null;
 
-      if (selectedFiles.length > 0) {
-        for (const f of selectedFiles) {
-          try {
-            const url = await uploadMediaFile(f);
-            if (url) mediaUrls.push(url);
-            if (!mediaType) mediaType = getMediaType(f);
-          } catch (err) {
-            console.warn('Upload failed for file', f.name, err);
-          }
-        }
+      if (selectedFile) {
+        mediaUrl = await uploadMediaFile(selectedFile);
+        mediaType = getMediaType(selectedFile);
       }
 
-      const postData: any = {
+      const { error } = await supabase.from('posts').insert({
         user_id: session.user.id,
         content: content.trim() || null,
         visibility: 'public',
+        media_url: mediaUrl,
+        media_type: mediaType,
         post_type: postType
-      };
-
-      if (mediaUrls.length > 0) {
-        postData.media_urls = mediaUrls;
-      }
-
-      if (mediaType) postData.media_type = mediaType;
-
-      if (backgroundKey) {
-        postData.content_style = {
-          backgroundKey: backgroundKey,
-          textColor: 'white',
-          isTextOnly: true
-        };
-      }
-
-      const { error } = await supabase.from('posts').insert(postData);
+      });
 
       if (error) throw error;
 
@@ -79,7 +57,7 @@ export function PostCreatorSimple({ onPostCreated }: PostCreatorSimpleProps) {
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       
       setContent("");
-      setSelectedFiles([]);
+      setSelectedFile(null);
       setPostType('regular');
       onPostCreated?.();
     } catch (error) {
@@ -128,40 +106,25 @@ export function PostCreatorSimple({ onPostCreated }: PostCreatorSimpleProps) {
       />
 
       {/* Adjuntos */}
-      <div className="space-y-2">
-        {/* Background presets */}
-        <div className="flex items-center gap-2">
-          {[
-            { key: 'bg-grad-1', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-            { key: 'bg-grad-2', color: 'bg-gradient-to-r from-blue-500 to-cyan-500' },
-            { key: 'bg-grad-3', color: 'bg-gradient-to-r from-green-400 to-emerald-500' },
-            { key: 'bg-solid-1', color: 'bg-black' },
-            { key: 'bg-solid-2', color: 'bg-white' }
-          ].map((bg) => (
-            <button
-              key={bg.key}
-              onClick={() => setBackgroundKey(backgroundKey === bg.key ? null : bg.key)}
-              className={`${bg.color} h-8 w-12 rounded-md border ${backgroundKey === bg.key ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
-              aria-label={bg.key}
-            />
-          ))}
-        </div>
-
-        <div>
-          <input
-            type="file"
-            id="file-upload"
-            className=""
-            accept="image/*,video/*,.pdf,.doc,.docx"
-            multiple
-            onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))}
-          />
-          {selectedFiles.length > 0 && (
-            <div className="text-sm text-muted-foreground mt-2">
-              {selectedFiles.map(f => (<div key={f.name}>{f.name}</div>))}
-            </div>
-          )}
-        </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="file"
+          id="file-upload"
+          className="hidden"
+          accept="image/*,video/*,.pdf,.doc,.docx"
+          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => document.getElementById('file-upload')?.click()}
+        >
+          <Image className="h-4 w-4 mr-1" />
+          Foto/Video
+        </Button>
+        {selectedFile && (
+          <span className="text-sm text-muted-foreground">{selectedFile.name}</span>
+        )}
       </div>
 
       {/* Botón publicar */}

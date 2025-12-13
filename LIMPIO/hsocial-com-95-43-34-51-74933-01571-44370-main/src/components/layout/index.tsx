@@ -25,8 +25,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const cleanup = optimizeImages();
     
-    // Register service worker
-    if ('serviceWorker' in navigator) {
+    // Register service worker only in production builds to avoid dev-time caching issues
+    // Vite exposes `import.meta.env.PROD` as a boolean at build time.
+    if ('serviceWorker' in navigator && (import.meta as any).env && (import.meta as any).env.PROD) {
       navigator.serviceWorker.register('/sw.js')
         .then(() => console.log('🔧 Service Worker registered'))
         .catch(err => console.error('❌ Service Worker registration failed:', err));

@@ -60,7 +60,6 @@ export function useFeedData(userId?: string) {
           reactions: post.reactions || [],
           reactions_count: post.reactions_count || 0,
           comments_count: post.comments_count || 0,
-          shares_count: post.shares_count || 0,
           userHasReacted: post.userHasReacted || false,
           poll: transformPoll(post.poll),
           idea: post.idea as Idea | undefined,

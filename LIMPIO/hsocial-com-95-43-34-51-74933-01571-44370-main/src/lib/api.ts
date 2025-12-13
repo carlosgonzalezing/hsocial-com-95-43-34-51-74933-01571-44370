@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { getMultiplePostSharesCounts } from "@/lib/api/posts/queries/shares";
 
 export async function getPosts(userId?: string) {
   try {
@@ -32,47 +31,8 @@ export async function getPosts(userId?: string) {
 
     if (error) throw error;
 
-    const uniquePostIds = Array.from(
-      new Set(
-        (data || [])
-          .flatMap((p: any) => [p.id, p.shared_post_id])
-          .filter(Boolean)
-      )
-    ) as string[];
-
-    const sharesCountsByPostId = uniquePostIds.length
-      ? await getMultiplePostSharesCounts(uniquePostIds)
-      : {};
-
     // Obtener el usuario actual para verificar si le ha dado like
     const { data: { user } } = await supabase.auth.getUser();
-
-    let pollVotesMap: Record<string, string> = {};
-    try {
-      if (user) {
-        const pollPostIds = (data || [])
-          .filter((p: any) => p?.poll)
-          .map((p: any) => p.id)
-          .filter(Boolean);
-
-        if (pollPostIds.length > 0) {
-          const { data: votesData } = await (supabase as any)
-            .from('poll_votes')
-            .select('post_id, option_id')
-            .eq('user_id', user.id)
-            .in('post_id', pollPostIds);
-
-          (votesData || []).forEach((v: any) => {
-            if (v?.post_id && v?.option_id) {
-              pollVotesMap[String(v.post_id)] = String(v.option_id);
-            }
-          });
-        }
-      }
-    } catch (e) {
-      // ignore (e.g. poll_votes table not deployed yet)
-      pollVotesMap = {};
-    }
 
     const postsWithUserReactions = await Promise.all(data.map(async (post: any) => {
       const postWithExtras = { ...post };
@@ -94,8 +54,7 @@ export async function getPosts(userId?: string) {
           if (!sharedPostError && sharedPostData) {
             postWithExtras.shared_post = {
               ...sharedPostData,
-              comments_count: sharedPostData.comments?.[0]?.count || 0,
-              shares_count: sharesCountsByPostId[sharedPostData.id] || 0
+              comments_count: sharedPostData.comments?.[0]?.count || 0
             };
           }
         } catch (err) {
@@ -124,17 +83,13 @@ export async function getPosts(userId?: string) {
 
       return {
         ...postWithExtras,
-        poll: postWithExtras.poll && typeof postWithExtras.poll === 'object'
-          ? { ...postWithExtras.poll, user_vote: pollVotesMap[String(post.id)] || postWithExtras.poll.user_vote || null }
-          : postWithExtras.poll,
         shared_post: postWithExtras.shared_post || null,
         shared_post_id: post.shared_post_id || null,
         shared_from: post.shared_from || null,
         userHasReacted,
         comments_count: post.comments?.[0]?.count || 0,
         user_reaction: null, // Default value
-        reactions_count: reactionsCount || 0,
-        shares_count: sharesCountsByPostId[post.id] || 0
+        reactions_count: reactionsCount || 0
       };
     }));
 

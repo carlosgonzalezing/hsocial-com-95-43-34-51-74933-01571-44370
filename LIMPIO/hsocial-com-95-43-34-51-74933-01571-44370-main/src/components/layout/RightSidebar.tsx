@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { 
   User, 
   UserPlus, 
@@ -11,9 +13,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 // Removed engagement sidebar
 import { useChatSystem } from "@/hooks/use-chat-system";
-import { useBatchFollowingStatus } from "@/hooks/use-batch-following-status";
-import { useFollowUser } from "@/hooks/use-follow-user";
-import { isUserOnline, getTimeAgo } from "@/utils/time-utils";
 
 interface RightSidebarProps {
   currentUserId: string | null;
@@ -25,7 +24,6 @@ interface Friend {
   avatar_url: string | null;
   is_online?: boolean;
   last_seen?: string;
-  status?: 'online' | 'offline' | 'away' | null;
 }
 
 interface FriendSuggestion {
@@ -40,13 +38,6 @@ export function RightSidebar({ currentUserId }: RightSidebarProps) {
   const [onlineFriends, setOnlineFriends] = useState<Friend[]>([]);
   const [friendSuggestions, setFriendSuggestions] = useState<FriendSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const { followUser, isLoading: isFollowLoading } = useFollowUser();
-
-  const suggestionIds = friendSuggestions.map(s => s.id);
-  const { getFollowingStatus, updateFollowingStatus } = useBatchFollowingStatus(suggestionIds);
-
-  const visibleSuggestions = friendSuggestions.filter(s => !getFollowingStatus(s.id));
 
   // Load online friends and suggestions
   useEffect(() => {
@@ -70,7 +61,7 @@ export function RightSidebar({ currentUserId }: RightSidebarProps) {
           
           const { data: profile } = await supabase
             .from('profiles')
-            .select('id, username, avatar_url, status, last_seen')
+            .select('id, username, avatar_url')
             .eq('id', friendUserId)
             .single();
 
@@ -80,18 +71,12 @@ export function RightSidebar({ currentUserId }: RightSidebarProps) {
             id: profile.id,
             username: profile.username || '',
             avatar_url: profile.avatar_url,
-            status: (profile as any).status ?? null,
-            last_seen: (profile as any).last_seen ?? null,
-            is_online: isUserOnline((profile as any).status ?? null, (profile as any).last_seen ?? null)
+            is_online: Math.random() > 0.5,
+            last_seen: new Date(Date.now() - Math.random() * 3600000).toISOString()
           };
         }));
 
-        const computedFriends = (friends.filter(Boolean) as Friend[]).map(f => ({
-          ...f,
-          is_online: isUserOnline(f.status ?? null, f.last_seen ?? null)
-        }));
-
-        setOnlineFriends(computedFriends.filter(f => f.is_online));
+        setOnlineFriends(friends.filter(Boolean) as Friend[]);
 
         // Load friend suggestions (users not yet friends with)
         const { data: suggestionsData, error: suggestionsError } = await supabase
@@ -179,7 +164,7 @@ export function RightSidebar({ currentUserId }: RightSidebarProps) {
                 >
                   <p className="text-sm font-medium truncate">{friend.username}</p>
                   <p className="text-xs text-muted-foreground">
-                    {friend.is_online ? 'Activo ahora' : getTimeAgo(friend.last_seen ?? null)}
+                    {friend.is_online ? 'Activo ahora' : 'Hace un momento'}
                   </p>
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -195,7 +180,7 @@ export function RightSidebar({ currentUserId }: RightSidebarProps) {
             ))
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">
-              No tienes contactos activos
+              No tienes amigos conectados
             </p>
           )}
         </CardContent>
@@ -210,8 +195,8 @@ export function RightSidebar({ currentUserId }: RightSidebarProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {visibleSuggestions.length > 0 ? (
-            visibleSuggestions.map((suggestion) => (
+          {friendSuggestions.length > 0 ? (
+            friendSuggestions.map((suggestion) => (
               <div key={suggestion.id} className="space-y-2">
                 <Link
                   to={`/profile/${suggestion.id}`}
@@ -233,32 +218,10 @@ export function RightSidebar({ currentUserId }: RightSidebarProps) {
                   </div>
                 </Link>
                 <div className="flex gap-2 px-2">
-                  <Button
-                    size="sm"
-                    className="flex-1 h-7 text-xs"
-                    disabled={isFollowLoading(suggestion.id)}
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const result = await followUser(suggestion.id);
-                      if (result.success) {
-                        updateFollowingStatus(suggestion.id, true);
-                        setFriendSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
-                      }
-                    }}
-                  >
-                    Seguir
+                  <Button size="sm" className="flex-1 h-7 text-xs">
+                    Agregar
                   </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="flex-1 h-7 text-xs"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setFriendSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
-                    }}
-                  >
+                  <Button variant="secondary" size="sm" className="flex-1 h-7 text-xs">
                     Eliminar
                   </Button>
                 </div>

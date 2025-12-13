@@ -46,10 +46,6 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
   } else if (post.reactions?.by_type) {
     Object.assign(reactionsByType, post.reactions.by_type);
   }
-
-  if (Object.keys(reactionsByType).length === 0 && (post.reactions_count || 0) > 0) {
-    reactionsByType.love = post.reactions_count || 0;
-  }
   const sharesCount = post.shares_count || 0;
 
   // Estados para modales
@@ -178,6 +174,11 @@ function SharedPostView({ post }: { post: PostType }) {
         <p className="text-sm whitespace-pre-wrap break-words mb-4 px-4 md:px-0">{post.content}</p>
       )}
       <div className="border border-border rounded-none md:rounded-lg overflow-hidden">
+        <div className="flex items-center mb-2 px-4">
+          <span className="text-sm text-muted-foreground">
+            Publicación original
+          </span>
+        </div>
         {post.shared_post && (
           <SharedPostContent post={post.shared_post} />
         )}
