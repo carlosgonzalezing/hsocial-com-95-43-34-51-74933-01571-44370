@@ -6,6 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { reactionIcons, type ReactionType } from "./ReactionIcons";
 import { Loader2 } from "lucide-react";
 
+const getTimeAgo = (date: Date): string => {
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (seconds < 60) return 'Hace un momento';
+  if (seconds < 3600) return `Hace ${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `Hace ${Math.floor(seconds / 3600)}h`;
+  if (seconds < 2592000) return `Hace ${Math.floor(seconds / 86400)}d`;
+  return date.toLocaleDateString();
+};
+
 interface Reaction {
   user_id: string;
   reaction_type: ReactionType;
@@ -117,29 +128,37 @@ export function ReactionsListDialog({ postId, open, onOpenChange }: ReactionsLis
                 No hay reacciones todavía
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {filteredReactions.map((reaction) => {
                   const reactionData = reactionIcons[reaction.reaction_type];
+                  const reactionTime = new Date(reaction.created_at);
+                  const timeAgo = getTimeAgo(reactionTime);
+                  
                   return (
-                    <div key={`${reaction.user_id}-${reaction.created_at}`} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
+                    <div key={`${reaction.user_id}-${reaction.created_at}`} className="flex items-start justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-start gap-3 flex-1">
+                        <Avatar className="h-10 w-10 flex-shrink-0">
                           <AvatarImage src={reaction.profiles?.avatar_url || undefined} />
                           <AvatarFallback>
                             {reaction.profiles?.username?.[0]?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">
-                            {reaction.profiles?.username || 'Usuario'}
-                          </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm truncate">
+                              {reaction.profiles?.username || 'Usuario'}
+                            </p>
+                            <span className="text-xl flex-shrink-0">
+                              {reactionData?.emoji}
+                            </span>
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             @{reaction.profiles?.username?.toLowerCase().replace(/\s+/g, '_') || 'usuario'}
                           </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {timeAgo}
+                          </p>
                         </div>
-                      </div>
-                      <div className="text-2xl">
-                        {reactionData?.emoji}
                       </div>
                     </div>
                   );

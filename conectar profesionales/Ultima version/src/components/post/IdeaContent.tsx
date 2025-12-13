@@ -1,16 +1,86 @@
 
-import { Lightbulb, Users, Clock, Target, MapPin, Briefcase, MessageCircle } from "lucide-react";
+import { Lightbulb, Users, Clock, Target, MapPin, Briefcase, MessageCircle, UserPlus, Loader2 } from "lucide-react";
 import type { Idea } from "@/types/post";
 import { MentionsText } from "./MentionsText";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useIdeaRequest } from "@/hooks/ideas/use-idea-request";
+import { useState, useEffect } from "react";
 
 interface IdeaContentProps {
   idea: Idea;
   content?: string;
+  postId?: string;
+  postUserId?: string;
+  maxMembers?: number | null;
 }
 
-export function IdeaContent({ idea, content }: IdeaContentProps) {
+export function IdeaContent({ idea, content, postId, postUserId, maxMembers }: IdeaContentProps) {
+  const { requestStatus, isLoading, sendJoinRequest, checkMaxMembersLimit, currentUserId } = useIdeaRequest(postId || '');
+  const [isLimitReached, setIsLimitReached] = useState(false);
+
+  // Check if max members limit has been reached
+  useEffect(() => {
+    const checkLimit = async () => {
+      if (maxMembers && postId) {
+        const limitReached = await checkMaxMembersLimit(maxMembers);
+        setIsLimitReached(limitReached);
+      }
+    };
+    checkLimit();
+  }, [maxMembers, postId]);
+
+  const handleJoinIdea = async () => {
+    if (!postUserId || !postId) return;
+    await sendJoinRequest(postUserId);
+  };
+
+  // Check if current user is the creator
+  const isCreator = currentUserId === postUserId;
+
+  // Determine button state
+  const getButtonConfig = () => {
+    if (isCreator) {
+      return null; // Don't show button for creator
+    }
+    
+    if (isLimitReached) {
+      return {
+        text: "Cupo lleno",
+        disabled: true,
+        variant: "secondary" as const,
+      };
+    }
+
+    switch (requestStatus) {
+      case 'PENDIENTE':
+        return {
+          text: "Solicitud Pendiente",
+          disabled: true,
+          variant: "secondary" as const,
+        };
+      case 'ACEPTADO':
+        return {
+          text: "Ya eres miembro",
+          disabled: true,
+          variant: "secondary" as const,
+        };
+      case 'RECHAZADO':
+        return {
+          text: "Solicitud rechazada",
+          disabled: true,
+          variant: "secondary" as const,
+        };
+      default:
+        return {
+          text: "Solicitar Unirse",
+          disabled: false,
+          variant: "default" as const,
+        };
+    }
+  };
+
+  const buttonConfig = getButtonConfig();
   const getPhaseColor = (phase?: string) => {
     switch (phase) {
       case 'ideation': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
@@ -156,6 +226,36 @@ export function IdeaContent({ idea, content }: IdeaContentProps) {
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Contactar
               </Button>
+            </div>
+          )}
+
+          {/* Join Request Button - Only for Ideas, not Projects */}
+          {postId && buttonConfig && (
+            <div className={idea.contact_link ? "pt-2" : "pt-2 border-t border-border"}>
+              <Button
+                variant={buttonConfig.variant}
+                size="sm"
+                className="w-full"
+                onClick={handleJoinIdea}
+                disabled={buttonConfig.disabled || isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {buttonConfig.text}
+                  </>
+                )}
+              </Button>
+              {maxMembers && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Máximo {maxMembers} miembros
+                </p>
+              )}
             </div>
           )}
         </div>

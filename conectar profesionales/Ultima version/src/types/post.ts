@@ -31,6 +31,7 @@ export interface Post {
   userHasReacted?: boolean; // Add missing property
   content_style?: ContentStyle | null; // Add content style for background/text formatting
   project_status?: 'idea' | 'in_progress' | 'completed' | null; // Ideas → Projects flow
+  max_members?: number | null; // Maximum number of members for Idea posts
 }
 
 export interface ContentStyle {

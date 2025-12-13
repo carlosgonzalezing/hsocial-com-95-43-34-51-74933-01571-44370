@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Clock, Image, Plus, ChevronDown } from "lucide-react";
+import { X, Clock, Image, Plus, ChevronDown, Lightbulb, Calendar, BarChart3, Briefcase, FileText, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,7 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profile, setProfile] = useState<{ avatar_url: string | null; username: string } | null>(null);
+  const [showPostTypeMenu, setShowPostTypeMenu] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -101,22 +102,39 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
 
     setIsSubmitting(true);
     try {
-      let mediaUrl = null;
+      // Upload all files if multiple attachments
+      const mediaUrls: string[] = [];
       let mediaType = null;
 
       if (selectedFiles.length > 0) {
-        mediaUrl = await uploadMediaFile(selectedFiles[0]);
-        mediaType = getMediaType(selectedFiles[0]);
+        // Upload all selected files
+        for (const file of selectedFiles) {
+          const url = await uploadMediaFile(file);
+          if (url) mediaUrls.push(url);
+          if (!mediaType) mediaType = getMediaType(file);
+        }
       }
 
-      const { error } = await supabase.from('posts').insert({
+      // Prepare the post data
+      const postData: any = {
         user_id: user.id,
         content: content.trim() || null,
         visibility,
-        media_url: mediaUrl,
         media_type: mediaType,
         post_type: 'regular'
-      });
+      };
+
+      // Store media URLs in the appropriate column
+      if (mediaUrls.length > 1) {
+        // Multiple files: use media_urls column (JSONB array)
+        postData.media_urls = mediaUrls;
+      } else if (mediaUrls.length === 1) {
+        // Single file: use both columns for backwards compatibility
+        postData.media_url = mediaUrls[0];
+        postData.media_urls = mediaUrls;
+      }
+
+      const { error } = await supabase.from('posts').insert(postData);
 
       if (error) throw error;
 
@@ -202,26 +220,45 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
           className="w-full h-[calc(100vh-180px)] resize-none bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-base"
         />
 
-        {/* File Previews */}
+        {/* File Previews - Mejorados para mejor visibilidad */}
         {filePreviews.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {filePreviews.map((preview, index) => (
-              <div key={index} className="relative inline-block">
-                {preview ? (
-                  <img src={preview} alt="Preview" className="max-h-40 rounded-lg" />
-                ) : (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <span className="text-sm text-muted-foreground truncate">{selectedFiles[index]?.name}</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => removeFile(index)}
-                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+          <div className="mt-4 mb-20 space-y-3">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                {filePreviews.length} {filePreviews.length === 1 ? 'archivo adjunto' : 'archivos adjuntos'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {filePreviews.map((preview, index) => (
+                <div key={index} className="relative group">
+                  {preview ? (
+                    <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-muted border border-border">
+                      <img 
+                        src={preview} 
+                        alt={`Vista previa ${index + 1}`} 
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() => removeFile(index)}
+                        className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-muted border border-border flex items-center justify-center p-4">
+                      <span className="text-xs text-muted-foreground text-center truncate">{selectedFiles[index]?.name}</span>
+                      <button
+                        onClick={() => removeFile(index)}
+                        className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-2 shadow-lg"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -242,10 +279,113 @@ export function SimplePostModal({ open, onOpenChange }: SimplePostModalProps) {
         >
           <Image className="h-6 w-6 text-muted-foreground" />
         </button>
-        <button className="p-2">
+        <button 
+          className="p-2 relative"
+          onClick={() => setShowPostTypeMenu(!showPostTypeMenu)}
+        >
           <Plus className="h-6 w-6 text-muted-foreground" />
         </button>
       </div>
+
+      {/* Post Type Menu */}
+      {showPostTypeMenu && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end" onClick={() => setShowPostTypeMenu(false)}>
+          <div 
+            className="bg-background w-full rounded-t-3xl p-6 pb-8 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
+            
+            <h3 className="text-lg font-semibold mb-6 text-center">Tipo de publicación</h3>
+            
+            <div className="grid grid-cols-3 gap-4">
+              {/* Idea */}
+              <button 
+                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-muted transition-colors"
+                onClick={() => {
+                  toast({ title: "Próximamente", description: "Función en desarrollo" });
+                  setShowPostTypeMenu(false);
+                }}
+              >
+                <div className="w-14 h-14 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+                  <Lightbulb className="h-7 w-7 text-yellow-600 dark:text-yellow-500" />
+                </div>
+                <span className="text-sm font-medium">Idea</span>
+              </button>
+
+              {/* Evento */}
+              <button 
+                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-muted transition-colors"
+                onClick={() => {
+                  toast({ title: "Próximamente", description: "Función en desarrollo" });
+                  setShowPostTypeMenu(false);
+                }}
+              >
+                <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                  <Calendar className="h-7 w-7 text-blue-600 dark:text-blue-500" />
+                </div>
+                <span className="text-sm font-medium">Evento</span>
+              </button>
+
+              {/* Encuesta */}
+              <button 
+                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-muted transition-colors"
+                onClick={() => {
+                  toast({ title: "Próximamente", description: "Función en desarrollo" });
+                  setShowPostTypeMenu(false);
+                }}
+              >
+                <div className="w-14 h-14 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
+                  <BarChart3 className="h-7 w-7 text-purple-600 dark:text-purple-500" />
+                </div>
+                <span className="text-sm font-medium">Encuesta</span>
+              </button>
+
+              {/* Empleo */}
+              <button 
+                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-muted transition-colors"
+                onClick={() => {
+                  toast({ title: "Próximamente", description: "Función en desarrollo" });
+                  setShowPostTypeMenu(false);
+                }}
+              >
+                <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <Briefcase className="h-7 w-7 text-green-600 dark:text-green-500" />
+                </div>
+                <span className="text-sm font-medium">Empleo</span>
+              </button>
+
+              {/* Documento */}
+              <button 
+                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-muted transition-colors"
+                onClick={() => {
+                  toast({ title: "Próximamente", description: "Función en desarrollo" });
+                  setShowPostTypeMenu(false);
+                }}
+              >
+                <div className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center">
+                  <FileText className="h-7 w-7 text-orange-600 dark:text-orange-500" />
+                </div>
+                <span className="text-sm font-medium">Documento</span>
+              </button>
+
+              {/* Servicios */}
+              <button 
+                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-muted transition-colors"
+                onClick={() => {
+                  toast({ title: "Próximamente", description: "Función en desarrollo" });
+                  setShowPostTypeMenu(false);
+                }}
+              >
+                <div className="w-14 h-14 rounded-full bg-teal-100 dark:bg-teal-900/20 flex items-center justify-center">
+                  <Wrench className="h-7 w-7 text-teal-600 dark:text-teal-500" />
+                </div>
+                <span className="text-sm font-medium">Servicios</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

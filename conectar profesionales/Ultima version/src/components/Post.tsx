@@ -245,6 +245,9 @@ function IdeaPostView({ post }: { post: PostType }) {
       <IdeaContent 
         idea={post.idea} 
         content={post.content || ''}
+        postId={post.id}
+        postUserId={post.user_id}
+        maxMembers={post.max_members}
       />
     </div>
   );
@@ -259,6 +262,7 @@ function ProjectPostView({ post }: { post: PostType }) {
       <IdeaContent 
         idea={post.idea} 
         content={post.content || ''}
+        // Note: Projects don't need join request button, so we don't pass postId
       />
     </div>
   );
