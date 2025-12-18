@@ -1,0 +1,346 @@
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Home, MessageCircle, Users, Bell, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen, Compass } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigation } from "./use-navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { FriendSearch } from "@/components/FriendSearch";
+import { FullScreenSearch } from "@/components/search/FullScreenSearch";
+import { UserMenu } from "@/components/user-menu/UserMenu";
+import { HSocialLogo } from "./HSocialLogo";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
+import ModalPublicacionWeb from "@/components/ModalPublicacionWeb";
+import { useUser } from "@/hooks/use-user";
+import { toast } from "@/hooks/use-toast";
+
+interface TopNavigationProps {
+  pendingRequestsCount: number;
+}
+
+export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
+  const {
+    currentUserId,
+    unreadNotifications,
+    newPosts,
+    handleHomeClick,
+    handleNotificationClick,
+    location
+  } = useNavigation();
+  
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [showFullScreenSearch, setShowFullScreenSearch] = useState(false);
+  const isMobile = useIsMobile();
+  const isVisible = useScrollDirection();
+  const [showPostModal, setShowPostModal] = useState(false);
+  const { user } = useUser();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (session?.user) {
+        // Get user profile
+        const { data } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', session.user.id)
+          .single();
+        setUserProfile(data);
+      }
+    };
+    
+    checkAuth();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+      if (session?.user) {
+        // Get user profile on auth change
+        const getProfile = async () => {
+          const { data } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', session.user.id)
+            .single();
+          setUserProfile(data);
+        };
+        getProfile();
+      } else {
+        setUserProfile(null);
+      }
+    });
+    
+    return () => {
+      if (authListener) authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Facebook-style navigation items
+  const centerNavItems = [
+    {
+      icon: Home,
+      label: "Inicio",
+      path: "/",
+      onClick: handleHomeClick,
+      badge: newPosts > 0 ? newPosts : null,
+      isActive: location.pathname === "/"
+    },
+    {
+      icon: Compass,
+      label: "Explorar",
+      path: "/explore",
+      isActive: location.pathname.startsWith('/explore')
+    },
+    {
+      icon: Users,
+      label: "Grupos",
+      path: "/groups",
+      isActive: location.pathname.startsWith('/groups')
+    },
+    {
+      icon: FolderOpen,
+      label: "Proyectos",
+      path: "/projects",
+      isActive: location.pathname.startsWith('/projects')
+    },
+    {
+      icon: PlaySquare,
+      label: "Reels",
+      path: "/reels",
+      isActive: location.pathname.startsWith('/reels')
+    }
+  ];
+
+  const handleProfileClick = async () => {
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
+    if (currentUserId) {
+      navigate(`/profile/${currentUserId}`);
+    }
+  };
+
+  // Mobile navigation (Instagram-style top bar)
+  if (isMobile) {
+    return (
+      <nav className={cn(
+        "bg-background border-b border-border fixed top-0 left-0 right-0 z-[70] transition-transform duration-300",
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      )}>
+        {/* Simplified top bar - Instagram Style */}
+        <div className="flex items-center justify-between h-14 px-3">
+          {/* Logo - "H Social" */}
+          <HSocialLogo size="md" showText={true} />
+          
+          {/* Search + Actions - Right */}
+          <div className="flex items-center gap-1">
+            {/* Search button (abre buscador de pantalla completa) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full text-foreground hover:bg-muted"
+              onClick={() => setShowFullScreenSearch(true)}
+              aria-label="Buscar"
+            >
+              <Search className="h-6 w-6" />
+            </Button>
+            
+            {/* Mensajes */}
+            <Button
+              variant="ghost" 
+              size="icon"
+              className="h-10 w-10 rounded-full text-foreground hover:text-muted-foreground"
+              onClick={() => navigate("/messages")}
+              aria-label="Mensajes"
+            >
+              <MessageCircle className="h-6 w-6" />
+            </Button>
+
+            {/* Notificaciones */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full text-foreground hover:text-muted-foreground relative"
+              onClick={() => {
+                handleNotificationClick();
+                navigate("/notifications");
+              }}
+              aria-label="Notificaciones"
+              title="Notificaciones"
+            >
+              <Bell className="h-6 w-6" />
+              {unreadNotifications > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+                >
+                  {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                </Badge>
+              )}
+            </Button>
+            
+            {/* Menú de usuario */}
+            <UserMenu />
+          </div>
+        </div>
+
+        {/* Full Screen Search for Mobile */}
+        <FullScreenSearch 
+          isOpen={showFullScreenSearch} 
+          onClose={() => setShowFullScreenSearch(false)} 
+        />
+      </nav>
+    );
+  }
+
+  // Desktop navigation (Facebook style)
+  return (
+    <nav className="bg-card border-b border-border h-14 fixed top-0 left-0 right-0 z-[70]">
+      <div className="w-full flex items-center justify-between h-full px-2 lg:px-4">
+        {/* Logo and Search - Left */}
+        <div className="flex items-center gap-4 flex-shrink-0 w-80">
+          <HSocialLogo size="md" showText={true} />
+          
+          {/* Search bar - desktop inline search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="w-full">
+              <FriendSearch />
+            </div>
+          </div>
+        </div>
+
+        {/* Center Navigation - Facebook Icons */}
+        <div className="flex items-center justify-center flex-1 max-w-2xl">
+          <div className="flex items-center gap-2">
+            {centerNavItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={item.onClick}
+                className={`flex items-center justify-center h-12 w-32 rounded-xl transition-colors duration-200 relative group ${
+                  item.isActive
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <item.icon className={`h-6 w-6 transition-colors ${
+                  item.isActive ? 'stroke-2' : 'stroke-1.5'
+                }`} />
+                {item.badge && item.badge > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                  >
+                    {item.badge}
+                  </Badge>
+                )}
+                {item.isActive && (
+                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-primary rounded-t-full"></div>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Section - User Actions */}
+        <div className="flex items-center gap-1 flex-shrink-0 w-80 justify-end">
+          {isAuthenticated && (
+            <>
+              {/* Profile */}
+              <Button
+                variant="ghost"
+                className="h-10 px-3 rounded-full hover:bg-muted transition-colors"
+                onClick={handleProfileClick}
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={userProfile?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                    {userProfile?.username?.[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="ml-2 text-sm font-medium text-foreground max-w-20 truncate">
+                  {userProfile?.username || 'Usuario'}
+                </span>
+              </Button>
+
+              {/* Plus Menu */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                title="Crear"
+                onClick={() => setShowPostModal(true)}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+
+              {/* Messenger */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 transition-colors relative"
+                onClick={() => navigate("/messages")}
+                title="Mensajes"
+              >
+                <MessageCircle className="h-5 w-5" />
+                {pendingRequestsCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                  >
+                    {pendingRequestsCount}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Notifications */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 transition-colors relative"
+                onClick={() => {
+                  handleNotificationClick();
+                  navigate("/notifications");
+                }}
+                title="Notificaciones"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadNotifications > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                  >
+                    {unreadNotifications}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* User Menu */}
+              <UserMenu />
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Full Screen Search for Desktop */}
+      <FullScreenSearch 
+        isOpen={showFullScreenSearch} 
+        onClose={() => setShowFullScreenSearch(false)} 
+      />
+      <ModalPublicacionWeb
+        isVisible={showPostModal}
+        onClose={() => setShowPostModal(false)}
+        initialPostType={null}
+        userAvatar={userProfile?.avatar_url || user?.user_metadata?.avatar_url}
+      />
+    </nav>
+  );
+}
