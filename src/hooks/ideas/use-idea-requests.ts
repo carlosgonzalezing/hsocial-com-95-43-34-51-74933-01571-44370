@@ -158,6 +158,101 @@ export function useAcceptIdeaRequest() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const getOrCreateIdeaChannel = async (postId: string, creatorId: string): Promise<string | null> => {
+    try {
+      const { data: existing, error: existingError } = await supabase
+        .from('idea_channels')
+        .select('channel_id')
+        .eq('post_id', postId)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+      if (existing?.channel_id) return existing.channel_id as any;
+
+      const { data: post, error: postError } = await supabase
+        .from('posts')
+        .select('idea')
+        .eq('id', postId)
+        .maybeSingle();
+
+      if (postError) throw postError;
+      const ideaTitle = (post as any)?.idea?.title;
+
+      const { data: newChannel, error: createChannelError } = await supabase
+        .from('canales')
+        .insert({
+          nombre: ideaTitle ? `Idea: ${ideaTitle}` : 'Chat de idea',
+          es_privado: true,
+        })
+        .select('id')
+        .single();
+
+      if (createChannelError) throw createChannelError;
+      const channelId = (newChannel as any)?.id as string | undefined;
+      if (!channelId) return null;
+
+      const { error: linkError } = await supabase
+        .from('idea_channels')
+        .insert({ post_id: postId, channel_id: channelId } as any);
+
+      if (linkError) throw linkError;
+
+      const { data: existingMembers, error: membersError } = await supabase
+        .from('miembros_canal')
+        .select('id_usuario')
+        .eq('id_canal', channelId);
+
+      if (membersError) throw membersError;
+      const existingIds = new Set((existingMembers || []).map((m: any) => m.id_usuario).filter(Boolean));
+
+      if (!existingIds.has(creatorId)) {
+        await supabase.from('miembros_canal').insert({ id_canal: channelId, id_usuario: creatorId } as any);
+      }
+
+      const { data: participants, error: participantsError } = await supabase
+        .from('idea_participants')
+        .select('user_id')
+        .eq('post_id', postId);
+
+      if (participantsError) throw participantsError;
+      const participantIds = (participants || []).map((p: any) => p.user_id).filter(Boolean);
+      for (const participantId of participantIds) {
+        if (!existingIds.has(participantId)) {
+          await supabase.from('miembros_canal').insert({ id_canal: channelId, id_usuario: participantId } as any);
+        }
+      }
+
+      return channelId;
+    } catch (error) {
+      console.error('Error getting/creating idea channel:', error);
+      return null;
+    }
+  };
+
+  const ensureMemberInChannel = async (channelId: string, userId: string) => {
+    const { data: existing, error } = await supabase
+      .from('miembros_canal')
+      .select('id')
+      .eq('id_canal', channelId)
+      .eq('id_usuario', userId)
+      .limit(1);
+
+    if (error) {
+      console.error('Error checking channel membership:', error);
+      return;
+    }
+
+    if (!existing || existing.length === 0) {
+      const { error: insertError } = await supabase
+        .from('miembros_canal')
+        .insert({ id_canal: channelId, id_usuario: userId } as any);
+
+      if (insertError) {
+        console.error('Error adding channel member:', insertError);
+      }
+    }
+  };
+
   return useMutation({
     mutationFn: async ({ 
       postId, 
@@ -168,6 +263,25 @@ export function useAcceptIdeaRequest() {
       userId: string;
       profession: string | null;
     }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: post, error: postError } = await supabase
+        .from('posts')
+        .select('user_id')
+        .eq('id', postId)
+        .maybeSingle();
+
+      if (postError) throw postError;
+      const creatorId = (post as any)?.user_id as string | undefined;
+
+      if (!creatorId) {
+        throw new Error('No se pudo determinar el creador de la idea');
+      }
+
+      if (!user?.id || user.id !== creatorId) {
+        throw new Error('Solo el creador de la idea puede aceptar participantes');
+      }
+
       // Add to idea_participants
       const { error: participantError } = await supabase
         .from('idea_participants')
@@ -181,8 +295,13 @@ export function useAcceptIdeaRequest() {
         throw participantError;
       }
 
+      const channelId = await getOrCreateIdeaChannel(postId, creatorId);
+      if (channelId) {
+        await ensureMemberInChannel(channelId, creatorId);
+        await ensureMemberInChannel(channelId, userId);
+      }
+
       // Notify the user
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase.from('notifications').insert({
           receiver_id: userId,

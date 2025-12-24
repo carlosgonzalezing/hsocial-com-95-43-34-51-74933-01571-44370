@@ -13,7 +13,7 @@ import { IdeaParticipant } from "@/types/post";
 import { useToast } from "@/hooks/use-toast";
 
 export default function IdeaParticipants() {
-  const { id } = useParams();
+  const { postId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [ideaTitle, setIdeaTitle] = useState("");
@@ -22,7 +22,10 @@ export default function IdeaParticipants() {
 
   useEffect(() => {
     const fetchIdeaAndParticipants = async () => {
-      if (!id) return;
+      if (!postId) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
@@ -31,7 +34,7 @@ export default function IdeaParticipants() {
         const { data: post, error: postError } = await supabase
           .from("posts")
           .select("idea, user_id")
-          .eq("id", id)
+          .eq("id", postId)
           .single();
 
         if (postError) {
@@ -56,19 +59,8 @@ export default function IdeaParticipants() {
         // 2. Get participants with profiles in a single optimized query
         const { data: participantsData, error: participantsError } = await supabase
           .from("idea_participants")
-          .select(`
-            id,
-            user_id,
-            profession,
-            created_at,
-            profiles:user_id (
-              id,
-              username,
-              avatar_url,
-              career
-            )
-          `)
-          .eq("post_id", id);
+          .select("user_id, profession, joined_at")
+          .eq("post_id", postId);
           
         if (participantsError) {
           console.error("Error fetching participants:", participantsError);
@@ -80,19 +72,38 @@ export default function IdeaParticipants() {
         const formattedParticipants: IdeaParticipant[] = [];
         
         if (participantsData && participantsData.length > 0) {
-          // Format participants with profile data already joined
-          participantsData.forEach((participant: any) => {
-            const profile = participant.profiles;
-            if (profile) {
-              formattedParticipants.push({
-                user_id: participant.user_id,
-                profession: participant.profession || "No especificado",
-                career: profile.career || "No especificado",
-                joined_at: participant.created_at,
-                username: profile.username || "Usuario",
-                avatar_url: profile.avatar_url
+          const userIds = [...new Set(participantsData.map((p: any) => p.user_id).filter(Boolean))];
+
+          let profilesById = new Map<string, { username: string | null; avatar_url: string | null; career: string | null }>();
+          if (userIds.length > 0) {
+            const { data: profiles, error: profilesError } = await supabase
+              .from("profiles")
+              .select("id, username, avatar_url, career")
+              .in("id", userIds);
+
+            if (profilesError) {
+              console.error("Error fetching participant profiles:", profilesError);
+            } else {
+              (profiles || []).forEach((p: any) => {
+                profilesById.set(p.id, {
+                  username: p.username ?? null,
+                  avatar_url: p.avatar_url ?? null,
+                  career: p.career ?? null,
+                });
               });
             }
+          }
+
+          participantsData.forEach((participant: any) => {
+            const profile = profilesById.get(participant.user_id);
+            formattedParticipants.push({
+              user_id: participant.user_id,
+              profession: participant.profession || "No especificado",
+              career: profile?.career || "No especificado",
+              joined_at: participant.joined_at,
+              username: profile?.username || "Usuario",
+              avatar_url: profile?.avatar_url,
+            });
           });
         }
         
@@ -202,12 +213,12 @@ export default function IdeaParticipants() {
     
     // Set up real-time subscription for updates
     const channel = supabase
-      .channel(`idea_participants_updates_${id}`)
+      .channel(`idea_participants_updates_${postId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'idea_participants',
-        filter: `post_id=eq.${id}`
+        filter: `post_id=eq.${postId}`
       }, () => {
         console.log("Change detected in participants, reloading...");
         fetchIdeaAndParticipants();
@@ -217,7 +228,7 @@ export default function IdeaParticipants() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, toast]);
+  }, [postId, toast]);
 
   const handleBack = () => {
     navigate(-1);

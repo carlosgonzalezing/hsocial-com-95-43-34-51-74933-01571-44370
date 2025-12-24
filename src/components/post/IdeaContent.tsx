@@ -37,6 +37,7 @@ export function IdeaContent({ idea, content, postId, postOwnerId }: IdeaContentP
   const hasPendingRequest = requestStatus === 'pending';
   const wasRejected = requestStatus === 'rejected';
   const canRequest = currentUserId && !isOwner && !isParticipant && !hasPendingRequest && !wasRejected;
+  const canAccessIdeaChat = !!currentUserId && (isOwner || isParticipant);
 
   const handleSubmitRequest = async (profession: string, message?: string) => {
     await createRequest.mutateAsync({
@@ -212,6 +213,15 @@ export function IdeaContent({ idea, content, postId, postOwnerId }: IdeaContentP
 
           {/* Request Button */}
           <div className="pt-3 border-t border-border space-y-2">
+            {canAccessIdeaChat && (
+              <Button asChild variant="outline" className="w-full">
+                <Link to={`/idea/${postId}/chat`}>
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Chat de la idea
+                </Link>
+              </Button>
+            )}
+
             {canRequest && (
               <Button
                 className="w-full"

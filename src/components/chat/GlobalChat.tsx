@@ -4,10 +4,26 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, MoreVertical, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const GLOBAL_CHANNEL_ID = "2f79759f-c53f-40ae-b786-59f6e69264a6";
 
@@ -28,6 +44,9 @@ export function GlobalChat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -127,6 +146,44 @@ export function GlobalChat() {
     }
   };
 
+  const requestDeleteMessage = (message: Message) => {
+    if (!currentUserId) return;
+    if (message.id_autor !== currentUserId) return;
+    setMessageToDelete(message);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteMessage = async () => {
+    if (!messageToDelete || !currentUserId) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('mensajes')
+        .delete()
+        .eq('id', messageToDelete.id)
+        .eq('id_autor', currentUserId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Mensaje eliminado',
+      });
+
+      setIsDeleteDialogOpen(false);
+      setMessageToDelete(null);
+      await loadMessages();
+    } catch (error: any) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo eliminar el mensaje',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -193,6 +250,27 @@ export function GlobalChat() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] bg-card border border-border rounded-lg">
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar mensaje</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteMessage}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Header */}
       <div className="p-4 border-b border-border">
         <h2 className="text-xl font-semibold text-foreground">Chat Global</h2>
@@ -220,7 +298,7 @@ export function GlobalChat() {
                 </Avatar>
 
                 <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? "items-end" : ""}`}>
-                  <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-2 ${isOwnMessage ? "justify-end" : ""}`}>
                     <span className="text-sm font-medium text-foreground">
                       {message.author?.username || "Usuario"}
                     </span>
@@ -230,6 +308,24 @@ export function GlobalChat() {
                         locale: es,
                       })}
                     </span>
+                    {isOwnMessage && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => requestDeleteMessage(message)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                   
                   <div

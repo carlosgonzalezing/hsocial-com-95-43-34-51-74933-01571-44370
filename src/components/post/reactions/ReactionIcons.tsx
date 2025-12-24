@@ -1,45 +1,45 @@
 // 3 tipos de reacciones para H Social
 
-import { Heart, Lightbulb, Rocket, Smile, Sparkles } from "lucide-react";
+import { Handshake, Lightbulb, PartyPopper, Star, ThumbsUp } from "lucide-react";
 
 export const reactionIcons = {
   love: {
-    icon: Heart,
-    color: "text-red-500",
+    icon: ThumbsUp,
+    color: "text-blue-600",
     label: "Me gusta",
-    emoji: "❤️",
+    emoji: "👍",
     animationClass: "reaction-love",
     size: "text-3xl",
   },
   awesome: {
     icon: Lightbulb,
-    color: "text-yellow-500",
-    label: "Idea brillante",
+    color: "text-amber-600",
+    label: "Interesante",
     emoji: "💡",
     animationClass: "reaction-awesome",
     size: "text-3xl",
   },
   incredible: {
-    icon: Rocket,
-    color: "text-blue-500",
-    label: "Increíble",
-    emoji: "🚀",
+    icon: Handshake,
+    color: "text-emerald-600",
+    label: "Apoyo",
+    emoji: "🤝",
     animationClass: "reaction-incredible",
     size: "text-3xl",
   },
   funny: {
-    icon: Smile,
-    color: "text-orange-500",
-    label: "Me divierte",
-    emoji: "😂",
+    icon: PartyPopper,
+    color: "text-fuchsia-600",
+    label: "Celebrar",
+    emoji: "🎉",
     animationClass: "reaction-funny",
     size: "text-3xl",
   },
   surprised: {
-    icon: Sparkles,
-    color: "text-purple-500",
-    label: "Me sorprende",
-    emoji: "😮",
+    icon: Star,
+    color: "text-yellow-600",
+    label: "\u00datil",
+    emoji: "⭐",
     animationClass: "reaction-surprised",
     size: "text-3xl",
   },

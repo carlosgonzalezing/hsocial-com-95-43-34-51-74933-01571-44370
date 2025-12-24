@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
 import { ReactionType } from "@/types/database/social.types";
 import { usePostReactions } from "@/hooks/posts/use-post-reactions";
+import { reactionIcons } from "./ReactionIcons";
 // Removed reaction sounds - simplified version
 
 interface LongPressReactionButtonProps {
@@ -42,18 +42,20 @@ export function LongPressReactionButton({
   
   // Only use "love" reaction since we simplified the system
   const defaultReaction: ReactionType = "love";
-  const defaultLabel = "Me encanta";
+  const reactionData = reactionIcons[defaultReaction];
+  const Icon = reactionData.icon;
+  const defaultLabel = reactionData.label;
   
   return (
     <Button 
       variant="ghost"
       size="sm"
-      className={`flex items-center px-2 py-1 ${hasReacted ? 'text-red-500' : ''}`}
+      className={`flex items-center px-2 py-1 ${hasReacted ? `${reactionData.color} bg-muted/50` : ''}`}
       onClick={() => handleReactionClick(defaultReaction)}
       disabled={isReacting}
     >
-      <Heart 
-        className={`h-6 w-6 mr-1.5 transition-transform duration-200 ${hasReacted ? "fill-red-500 text-red-500 scale-110 reaction-love" : ""} ${animatingReaction === defaultReaction ? 'reaction-love' : ''}`}
+      <Icon
+        className={`h-6 w-6 mr-1.5 transition-transform duration-200 ${hasReacted ? "fill-current scale-110 reaction-love" : ""} ${animatingReaction === defaultReaction ? 'reaction-love' : ''}`}
         strokeWidth={1.5}
       />
       <span>{defaultLabel}</span>

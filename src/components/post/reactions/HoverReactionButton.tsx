@@ -72,6 +72,7 @@ export function HoverReactionButton({
   const CurrentIcon = reactionData.icon;
   const currentColor = hasReacted ? reactionData.color : '';
   const currentEmoji = hasReacted ? reactionData.emoji : null;
+  const activeClasses = hasReacted ? `${currentColor} bg-muted/50 border border-border` : 'hover:bg-muted/50 border border-transparent';
 
   const handleReactionSelected = useCallback((type: ReactionType) => {
     setAnimatingReaction(type);
@@ -84,7 +85,7 @@ export function HoverReactionButton({
     <div className="relative">
       {/* Menú de reacciones flotante */}
       {showReactions && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 ml-[-16rem]"> 
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 ml-[-16rem]">
           <ReactionMenu
             show={showReactions}
             activeReaction={activeReaction}
@@ -95,37 +96,37 @@ export function HoverReactionButton({
         </div>
       )}
 
-      <Button 
-        ref={buttonRef}
-        variant="ghost"
-        size="sm"
-        className={`flex items-center px-3 py-2 transition-all duration-200 ${
-          hasReacted ? `${currentColor} bg-red-50 border border-red-200` : 'hover:bg-muted/50 border border-transparent'
-        } ${isSubmitting ? 'opacity-70 cursor-wait' : ''}`}
-        onClick={handleButtonClick}
-        onPointerDown={handlePressStart}
-        onPointerUp={handlePressEnd}
-        onPointerLeave={handlePressEnd}
-        disabled={isSubmitting}
-      >
-        {currentEmoji ? (
-          <span className={`mr-2 text-xl transition-transform duration-200 ${
-            hasReacted ? `scale-110 ${reactionData.animationClass}` : ''
-          } ${animatingReaction === primaryReactionType ? reactionData.animationClass : ''}`}>
-            {currentEmoji}
-          </span>
-        ) : (
-          <CurrentIcon 
-            className={`h-5 w-5 mr-2 transition-transform duration-200 ${
-              hasReacted ? `${currentColor} fill-current scale-110 ${reactionData.animationClass}` : ''
-            } ${animatingReaction === primaryReactionType ? reactionData.animationClass : ''}`}
-            strokeWidth={1.5}
-          />
-        )}
-        <span className={`text-sm font-medium ${hasReacted ? currentColor : ''}`}>
-          {hasReacted ? reactionData.label : "Reaccionar"}
-        </span>
-      </Button>
-    </div>
-  );
+      <Button
+        ref={buttonRef}
+        variant="ghost"
+        size="sm"
+        className={`flex items-center px-3 py-2 transition-all duration-200 ${activeClasses} ${isSubmitting ? 'opacity-70 cursor-wait' : ''}`}
+        onClick={handleButtonClick}
+        onPointerDown={handlePressStart}
+        onPointerUp={handlePressEnd}
+        onPointerLeave={handlePressEnd}
+        disabled={isSubmitting}
+      >
+        {currentEmoji ? (
+          <span
+            className={`mr-2 text-xl transition-transform duration-200 ${
+              hasReacted ? `scale-110 ${reactionData.animationClass}` : ''
+            } ${animatingReaction === primaryReactionType ? reactionData.animationClass : ''}`}
+          >
+            {currentEmoji}
+          </span>
+        ) : (
+          <CurrentIcon
+            className={`h-5 w-5 mr-2 transition-transform duration-200 ${
+              hasReacted ? `${currentColor} fill-current scale-110 ${reactionData.animationClass}` : ''
+            } ${animatingReaction === primaryReactionType ? reactionData.animationClass : ''}`}
+            strokeWidth={1.5}
+          />
+        )}
+        <span className={`text-sm font-medium ${hasReacted ? currentColor : ''}`}>
+          {hasReacted ? reactionData.label : "Reaccionar"}
+        </span>
+      </Button>
+    </div>
+  );
 }

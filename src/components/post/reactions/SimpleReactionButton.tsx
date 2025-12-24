@@ -1,4 +1,4 @@
-import { Heart, Lightbulb, Rocket } from "lucide-react";
+import { Handshake, Lightbulb, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SimpleReactionType } from "@/types/database/reaction.types";
 import { cn } from "@/lib/utils";
@@ -11,9 +11,9 @@ interface SimpleReactionButtonProps {
 }
 
 const reactionConfig = {
-  love: { icon: Heart, label: "Me gusta", color: "text-red-500" },
-  awesome: { icon: Lightbulb, label: "Idea brillante", color: "text-yellow-500" },
-  incredible: { icon: Rocket, label: "Increíble", color: "text-blue-500" },
+  love: { icon: ThumbsUp, label: "Me gusta", color: "text-blue-600" },
+  awesome: { icon: Lightbulb, label: "Interesante", color: "text-amber-600" },
+  incredible: { icon: Handshake, label: "Apoyo", color: "text-emerald-600" },
 };
 
 export function SimpleReactionButton({
@@ -25,7 +25,7 @@ export function SimpleReactionButton({
   
   const totalReactions = Object.values(reactions).reduce((sum, count) => sum + count, 0);
   
-  const CurrentIcon = userReaction ? reactionConfig[userReaction].icon : Heart;
+  const CurrentIcon = userReaction ? reactionConfig[userReaction].icon : ThumbsUp;
   const currentColor = userReaction ? reactionConfig[userReaction].color : "";
 
   return (

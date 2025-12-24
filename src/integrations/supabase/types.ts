@@ -185,6 +185,39 @@ export type Database = {
           },
         ]
       }
+      idea_channels: {
+        Row: {
+          channel_id: string
+          created_at: string
+          post_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          post_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idea_channels_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: true
+            referencedRelation: "canales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "idea_channels_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       idea_participants: {
         Row: {
           id: string

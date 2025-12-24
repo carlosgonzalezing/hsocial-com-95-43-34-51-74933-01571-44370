@@ -49,6 +49,7 @@ const StatisticsSettings = React.lazy(() => import("@/pages/settings/StatisticsS
 const AccessibilitySettings = React.lazy(() => import("@/pages/settings/AccessibilitySettings"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const IdeaParticipants = React.lazy(() => import("@/pages/IdeaParticipants"));
+const IdeaChat = React.lazy(() => import("@/pages/IdeaChat"));
 const ProjectDetail = React.lazy(() => import("@/pages/ProjectDetail"));
 
 const queryClient = new QueryClient({
@@ -303,6 +304,14 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <IdeaParticipants />
+                  </Suspense>
+                </AuthGuard>
+              } />
+
+              <Route path="/idea/:postId/chat" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <IdeaChat />
                   </Suspense>
                 </AuthGuard>
               } />

@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2, MessageCircle, Search, Globe, Users } from "lucide-react";
+import { Send, Loader2, MessageCircle, Search, Globe, Users, MoreVertical, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -12,6 +12,22 @@ import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { playUiSound } from "@/lib/ui-sounds";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const GLOBAL_CHANNEL_ID = "2f79759f-c53f-40ae-b786-59f6e69264a6";
 
@@ -51,6 +67,9 @@ export function PrivateMessages() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -154,6 +173,48 @@ export function PrivateMessages() {
     } catch (error) {
       console.error("Error getting/creating private channel:", error);
       return null;
+    }
+  };
+
+  const requestDeleteMessage = (message: Message) => {
+    if (!currentUserId) return;
+    if (message.id_autor !== currentUserId) return;
+    setMessageToDelete(message);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteMessage = async () => {
+    if (!messageToDelete || !currentUserId) return;
+    const conversation = conversations.find(c => c.id === selectedConversation);
+    if (!conversation) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('mensajes')
+        .delete()
+        .eq('id', messageToDelete.id)
+        .eq('id_autor', currentUserId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Mensaje eliminado',
+      });
+
+      await loadMessages(conversation.channel_id);
+      await loadConversations();
+      setIsDeleteDialogOpen(false);
+      setMessageToDelete(null);
+    } catch (error: any) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo eliminar el mensaje',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -458,6 +519,27 @@ export function PrivateMessages() {
 
   return (
     <div className="flex h-[calc(100vh-120px)] border border-border rounded-lg overflow-hidden bg-background">
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar mensaje</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteMessage}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Lista de conversaciones */}
       <div className="w-full md:w-80 border-r border-border flex flex-col">
         {/* Header con búsqueda */}
@@ -618,7 +700,10 @@ export function PrivateMessages() {
                           "flex flex-col max-w-[70%]",
                           isOwn ? "items-end" : ""
                         )}>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className={cn(
+                            "flex items-center gap-2 mb-1",
+                            isOwn ? "justify-end" : ""
+                          )}>
                             <span className="text-xs font-medium">
                               {message.author?.username}
                             </span>
@@ -628,6 +713,24 @@ export function PrivateMessages() {
                                 locale: es,
                               })}
                             </span>
+                            {isOwn && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => requestDeleteMessage(message)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Eliminar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
                           <div className={cn(
                             "rounded-2xl px-4 py-2",
@@ -738,7 +841,10 @@ export function PrivateMessages() {
                         "flex flex-col max-w-[70%]",
                         isOwn ? "items-end" : ""
                       )}>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className={cn(
+                          "flex items-center gap-2 mb-1",
+                          isOwn ? "justify-end" : ""
+                        )}>
                           <span className="text-xs font-medium">
                             {message.author?.username}
                           </span>
@@ -748,6 +854,24 @@ export function PrivateMessages() {
                               locale: es,
                             })}
                           </span>
+                          {isOwn && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => requestDeleteMessage(message)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                         <div className={cn(
                           "rounded-2xl px-4 py-2",
