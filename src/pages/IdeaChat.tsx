@@ -138,17 +138,14 @@ export default function IdeaChat() {
 
     if (linkError) throw linkError;
 
-    const { data: existingMembers, error: membersError } = await supabase
-      .from("miembros_canal")
-      .select("id_usuario")
-      .eq("id_canal", newChannelId);
+    {
+      const { error: ownerMemberError } = await supabase
+        .from("miembros_canal")
+        .insert({ id_canal: newChannelId, id_usuario: ownerId } as any);
 
-    if (membersError) throw membersError;
-
-    const existingIds = new Set((existingMembers || []).map((m: any) => m.id_usuario).filter(Boolean));
-
-    if (!existingIds.has(ownerId)) {
-      await supabase.from("miembros_canal").insert({ id_canal: newChannelId, id_usuario: ownerId } as any);
+      if (ownerMemberError && ownerMemberError.code !== '23505') {
+        throw ownerMemberError;
+      }
     }
 
     const { data: participants, error: participantsError } = await supabase
@@ -160,8 +157,13 @@ export default function IdeaChat() {
 
     for (const participant of participants || []) {
       const participantId = (participant as any).user_id as string | undefined;
-      if (participantId && !existingIds.has(participantId)) {
-        await supabase.from("miembros_canal").insert({ id_canal: newChannelId, id_usuario: participantId } as any);
+      if (!participantId) continue;
+      const { error: participantMemberError } = await supabase
+        .from("miembros_canal")
+        .insert({ id_canal: newChannelId, id_usuario: participantId } as any);
+
+      if (participantMemberError && participantMemberError.code !== '23505') {
+        throw participantMemberError;
       }
     }
 
@@ -180,6 +182,16 @@ export default function IdeaChat() {
         const { data: auth } = await supabase.auth.getUser();
         const uid = auth.user?.id || null;
         setCurrentUserId(uid);
+
+        if (!uid) {
+          toast({
+            title: "Sesión expirada",
+            description: "Vuelve a iniciar sesión para acceder al chat.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return;
+        }
 
         const { data: post, error: postError } = await supabase
           .from("posts")
@@ -205,9 +217,15 @@ export default function IdeaChat() {
         }
       } catch (error: any) {
         console.error("IdeaChat init error:", error);
+
+        const message =
+          error?.code === '42501' || String(error?.message || '').toLowerCase().includes('row-level security')
+            ? 'Permisos insuficientes para crear/leer el chat. Verifica las políticas RLS en Supabase y vuelve a iniciar sesión.'
+            : (error?.message || "No se pudo cargar el chat de la idea");
+
         toast({
           title: "Error",
-          description: error.message || "No se pudo cargar el chat de la idea",
+          description: message,
           variant: "destructive",
         });
       } finally {

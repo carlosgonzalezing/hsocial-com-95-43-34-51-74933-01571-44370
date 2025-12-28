@@ -3,6 +3,20 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+function clearSupabaseAuthStorage() {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (/^sb-.*-auth-token$/.test(key)) keysToRemove.push(key);
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // Best-effort
+  }
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -31,6 +45,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔐 AuthProvider: Auth event:', event, session?.user?.email);
+
+        if (event === 'TOKEN_REFRESH_FAILED') {
+          console.warn('🔐 AuthProvider: TOKEN_REFRESH_FAILED, clearing session and redirecting to /auth');
+          clearSupabaseAuthStorage();
+          try {
+            await supabase.auth.signOut();
+          } catch {
+            // Best-effort
+          }
+          setSession(null);
+          setUser(null);
+          userIdRef.current = null;
+          setLoading(false);
+          window.location.href = '/auth';
+          return;
+        }
         
         setSession(session);
         setUser(session?.user ?? null);
@@ -71,6 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error('🔐 AuthProvider: Error getting session:', error);
+
+        const message = (error as any)?.message as string | undefined;
+        if (message && message.toLowerCase().includes('invalid refresh token')) {
+          clearSupabaseAuthStorage();
+          void supabase.auth.signOut();
+          window.location.href = '/auth';
+          return;
+        }
+
         setLoading(false);
         return;
       }
