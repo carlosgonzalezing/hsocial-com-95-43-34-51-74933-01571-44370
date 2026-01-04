@@ -19,7 +19,10 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
     posts,
     isLoading,
     trackPostView,
-    trackPostInteraction
+    trackPostInteraction,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
   } = usePersonalizedFeed(userId, groupId, companyId);
 
   // Set up real-time subscriptions for feed, reactions and comments
@@ -49,6 +52,19 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
         trackPostView={trackPostView}
         trackPostInteraction={trackPostInteraction}
       />
+
+      {hasNextPage && (
+        <div className="py-4 flex justify-center">
+          <button
+            type="button"
+            className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? 'Cargando…' : 'Cargar más'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

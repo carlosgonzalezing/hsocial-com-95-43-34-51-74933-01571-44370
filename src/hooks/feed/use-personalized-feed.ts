@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { personalizedFeedAlgorithm } from "@/lib/feed/personalized-algorithm";
-import { getPosts } from "@/lib/api";
+import { getPostsPage } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import type { Post } from "@/types/post";
 
@@ -17,15 +17,37 @@ export function usePersonalizedFeed(userId?: string, groupId?: string, companyId
     getCurrentUser();
   }, []);
 
-  const { 
-    data: rawPosts = [], 
-    isLoading: postsLoading, 
-    refetch 
-  } = useQuery({
-    queryKey: ["posts", userId, groupId, companyId],
-    queryFn: () => getPosts(userId, groupId, companyId),
+  const PAGE_SIZE = 20;
+
+  const {
+    data,
+    isLoading: postsLoading,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["posts", userId, groupId, companyId, "infinite"],
+    queryFn: ({ pageParam }) =>
+      getPostsPage({
+        userId,
+        groupId,
+        companyId,
+        limit: PAGE_SIZE,
+        cursor: (pageParam as string | null | undefined) ?? null,
+      }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor ?? null,
     enabled: true,
   });
+
+  const rawPosts = useMemo(() => {
+    const flat = (data?.pages || []).flatMap((p) => p?.posts || []) as Post[];
+    // Ensure stable ordering
+    return flat.sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [data]);
 
   const { 
     data: personalizedPosts = [], 
@@ -109,6 +131,9 @@ export function usePersonalizedFeed(userId?: string, groupId?: string, companyId
     isPersonalized,
     setIsPersonalized,
     refetch,
+    fetchNextPage,
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
     trackPostView,
     trackPostInteraction,
     rawPostsCount: rawPosts.length,

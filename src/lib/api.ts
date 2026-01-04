@@ -2,6 +2,172 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getMultiplePostSharesCounts } from "@/lib/api/posts/queries/shares";
 
+async function enrichPosts(
+  data: any[],
+  hasSharedFields: boolean,
+  groupById: Record<string, { id: string; name: string; slug: string; avatar_url: string | null }>,
+  companyById: Record<string, { id: string; name: string; slug: string; logo_url: string | null }>
+) {
+  // Obtener el usuario actual para verificar si le ha dado like
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let pollVotesMap: Record<string, string> = {};
+  try {
+    if (user) {
+      const pollPostIds = (data || [])
+        .filter((p: any) => p?.poll)
+        .map((p: any) => p.id)
+        .filter(Boolean);
+
+      if (pollPostIds.length > 0) {
+        const { data: votesData } = await (supabase as any)
+          .from('poll_votes')
+          .select('post_id, option_id')
+          .eq('user_id', user.id)
+          .in('post_id', pollPostIds);
+
+        (votesData || []).forEach((v: any) => {
+          if (v?.post_id && v?.option_id) {
+            pollVotesMap[String(v.post_id)] = String(v.option_id);
+          }
+        });
+      }
+    }
+  } catch (e) {
+    // ignore (e.g. poll_votes table not deployed yet)
+    pollVotesMap = {};
+  }
+
+  const postIds = (data || []).map((p: any) => p?.id).filter(Boolean) as string[];
+
+  const uniquePostIds = Array.from(
+    new Set(
+      (data || [])
+        .flatMap((p: any) => [p.id, p.shared_post_id])
+        .filter(Boolean)
+    )
+  ) as string[];
+
+  const sharesCountsByPostId = uniquePostIds.length
+    ? await getMultiplePostSharesCounts(uniquePostIds)
+    : {};
+
+  // Fetch reactions breakdown for all posts in one query (count + by_type)
+  const reactionsByPostId: Record<string, { count: number; by_type: Record<string, number> }> = {};
+  try {
+    if (postIds.length > 0) {
+      const { data: reactionsRows, error: reactionsError } = await supabase
+        .from("reactions")
+        .select("post_id, reaction_type")
+        .in("post_id", postIds);
+
+      if (reactionsError) throw reactionsError;
+
+      (reactionsRows || []).forEach((r: any) => {
+        const pid = String(r.post_id);
+        const type = String(r.reaction_type || '');
+        if (!pid || !type) return;
+
+        if (!reactionsByPostId[pid]) {
+          reactionsByPostId[pid] = { count: 0, by_type: {} };
+        }
+
+        reactionsByPostId[pid].count += 1;
+        reactionsByPostId[pid].by_type[type] = (reactionsByPostId[pid].by_type[type] || 0) + 1;
+      });
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // Fetch current user's reactions for all posts in one query
+  const userReactionByPostId: Record<string, string> = {};
+  try {
+    if (user && postIds.length > 0) {
+      const { data: userReactions, error: userReactionsError } = await supabase
+        .from("reactions")
+        .select("post_id, reaction_type")
+        .eq("user_id", user.id)
+        .in("post_id", postIds);
+
+      if (userReactionsError) throw userReactionsError;
+
+      (userReactions || []).forEach((r: any) => {
+        if (r?.post_id && r?.reaction_type) {
+          userReactionByPostId[String(r.post_id)] = String(r.reaction_type);
+        }
+      });
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const postsWithUserReactions = await Promise.all((data || []).map(async (post: any) => {
+    const postWithExtras = { ...post };
+
+    if (post?.group_id && groupById[String(post.group_id)]) {
+      postWithExtras.group = groupById[String(post.group_id)];
+    } else {
+      postWithExtras.group = null;
+    }
+
+    if (post?.company_id && companyById[String(post.company_id)]) {
+      postWithExtras.company = companyById[String(post.company_id)];
+    } else {
+      postWithExtras.company = null;
+    }
+
+    // Para cada post, vemos si hay un post compartido referenciado
+    if (hasSharedFields && 'shared_post_id' in post && post.shared_post_id) {
+      try {
+        const { data: sharedPostData, error: sharedPostError } = await supabase
+          .from("posts")
+          .select(`
+              *,
+              profiles:profiles(*),
+              comments:comments(count)
+            `)
+          .eq("id", post.shared_post_id)
+          .single();
+
+        if (!sharedPostError && sharedPostData) {
+          postWithExtras.shared_post = sharedPostData;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // Poll votes
+    if (postWithExtras?.poll && pollVotesMap[String(postWithExtras.id)]) {
+      try {
+        postWithExtras.poll = {
+          ...(postWithExtras.poll || {}),
+          userVote: pollVotesMap[String(postWithExtras.id)],
+        };
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const pid = String(postWithExtras.id);
+    postWithExtras.shares_count = sharesCountsByPostId[pid] || 0;
+    postWithExtras.reactions_by_type = reactionsByPostId[pid]?.by_type || {};
+    postWithExtras.reactions_count = reactionsByPostId[pid]?.count || 0;
+    postWithExtras.user_reaction = userReactionByPostId[pid] || null;
+
+    // Comments count from joined relation
+    postWithExtras.comments_count =
+      (postWithExtras.comments && Array.isArray(postWithExtras.comments) && postWithExtras.comments[0]?.count) ||
+      postWithExtras.comments_count ||
+      0;
+
+    return postWithExtras;
+  }));
+
+  return postsWithUserReactions;
+}
+
 export async function getPosts(userId?: string, groupId?: string, companyId?: string) {
   try {
     // Add a table query that includes the keys we need
@@ -94,178 +260,102 @@ export async function getPosts(userId?: string, groupId?: string, companyId?: st
       // ignore company enrichment failures
     }
 
-    const uniquePostIds = Array.from(
-      new Set(
-        (data || [])
-          .flatMap((p: any) => [p.id, p.shared_post_id])
-          .filter(Boolean)
-      )
-    ) as string[];
-
-    const sharesCountsByPostId = uniquePostIds.length
-      ? await getMultiplePostSharesCounts(uniquePostIds)
-      : {};
-
-    // Obtener el usuario actual para verificar si le ha dado like
-    const { data: { user } } = await supabase.auth.getUser();
-
-    let pollVotesMap: Record<string, string> = {};
-    try {
-      if (user) {
-        const pollPostIds = (data || [])
-          .filter((p: any) => p?.poll)
-          .map((p: any) => p.id)
-          .filter(Boolean);
-
-        if (pollPostIds.length > 0) {
-          const { data: votesData } = await (supabase as any)
-            .from('poll_votes')
-            .select('post_id, option_id')
-            .eq('user_id', user.id)
-            .in('post_id', pollPostIds);
-
-          (votesData || []).forEach((v: any) => {
-            if (v?.post_id && v?.option_id) {
-              pollVotesMap[String(v.post_id)] = String(v.option_id);
-            }
-          });
-        }
-      }
-    } catch (e) {
-      // ignore (e.g. poll_votes table not deployed yet)
-      pollVotesMap = {};
-    }
-
-    const postIds = (data || []).map((p: any) => p?.id).filter(Boolean) as string[];
-
-    // Fetch reactions breakdown for all posts in one query (count + by_type)
-    const reactionsByPostId: Record<string, { count: number; by_type: Record<string, number> }> = {};
-    try {
-      if (postIds.length > 0) {
-        const { data: reactionsRows, error: reactionsError } = await supabase
-          .from("reactions")
-          .select("post_id, reaction_type")
-          .in("post_id", postIds);
-
-        if (reactionsError) throw reactionsError;
-
-        (reactionsRows || []).forEach((r: any) => {
-          const pid = String(r.post_id);
-          const type = String(r.reaction_type || '');
-          if (!pid || !type) return;
-
-          if (!reactionsByPostId[pid]) {
-            reactionsByPostId[pid] = { count: 0, by_type: {} };
-          }
-
-          reactionsByPostId[pid].count += 1;
-          reactionsByPostId[pid].by_type[type] = (reactionsByPostId[pid].by_type[type] || 0) + 1;
-        });
-      }
-    } catch (e) {
-      // If reaction breakdown fails, fallback to empty; UI will still work with counts
-      // (avoid breaking the feed)
-    }
-
-    // Fetch current user's reactions for all posts in one query
-    const userReactionByPostId: Record<string, string> = {};
-    try {
-      if (user && postIds.length > 0) {
-        const { data: userReactions, error: userReactionsError } = await supabase
-          .from("reactions")
-          .select("post_id, reaction_type")
-          .eq("user_id", user.id)
-          .in("post_id", postIds);
-
-        if (userReactionsError) throw userReactionsError;
-
-        (userReactions || []).forEach((r: any) => {
-          if (r?.post_id && r?.reaction_type) {
-            userReactionByPostId[String(r.post_id)] = String(r.reaction_type);
-          }
-        });
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    const postsWithUserReactions = await Promise.all(data.map(async (post: any) => {
-      const postWithExtras = { ...post };
-
-      if (post?.group_id && groupById[String(post.group_id)]) {
-        postWithExtras.group = groupById[String(post.group_id)];
-      } else {
-        postWithExtras.group = null;
-      }
-
-      if (post?.company_id && companyById[String(post.company_id)]) {
-        postWithExtras.company = companyById[String(post.company_id)];
-      } else {
-        postWithExtras.company = null;
-      }
-      
-      // Para cada post, vemos si hay un post compartido referenciado
-      // Check for shared_post_id property before using it
-      if (hasSharedFields && 'shared_post_id' in post && post.shared_post_id) {
-        try {
-          const { data: sharedPostData, error: sharedPostError } = await supabase
-            .from("posts")
-            .select(`
-              *,
-              profiles:profiles(*),
-              comments:comments(count)
-            `)
-            .eq("id", post.shared_post_id)
-            .single();
-
-          if (!sharedPostError && sharedPostData) {
-            postWithExtras.shared_post = {
-              ...sharedPostData,
-              comments_count: sharedPostData.comments?.[0]?.count || 0,
-              shares_count: sharesCountsByPostId[sharedPostData.id] || 0,
-              group: sharedPostData?.group_id && groupById[String(sharedPostData.group_id)]
-                ? groupById[String(sharedPostData.group_id)]
-                : null,
-              company: sharedPostData?.company_id && companyById[String(sharedPostData.company_id)]
-                ? companyById[String(sharedPostData.company_id)]
-                : null,
-            };
-          }
-        } catch (err) {
-          console.error("Error fetching shared post:", err);
-          // Continue even if shared post fetch fails
-        }
-      }
-
-      const postReactions = reactionsByPostId[String(post.id)] || { count: 0, by_type: {} };
-      const reactionsCount = postReactions.count;
-      const userReaction = userReactionByPostId[String(post.id)] || null;
-      const userHasReacted = !!userReaction;
-
-      return {
-        ...postWithExtras,
-        poll: postWithExtras.poll && typeof postWithExtras.poll === 'object'
-          ? { ...postWithExtras.poll, user_vote: pollVotesMap[String(post.id)] || postWithExtras.poll.user_vote || null }
-          : postWithExtras.poll,
-        shared_post: postWithExtras.shared_post || null,
-        shared_post_id: post.shared_post_id || null,
-        shared_from: post.shared_from || null,
-        userHasReacted,
-        comments_count: post.comments?.[0]?.count || 0,
-        user_reaction: userReaction,
-        reactions: postReactions,
-        reactions_count: reactionsCount || 0,
-        shares_count: sharesCountsByPostId[post.id] || 0
-      };
-    }));
-
-    console.log('Posts fetched with media URLs:', postsWithUserReactions.map(p => ({ id: p.id, media_url: p.media_url, media_type: p.media_type })));
-
-    return postsWithUserReactions;
+    return await enrichPosts(data || [], hasSharedFields, groupById, companyById);
   } catch (error) {
     console.error("Error fetching posts:", error);
     throw error;
   }
+}
+
+export async function getPostsPage(params: {
+  userId?: string;
+  groupId?: string;
+  companyId?: string;
+  limit?: number;
+  cursor?: string | null;
+}) {
+  const { userId, groupId, companyId, limit = 20, cursor } = params;
+
+  const { data: tableInfo } = await supabase
+    .from('posts')
+    .select('*')
+    .limit(1);
+
+  const hasSharedFields = tableInfo && tableInfo.length > 0 &&
+    ('shared_post_id' in tableInfo[0] || 'shared_from' in tableInfo[0]);
+
+  let query = supabase
+    .from('posts')
+    .select(`
+      *,
+      profiles:profiles(*),
+      comments:comments(count)
+    `);
+
+  if (userId) query = query.eq('user_id', userId);
+  if (groupId) query = query.eq('group_id', groupId);
+  if (companyId) query = query.eq('company_id', companyId);
+  if (cursor) query = query.lt('created_at', cursor);
+
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+
+  const groupIds = Array.from(new Set((data || []).map((p: any) => p?.group_id).filter(Boolean))) as string[];
+  const companyIds = Array.from(new Set((data || []).map((p: any) => p?.company_id).filter(Boolean))) as string[];
+  const groupById: Record<string, { id: string; name: string; slug: string; avatar_url: string | null }> = {};
+  const companyById: Record<string, { id: string; name: string; slug: string; logo_url: string | null }> = {};
+
+  try {
+    if (groupIds.length > 0) {
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('groups')
+        .select('id, name, slug, avatar_url')
+        .in('id', groupIds);
+      if (groupsError) throw groupsError;
+      (groupsData || []).forEach((g: any) => {
+        if (!g?.id) return;
+        groupById[String(g.id)] = {
+          id: String(g.id),
+          name: String(g.name || ''),
+          slug: String(g.slug || ''),
+          avatar_url: g.avatar_url ?? null,
+        };
+      });
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    if (companyIds.length > 0) {
+      const { data: companiesData, error: companiesError } = await (supabase as any)
+        .from('companies')
+        .select('id, name, slug, logo_url')
+        .in('id', companyIds);
+      if (companiesError) throw companiesError;
+      (companiesData || []).forEach((c: any) => {
+        if (!c?.id) return;
+        companyById[String(c.id)] = {
+          id: String(c.id),
+          name: String(c.name || ''),
+          slug: String(c.slug || ''),
+          logo_url: c.logo_url ?? null,
+        };
+      });
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const enriched = await enrichPosts(data || [], hasSharedFields, groupById, companyById);
+  const nextCursor = enriched.length > 0 ? String(enriched[enriched.length - 1]?.created_at) : null;
+
+  return {
+    posts: enriched,
+    nextCursor: enriched.length === limit ? nextCursor : null,
+  };
 }
 
 export async function getHiddenPosts() {
