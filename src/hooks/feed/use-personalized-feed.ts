@@ -24,7 +24,7 @@ export function usePersonalizedFeed(userId?: string, groupId?: string, companyId
   } = useQuery({
     queryKey: ["posts", userId, groupId, companyId],
     queryFn: () => getPosts(userId, groupId, companyId),
-    enabled: !!currentUserId,
+    enabled: true,
   });
 
   const { 

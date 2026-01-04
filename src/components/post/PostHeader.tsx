@@ -156,7 +156,7 @@ export function PostHeader({
         className="ml-2 flex items-center gap-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
       >
         <Sparkles className="h-3 w-3" />
-        <span>Ejemplo</span>
+        <span>Contenido Automatizado</span>
       </Badge>
     );
   };

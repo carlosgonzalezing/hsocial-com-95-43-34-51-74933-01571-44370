@@ -17,6 +17,9 @@ import { SendPostModal } from "./post/actions/SendPostModal";
 import { usePostReactions } from "@/hooks/posts/use-post-reactions";
 import { PostActivitySummary } from "./post/PostActivitySummary";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { useNavigate } from "react-router-dom";
 
 interface PostProps {
   post: PostType;
@@ -36,7 +39,22 @@ export function Post({ post, hideComments = false, isHidden = false }: PostProps
 
 function PostInner({ post, hideComments = false, isHidden = false }: PostProps) {
   // Detectar si es un post de demostración (no permite interacciones)
-  const isDemoPost = post.id.startsWith('demo-');
+  const isDemoPost = !!post.is_demo || !!post.demo_readonly;
+
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const showDemoCta = () => {
+    toast({
+      title: "Contenido automatizado",
+      description: "Regístrate para interactuar.",
+      action: (
+        <ToastAction altText="Regístrate" onClick={() => navigate('/auth')}>
+          Regístrate
+        </ToastAction>
+      ),
+    });
+  };
 
   // Hook para manejar reacciones del usuario
   const { userReaction, onReaction } = usePostReactions(post.id);
@@ -91,6 +109,11 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
   // Determinar si la publicación está fijada
   const isPinned = post.is_pinned;
 
+  const onCommentsClick = isDemoPost ? showDemoCta : toggleComments;
+  const onShareClick = isDemoPost ? showDemoCta : () => setShowShareModal(true);
+  const onSendClick = isDemoPost ? showDemoCta : () => setShowSendModal(true);
+  const onReactionClick = isDemoPost ? () => showDemoCta() : onReaction;
+
   return (
     <PostWrapper isHidden={isHidden} isIdeaPost={isIdeaPost} isPinned={isPinned}>
       <PostHeader 
@@ -116,30 +139,26 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
         <StandardPostView post={post} />
       )}
       
-      {!isDemoPost && (
-        <>
-          {/* Contadores de reacciones / comentarios / compartidos */}
-          <PostActivitySummary
-            post={post}
-            reactionsByType={reactionsByType}
-            commentsCount={post.comments_count || 0}
-            sharesCount={sharesCount}
-            onCommentsClick={toggleComments}
-          />
+      {/* Contadores de reacciones / comentarios / compartidos */}
+      <PostActivitySummary
+        post={post}
+        reactionsByType={reactionsByType}
+        commentsCount={post.comments_count || 0}
+        sharesCount={sharesCount}
+        onCommentsClick={onCommentsClick}
+      />
 
-          {/* Botones: reaccionar, comentar, compartir, enviar */}
-          <ActionsButtons 
-            post={post}
-            postId={post.id}
-            userReaction={userReaction}
-            onReaction={onReaction}
-            onComment={toggleComments}
-            onShare={() => setShowShareModal(true)}
-            onSend={() => setShowSendModal(true)}
-            commentsExpanded={showComments}
-          />
-        </>
-      )}
+      {/* Botones: reaccionar, comentar, compartir, enviar */}
+      <ActionsButtons 
+        post={post}
+        postId={post.id}
+        userReaction={userReaction}
+        onReaction={onReactionClick}
+        onComment={onCommentsClick}
+        onShare={onShareClick}
+        onSend={onSendClick}
+        commentsExpanded={showComments}
+      />
       
       {!isDemoPost && !hideComments && showComments && (
         <Comments 
