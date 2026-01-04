@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { DEMO_FEED_ITEMS, type DemoFeedItem } from './demo-feed-items';
 
 function loadEnvFromFile(filePath: string) {
   try {
@@ -23,7 +24,6 @@ function loadEnvFromFile(filePath: string) {
       ) {
         value = value.slice(1, -1);
       }
-
       if (!process.env[key]) {
         process.env[key] = value;
       }
@@ -35,11 +35,15 @@ function loadEnvFromFile(filePath: string) {
 
 const cwd = process.cwd();
 loadEnvFromFile(path.join(cwd, 'supabase', '.env.local'));
+loadEnvFromFile(path.join(cwd, 'supabase', '.env.local.txt'));
 loadEnvFromFile(path.join(cwd, 'supabase', '.env'));
+loadEnvFromFile(path.join(cwd, 'supabase', '.env.txt'));
 loadEnvFromFile(path.join(cwd, '.env.local'));
+loadEnvFromFile(path.join(cwd, '.env.local.txt'));
 loadEnvFromFile(path.join(cwd, '.env'));
+loadEnvFromFile(path.join(cwd, '.env.txt'));
 
-const SUPABASE_URL = process.env.SUPABASE_URL?.trim();
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL)?.trim();
 const rawServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const jwtMatch = rawServiceKey?.match(/[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
 const SUPABASE_SERVICE_ROLE_KEY = (jwtMatch?.[0] ?? rawServiceKey)?.replace(/\s+/g, '');
@@ -74,6 +78,37 @@ type AuthAdminUser = {
   id: string;
   email?: string;
 };
+
+type AuthorAccount = {
+  id: string;
+  username: string;
+};
+
+function shuffleInPlace<T>(items: T[]) {
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = items[i];
+    items[i] = items[j];
+    items[j] = tmp;
+  }
+  return items;
+}
+
+async function getAllProfileAuthors(): Promise<AuthorAccount[]> {
+  const { data, error } = await (supabase as any)
+    .from('profiles')
+    .select('id, username')
+    .limit(1000);
+  if (error) throw error;
+
+  const rows = (data || []) as any[];
+  return rows
+    .map((r) => ({
+      id: String(r?.id || ''),
+      username: String(r?.username || 'Usuario'),
+    }))
+    .filter((a) => Boolean(a.id));
+}
 
 async function authAdminRequest<T>(pathname: string, init: RequestInit): Promise<T> {
   const url = `${REQUIRED_SUPABASE_URL}/auth/v1${pathname}`;
@@ -161,18 +196,78 @@ async function ensureAuthUserAndBotProfile(bot: BotSpec): Promise<string> {
   return userId;
 }
 
-async function getFallbackUserId(): Promise<string> {
-  const { data, error } = await supabase.from('profiles').select('id').limit(1);
+async function getFallbackUserIds(count: number): Promise<string[]> {
+  const take = Math.max(1, Math.min(100, Math.floor(count || 1)));
+
+  // Prefer bot accounts if available
+  try {
+    const { data, error } = await (supabase as any)
+      .from('profiles')
+      .select('id')
+      .eq('is_bot', true)
+      .limit(take);
+    if (error) throw error;
+    const ids = (data as any[])?.map((r) => String(r?.id)).filter(Boolean) as string[];
+    if (ids.length > 0) return ids;
+  } catch {
+    // ignore
+  }
+
+  // Fallback: any profiles
+  const { data, error } = await (supabase as any)
+    .from('profiles')
+    .select('id')
+    .limit(take);
   if (error) throw error;
-  const id = (data as any[])?.[0]?.id as string | undefined;
-  if (!id) {
+
+  const ids = (data as any[])?.map((r) => String(r?.id)).filter(Boolean) as string[];
+  if (ids.length === 0) {
     throw new Error('No profiles found to use as fallback for demo seeding. Create a real user first.');
   }
-  return id;
+  return ids;
 }
 
 function hoursAgoIso(hours: number) {
   return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+}
+
+function slugify(value: string) {
+  return value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 40);
+}
+
+function extractAvatarUrl(authorRole: string): string | undefined {
+  const match = authorRole.match(/avatar:\s*(https?:\/\/[^)\s]+)/i);
+  return match?.[1];
+}
+
+function demoCategoryFromType(type: DemoFeedItem['tipo_publicacion']) {
+  switch (type) {
+    case 'idea_proyecto':
+      return 'idea';
+    case 'evento':
+      return 'event';
+    case 'meme':
+      return 'meme';
+    case 'tip_rapido':
+      return 'tip';
+    case 'pregunta':
+      return 'question';
+    case 'colaboracion':
+      return 'collaboration';
+    default:
+      return 'post';
+  }
+}
+
+function buildContent(item: DemoFeedItem): string {
+  const tagsLine = item.tags.join(' ');
+  return `${item.titulo}\n${item.contenido}\n\n${tagsLine}`;
 }
 
 async function resetDemoPosts() {
@@ -184,69 +279,61 @@ async function resetDemoPosts() {
   }
 }
 
-async function seedDemoPosts(botIds: Record<string, string>) {
-  const posts: any[] = [
-    {
-      user_id: botIds.community,
+async function seedDemoPosts(items: DemoFeedItem[], authors: AuthorAccount[]) {
+  const posts: any[] = items.map((item, idx) => {
+    const author = authors[idx % authors.length];
+    const userId = author.id;
+    const createdAt = hoursAgoIso(2 + idx * 2);
+
+    const common = {
+      user_id: userId,
       visibility: 'public',
-      content: 'Busco compañeros para desarrollar una plataforma que conecte estudiantes que necesitan ayuda con tutores. ¡Únete si te interesa!',
-      post_type: 'idea',
-      idea: {
-        title: '📚 Plataforma de Tutorías entre Estudiantes',
-        description:
-          'Una app que conecte estudiantes que necesitan ayuda en materias específicas con otros estudiantes que dominan esos temas. Sistema de puntos y recompensas para los tutores.',
-        participants: [
-          {
-            user_id: botIds.community,
-            username: 'Comunidad HSocial',
-            profession: 'Coordinación',
-            joined_at: hoursAgoIso(6),
-          },
-        ],
-        needed_roles: [
-          {
-            title: 'Desarrollador Backend',
-            description: 'Necesitamos alguien con experiencia en Node.js y bases de datos',
-            commitment_level: 'medium',
-          },
-        ],
-        project_phase: 'ideation',
-        collaboration_type: 'remote',
-      },
-      created_at: hoursAgoIso(6),
-      updated_at: hoursAgoIso(6),
+      content: buildContent(item),
+      created_at: createdAt,
+      updated_at: createdAt,
       is_demo: true,
-      demo_category: 'idea',
+      demo_category: demoCategoryFromType(item.tipo_publicacion),
       demo_source: 'seed',
       demo_readonly: true,
-    },
-    {
-      user_id: botIds.mentor,
-      visibility: 'public',
-      content:
-        'Tip rápido: si vas a iniciar un proyecto, define primero el problema y el usuario. Después viene la tecnología. ¿Qué problema estás resolviendo hoy?',
+    };
+
+    if (item.tipo_publicacion === 'idea_proyecto' || item.tipo_publicacion === 'colaboracion') {
+      return {
+        ...common,
+        post_type: 'idea',
+        idea: {
+          title: item.titulo,
+          description: item.contenido,
+          tags: item.tags,
+          participants: [
+            {
+              user_id: userId,
+              username: author.username,
+              profession: item.autor_rol,
+              joined_at: createdAt,
+            },
+          ],
+          needed_roles:
+            item.tipo_publicacion === 'colaboracion'
+              ? [
+                  {
+                    title: 'Colaborador/a',
+                    description: 'Busco apoyo para llevar esta idea a producción',
+                    commitment_level: 'medium',
+                  },
+                ]
+              : [],
+          project_phase: 'ideation',
+          collaboration_type: 'remote',
+        },
+      };
+    }
+
+    return {
+      ...common,
       post_type: 'regular',
-      created_at: hoursAgoIso(10),
-      updated_at: hoursAgoIso(10),
-      is_demo: true,
-      demo_category: 'post',
-      demo_source: 'seed',
-      demo_readonly: true,
-    },
-    {
-      user_id: botIds.events,
-      visibility: 'public',
-      content:
-        '📅 Evento recomendado: Meetup de Portafolios. Trae tu CV y tu proyecto favorito para feedback. (Publicación de muestra)',
-      post_type: 'regular',
-      created_at: hoursAgoIso(14),
-      updated_at: hoursAgoIso(14),
-      is_demo: true,
-      demo_category: 'event',
-      demo_source: 'seed',
-      demo_readonly: true,
-    },
-  ];
+    };
+  });
 
   const { error } = await supabase.from('posts').insert(posts);
   if (error) throw error;
@@ -254,54 +341,56 @@ async function seedDemoPosts(botIds: Record<string, string>) {
 
 async function main() {
   const shouldReset = process.argv.includes('--reset');
+  const desiredPostCount = 27;
 
-  const bots: BotSpec[] = [
-    {
-      email: 'bot-community@hsocial.demo',
-      username: 'Comunidad HSocial',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Community',
-      career: 'Cuenta Oficial',
-      bot_label: 'Cuenta de la Comunidad',
-      bot_style: 'community',
-    },
-    {
-      email: 'bot-mentor@hsocial.demo',
-      username: 'Mentor HSocial',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mentor',
-      career: 'Mentoría',
-      bot_label: 'Mentor',
-      bot_style: 'mentor',
-    },
-    {
-      email: 'bot-events@hsocial.demo',
-      username: 'Eventos HSocial',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Events',
-      career: 'Eventos',
-      bot_label: 'Cuenta de Eventos',
-      bot_style: 'events',
-    },
-  ];
+  const uniqueAuthors = Array.from(new Set(DEMO_FEED_ITEMS.map((i) => i.autor_nombre)));
+  const selectedAuthors = uniqueAuthors.slice(0, 10);
+  const bots: BotSpec[] = selectedAuthors.map((name) => {
+    const first = DEMO_FEED_ITEMS.find((i) => i.autor_nombre === name);
+    const avatar_url = first ? extractAvatarUrl(first.autor_rol) : undefined;
+    const bot_style = slugify(name);
+    return {
+      email: `bot-${bot_style}@hsocial.demo`,
+      username: name,
+      avatar_url,
+      career: first?.autor_rol,
+      bot_label: first?.autor_rol,
+      bot_style,
+    };
+  });
 
-  let community: string;
-  let mentor: string;
-  let events: string;
-
+  const botAccounts: Array<{ id: string; username: string }> = [];
   try {
-    [community, mentor, events] = await Promise.all(bots.map(ensureAuthUserAndBotProfile));
+    const ids = await Promise.all(bots.map(ensureAuthUserAndBotProfile));
+    bots.forEach((b, idx) => {
+      botAccounts.push({ id: ids[idx], username: b.username });
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('⚠️ Bot auth creation failed; falling back to an existing user for demo posts:', err);
-    const fallbackUserId = await getFallbackUserId();
-    community = fallbackUserId;
-    mentor = fallbackUserId;
-    events = fallbackUserId;
+    const fallbackUserIds = await getFallbackUserIds(selectedAuthors.length);
+    selectedAuthors.forEach((a, idx) => {
+      const id = fallbackUserIds[idx % fallbackUserIds.length];
+      botAccounts.push({ id, username: a });
+    });
   }
+
+  const allProfiles = await getAllProfileAuthors();
+  const authorById = new Map<string, AuthorAccount>();
+  allProfiles.forEach((a) => authorById.set(a.id, a));
+  botAccounts.forEach((b) => {
+    authorById.set(String(b.id), { id: String(b.id), username: String(b.username || 'Usuario') });
+  });
+
+  const authorPool = shuffleInPlace(Array.from(authorById.values()));
+  const itemsToSeed = DEMO_FEED_ITEMS.slice(0, desiredPostCount);
+  const selectedAuthorPool = authorPool.slice(0, Math.max(1, Math.min(authorPool.length, itemsToSeed.length)));
 
   if (shouldReset) {
     await resetDemoPosts();
   }
 
-  await seedDemoPosts({ community, mentor, events });
+  await seedDemoPosts(itemsToSeed, selectedAuthorPool);
 
   // eslint-disable-next-line no-console
   console.log('✅ Demo seed completed', { reset: shouldReset });

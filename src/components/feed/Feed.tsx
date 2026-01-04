@@ -4,8 +4,23 @@ import type { Post } from "@/types/post";
 import { FeedContent } from "./FeedContent";
 import { usePersonalizedFeed } from "@/hooks/feed/use-personalized-feed";
 import { useRealtimeFeedSimple } from "@/hooks/feed/hooks/use-realtime-feed-simple";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+
+function getScrollParent(el: HTMLElement | null): HTMLElement | null {
+  if (!el) return null;
+  let parent: HTMLElement | null = el.parentElement;
+  while (parent) {
+    const style = window.getComputedStyle(parent);
+    const overflowY = style.overflowY;
+    const overflow = style.overflow;
+    const isScrollable =
+      overflowY === "auto" || overflowY === "scroll" || overflow === "auto" || overflow === "scroll";
+    if (isScrollable) return parent;
+    parent = parent.parentElement;
+  }
+  return null;
+}
 
 interface FeedProps {
   userId?: string;
@@ -26,29 +41,76 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
   } = usePersonalizedFeed(userId, groupId, companyId);
   const loaderRef = useRef<HTMLDivElement>(null);
 
+  const maybeLoadMore = useCallback(() => {
+    if (!hasNextPage) return;
+    if (isFetchingNextPage) return;
+    fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   useEffect(() => {
     if (!hasNextPage) return;
+
+    const rootEl = loaderRef.current ? getScrollParent(loaderRef.current) : null;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0];
-        if (target.isIntersecting && !isFetchingNextPage) {
-          fetchNextPage();
-        }
+        if (target.isIntersecting) maybeLoadMore();
       },
-      { rootMargin: "200px" }
+      { root: rootEl ?? null, rootMargin: "200px" }
     );
 
     if (loaderRef.current) {
       observer.observe(loaderRef.current);
     }
 
+    const checkIfSentinelVisible = () => {
+      if (!loaderRef.current) return;
+      const rect = loaderRef.current.getBoundingClientRect();
+
+      if (!rootEl) {
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        if (rect.top <= viewportHeight + 200) {
+          maybeLoadMore();
+        }
+        return;
+      }
+
+      const rootRect = rootEl.getBoundingClientRect();
+      if (rect.top <= rootRect.bottom + 200) {
+        maybeLoadMore();
+      }
+    };
+
+    let rafId: number | null = null;
+    const onScroll = () => {
+      if (rafId != null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        checkIfSentinelVisible();
+      });
+    };
+
+    // If the page isn't tall enough (common on mobile), trigger immediately
+    const t = window.setTimeout(checkIfSentinelVisible, 0);
+
+    const scrollTarget: any = rootEl ?? window;
+    scrollTarget.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+
     return () => {
+      window.clearTimeout(t);
+      scrollTarget.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (rafId != null) {
+        window.cancelAnimationFrame(rafId);
+      }
       if (loaderRef.current) {
         observer.unobserve(loaderRef.current);
       }
+      observer.disconnect();
     };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, maybeLoadMore, posts.length]);
 
   // Set up real-time subscriptions for feed, reactions and comments
   useRealtimeFeedSimple(userId);
