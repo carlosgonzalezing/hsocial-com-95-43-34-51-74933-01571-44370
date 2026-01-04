@@ -138,7 +138,3 @@ export {
   AlertDialogAction,
   AlertDialogCancel,
 }
-
-// Ensure AlertDialog is properly exported for module resolution
-export type { AlertDialog as AlertDialogType };
-export { AlertDialog };
