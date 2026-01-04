@@ -180,7 +180,7 @@ export async function getPosts(userId?: string, groupId?: string, companyId?: st
     const hasSharedFields = tableInfo && tableInfo.length > 0 && 
       ('shared_post_id' in tableInfo[0] || 'shared_from' in tableInfo[0]);
 
-    let query = supabase
+    let query: any = supabase
       .from("posts")
       .select(`
         *,
@@ -286,7 +286,7 @@ export async function getPostsPage(params: {
   const hasSharedFields = tableInfo && tableInfo.length > 0 &&
     ('shared_post_id' in tableInfo[0] || 'shared_from' in tableInfo[0]);
 
-  let query = supabase
+  let query: any = supabase
     .from('posts')
     .select(`
       *,
@@ -304,8 +304,10 @@ export async function getPostsPage(params: {
     .limit(limit);
   if (error) throw error;
 
-  const groupIds = Array.from(new Set((data || []).map((p: any) => p?.group_id).filter(Boolean))) as string[];
-  const companyIds = Array.from(new Set((data || []).map((p: any) => p?.company_id).filter(Boolean))) as string[];
+  const posts = (data || []) as any[];
+
+  const groupIds = Array.from(new Set(posts.map((p: any) => p?.group_id).filter(Boolean))) as string[];
+  const companyIds = Array.from(new Set(posts.map((p: any) => p?.company_id).filter(Boolean))) as string[];
   const groupById: Record<string, { id: string; name: string; slug: string; avatar_url: string | null }> = {};
   const companyById: Record<string, { id: string; name: string; slug: string; logo_url: string | null }> = {};
 
@@ -351,12 +353,12 @@ export async function getPostsPage(params: {
     // ignore
   }
 
-  const enriched = await enrichPosts(data || [], hasSharedFields, groupById, companyById);
+  const enriched = await enrichPosts(posts, hasSharedFields, groupById, companyById);
   const nextCursor = enriched.length > 0 ? String(enriched[enriched.length - 1]?.created_at) : null;
 
   return {
     posts: enriched,
-    nextCursor: enriched.length === limit ? nextCursor : null,
+    nextCursor: enriched.length === limit ? nextCursor : undefined,
   };
 }
 

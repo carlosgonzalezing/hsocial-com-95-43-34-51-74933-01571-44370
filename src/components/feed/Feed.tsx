@@ -1,6 +1,6 @@
 import { FeedSkeleton } from "./FeedSkeleton";
 import { EmptyFeed } from "./EmptyFeed";
-import { Post } from "@/types/post";
+import type { Post } from "@/types/post";
 import { FeedContent } from "./FeedContent";
 import { usePersonalizedFeed } from "@/hooks/feed/use-personalized-feed";
 import { useRealtimeFeedSimple } from "@/hooks/feed/hooks/use-realtime-feed-simple";

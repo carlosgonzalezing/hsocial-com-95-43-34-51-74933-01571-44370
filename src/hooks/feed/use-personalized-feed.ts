@@ -5,6 +5,32 @@ import { getPostsPage } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import type { Post } from "@/types/post";
 
+function mergePreservingAllPosts(raw: Post[], prioritized: Post[]) {
+  const byId = new Map<string, Post>();
+  raw.forEach((p) => {
+    if (p?.id) byId.set(String(p.id), p);
+  });
+
+  const ordered: Post[] = [];
+  const seen = new Set<string>();
+  prioritized.forEach((p) => {
+    const id = String((p as any)?.id || "");
+    if (!id || seen.has(id)) return;
+    const canonical = byId.get(id) || p;
+    ordered.push(canonical);
+    seen.add(id);
+  });
+
+  raw.forEach((p) => {
+    const id = String((p as any)?.id || "");
+    if (!id || seen.has(id)) return;
+    ordered.push(p);
+    seen.add(id);
+  });
+
+  return ordered;
+}
+
 export function usePersonalizedFeed(userId?: string, groupId?: string, companyId?: string) {
   const [isPersonalized, setIsPersonalized] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -34,10 +60,10 @@ export function usePersonalizedFeed(userId?: string, groupId?: string, companyId
         groupId,
         companyId,
         limit: PAGE_SIZE,
-        cursor: (pageParam as string | null | undefined) ?? null,
+        cursor: (pageParam as string | undefined) ?? null,
       }),
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage?.nextCursor ?? null,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor,
     enabled: true,
   });
 
@@ -58,10 +84,17 @@ export function usePersonalizedFeed(userId?: string, groupId?: string, companyId
       if (!currentUserId || rawPosts.length === 0) return rawPosts;
       
       try {
-        return await personalizedFeedAlgorithm.generatePersonalizedFeed(
+        const prioritized = await personalizedFeedAlgorithm.generatePersonalizedFeed(
           rawPosts as Post[], 
           currentUserId
         );
+
+        if (!Array.isArray(prioritized)) {
+          return rawPosts;
+        }
+
+        // Personalization must not reduce content; only re-order
+        return mergePreservingAllPosts(rawPosts, prioritized as Post[]);
       } catch (error) {
         console.error('Error generating personalized feed:', error);
         return rawPosts.sort((a: any, b: any) => 
