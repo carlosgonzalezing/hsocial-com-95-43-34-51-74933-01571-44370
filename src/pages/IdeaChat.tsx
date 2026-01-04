@@ -121,11 +121,29 @@ export default function IdeaChat() {
 
     if (!canCreate) return null;
 
-    const { data: newChannel, error: createChannelError } = await supabase
-      .from("canales")
-      .insert({ nombre: title ? `Idea: ${title}` : "Chat de idea", es_privado: true })
-      .select("id")
-      .single();
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session?.access_token) {
+      throw new Error('Sesión inválida. Vuelve a iniciar sesión.');
+    }
+
+    const createChannel = async () => {
+      return supabase
+        .from("canales")
+        .insert({ nombre: title ? `Idea: ${title}` : "Chat de idea", es_privado: true })
+        .select("id")
+        .single();
+    };
+
+    let { data: newChannel, error: createChannelError } = await createChannel();
+
+    if (createChannelError?.code === '42501') {
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (!refreshError && refreshed.session?.access_token) {
+        const retry = await createChannel();
+        newChannel = retry.data;
+        createChannelError = retry.error;
+      }
+    }
 
     if (createChannelError) throw createChannelError;
 
@@ -179,6 +197,17 @@ export default function IdeaChat() {
 
       try {
         setLoading(true);
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session?.access_token) {
+          toast({
+            title: "Sesión expirada",
+            description: "Vuelve a iniciar sesión para acceder al chat.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return;
+        }
+
         const { data: auth } = await supabase.auth.getUser();
         const uid = auth.user?.id || null;
         setCurrentUserId(uid);
