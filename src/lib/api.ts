@@ -206,12 +206,14 @@ export async function getPosts(userId?: string, groupId?: string, companyId?: st
 
     if (error) throw error;
 
+    const posts = data as any[];
+
     const groupIds = Array.from(
-      new Set((data || []).map((p: any) => p?.group_id).filter(Boolean))
+      new Set(posts.map((p: any) => p?.group_id).filter(Boolean))
     ) as string[];
 
     const companyIds = Array.from(
-      new Set((data || []).map((p: any) => p?.company_id).filter(Boolean))
+      new Set(posts.map((p: any) => p?.company_id).filter(Boolean))
     ) as string[];
 
     const groupById: Record<string, { id: string; name: string; slug: string; avatar_url: string | null }> = {};
@@ -260,7 +262,7 @@ export async function getPosts(userId?: string, groupId?: string, companyId?: st
       // ignore company enrichment failures
     }
 
-    return await enrichPosts(data || [], hasSharedFields, groupById, companyById);
+    return await enrichPosts(posts, hasSharedFields, groupById, companyById);
   } catch (error) {
     console.error("Error fetching posts:", error);
     throw error;

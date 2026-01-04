@@ -4,7 +4,7 @@ import { Post } from "@/types/post";
 import { FeedContent } from "./FeedContent";
 import { usePersonalizedFeed } from "@/hooks/feed/use-personalized-feed";
 import { useRealtimeFeedSimple } from "@/hooks/feed/hooks/use-realtime-feed-simple";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface FeedProps {
@@ -24,6 +24,31 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
     hasNextPage,
     isFetchingNextPage
   } = usePersonalizedFeed(userId, groupId, companyId);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0];
+        if (target.isIntersecting && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Set up real-time subscriptions for feed, reactions and comments
   useRealtimeFeedSimple(userId);
@@ -52,19 +77,18 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
         trackPostView={trackPostView}
         trackPostInteraction={trackPostInteraction}
       />
-
-      {hasNextPage && (
-        <div className="py-4 flex justify-center">
-          <button
-            type="button"
-            className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-          >
-            {isFetchingNextPage ? 'Cargando…' : 'Cargar más'}
-          </button>
-        </div>
-      )}
+      {/* Loader sentinel for IntersectionObserver */}
+      <div ref={loaderRef} className="py-4 flex justify-center">
+        {isFetchingNextPage && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            Cargando…
+          </div>
+        )}
+        {!hasNextPage && posts.length > 0 && (
+          <div className="text-sm text-muted-foreground">Ya estás al día</div>
+        )}
+      </div>
     </div>
   );
 }
