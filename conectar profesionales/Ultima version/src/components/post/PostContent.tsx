@@ -57,9 +57,7 @@ export function PostContent({ post, postId }: PostContentProps) {
   console.log('PostContent rendering:', { 
     postId: post.id, 
     hasMedia, 
-    mediaUrl: post.media_url,
-    mediaUrls: post.media_urls,
-    mediaItemsCount: mediaItems.length,
+    mediaUrl: post.media_url, 
     mediaType: post.media_type,
     hasMarketplace,
     hasIdea,

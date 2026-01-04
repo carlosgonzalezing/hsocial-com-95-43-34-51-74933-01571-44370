@@ -62,7 +62,7 @@ export function MobileBottomNavigation({
     <>
       <nav className={cn(
         "fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[60] md:hidden transition-transform duration-300",
-        isVisible && !showPostModal ? "translate-y-0" : "translate-y-full"
+        isVisible ? "translate-y-0" : "translate-y-full"
       )}>
         <div className="grid grid-cols-5 items-center h-14">
           {navItems.map((item) => {

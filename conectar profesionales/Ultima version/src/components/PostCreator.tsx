@@ -38,32 +38,6 @@ export interface Proyecto {
   max_participants: number;
 }
 
-export interface Encuesta {
-  title: string;
-  description?: string;
-  options: string[];
-  multiple_choice?: boolean;
-}
-
-export interface Documento {
-  title: string;
-  description?: string;
-  category: 'guía' | 'tutorial' | 'caso de estudio' | 'investigación' | 'otro';
-  file?: File;
-}
-
-export interface Empleo {
-  title: string;
-  company: string;
-  description: string;
-  job_type: 'full-time' | 'part-time' | 'freelance' | 'internship';
-  location: string;
-  remote: boolean;
-  salary_range?: string;
-  requirements: string[];
-  contact_link?: string;
-}
-
 export interface EventForm {
   title: string;
   description: string;
@@ -81,7 +55,7 @@ export interface EventForm {
   banner_file?: File | null;
 }
 
-type PostType = 'regular' | 'idea' | 'proyecto' | 'evento' | 'encuesta' | 'documento' | 'empleo';
+type PostType = 'regular' | 'idea' | 'proyecto';
 type Visibility = 'public' | 'friends' | 'private' | 'incognito';
 
 interface PostCreatorProps {
@@ -137,34 +111,6 @@ export function PostCreator({
     gradient_color: 'gradient-1',
     banner_file: null
   });
-  
-  const [encuesta, setEncuesta] = useState<Encuesta>({
-    title: "",
-    description: "",
-    options: ["", ""],
-    multiple_choice: false
-  });
-  
-  const [documento, setDocumento] = useState<Documento>({
-    title: "",
-    description: "",
-    category: 'guía',
-    file: undefined
-  });
-  
-  const [empleo, setEmpleo] = useState<Empleo>({
-    title: "",
-    company: "",
-    description: "",
-    job_type: 'full-time',
-    location: "",
-    remote: false,
-    requirements: [],
-    contact_link: ""
-  });
-  
-  const [scheduledTime, setScheduledTime] = useState<string>(""); // Para programar publicaciones
-  const [autoDeleteTime, setAutoDeleteTime] = useState<string>(""); // Para auto-eliminar
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -244,40 +190,6 @@ export function PostCreator({
     setFilePreviews([]);
   };
 
-  const calculateDeleteTime = (timeString: string): string | null => {
-    const now = new Date();
-    
-    const timeMap: Record<string, number> = {
-      '1h': 60 * 60 * 1000,
-      '6h': 6 * 60 * 60 * 1000,
-      '24h': 24 * 60 * 60 * 1000,
-      '7d': 7 * 24 * 60 * 60 * 1000,
-      '30d': 30 * 24 * 60 * 60 * 1000
-    };
-
-    const milliseconds = timeMap[timeString];
-    if (!milliseconds) return null;
-
-    return new Date(now.getTime() + milliseconds).toISOString();
-  };
-
-  const calculateDeleteTimeFromBase = (timeString: string, baseTime?: string): string | null => {
-    const baseDate = baseTime ? new Date(baseTime) : new Date();
-    
-    const timeMap: Record<string, number> = {
-      '1h': 60 * 60 * 1000,
-      '6h': 6 * 60 * 60 * 1000,
-      '24h': 24 * 60 * 60 * 1000,
-      '7d': 7 * 24 * 60 * 60 * 1000,
-      '30d': 30 * 24 * 60 * 60 * 1000
-    };
-
-    const milliseconds = timeMap[timeString];
-    if (!milliseconds) return null;
-
-    return new Date(baseDate.getTime() + milliseconds).toISOString();
-  };
-
   const handleSubmit = async () => {
     try {
       console.log('🚀 Starting post creation...', { postType, isFormValid: isFormValid() });
@@ -330,31 +242,6 @@ export function PostCreator({
 
       if (postType === 'proyecto' && (!proyecto.title.trim() || !proyecto.description.trim())) {
         mobileToasts.validationError("Completa los campos obligatorios del proyecto (título y descripción)");
-        return;
-      }
-
-      if (postType === 'idea' && (!idea.title.trim() || !idea.description.trim())) {
-        mobileToasts.validationError("Completa los campos obligatorios de la idea (título y descripción)");
-        return;
-      }
-
-      if (postType === 'evento' && (!evento.title.trim() || !evento.description.trim() || !evento.start_date || !evento.location.trim())) {
-        mobileToasts.validationError("Completa todos los campos del evento (título, descripción, fecha y ubicación)");
-        return;
-      }
-
-      if (postType === 'encuesta' && (!encuesta.title.trim() || encuesta.options.filter(o => o.trim()).length < 2)) {
-        mobileToasts.validationError("La encuesta necesita una pregunta y al menos 2 opciones");
-        return;
-      }
-
-      if (postType === 'documento' && !documento.title.trim()) {
-        mobileToasts.validationError("El documento necesita un título");
-        return;
-      }
-
-      if (postType === 'empleo' && (!empleo.title.trim() || !empleo.company.trim() || !empleo.description.trim() || !empleo.location.trim())) {
-        mobileToasts.validationError("Completa todos los campos de la oferta de empleo (puesto, empresa, descripción y ubicación)");
         return;
       }
 
@@ -413,10 +300,7 @@ export function PostCreator({
         media_url: mediaUrl, // Primera URL para compatibilidad
         media_type: mediaType, // Primer tipo para compatibilidad
         media_urls: mediaUrls.length > 0 ? mediaUrls : null, // Array de URLs para múltiples archivos
-        post_type: postType,
-        scheduled_at: scheduledTime ? new Date(scheduledTime).toISOString() : null,
-        // delete_at se calcula desde scheduled_at si existe, si no desde ahora
-        delete_at: autoDeleteTime ? calculateDeleteTimeFromBase(autoDeleteTime, scheduledTime) : null
+        post_type: postType
       };
 
       // Add type-specific data
@@ -431,58 +315,6 @@ export function PostCreator({
           contact_link: idea.contact_link || null
         };
         postData.project_status = 'idea'; // Mark as idea initially
-      }
-
-      if (postType === 'evento' && evento.title.trim()) {
-        postData.post_metadata = {
-          ...postData.post_metadata,
-          evento: {
-            title: evento.title,
-            description: evento.description,
-            start_date: evento.start_date,
-            location: evento.location,
-            location_type: evento.location_type,
-            category: evento.category
-          }
-        };
-      }
-
-      if (postType === 'encuesta' && encuesta.title.trim()) {
-        postData.post_metadata = {
-          ...postData.post_metadata,
-          encuesta: {
-            title: encuesta.title,
-            options: encuesta.options.filter(o => o.trim()),
-            multiple_choice: encuesta.multiple_choice
-          }
-        };
-      }
-
-      if (postType === 'documento' && documento.title.trim()) {
-        postData.post_metadata = {
-          ...postData.post_metadata,
-          documento: {
-            title: documento.title,
-            description: documento.description,
-            category: documento.category
-          }
-        };
-      }
-
-      if (postType === 'empleo' && empleo.title.trim()) {
-        postData.post_metadata = {
-          ...postData.post_metadata,
-          empleo: {
-            title: empleo.title,
-            company: empleo.company,
-            description: empleo.description,
-            job_type: empleo.job_type,
-            location: empleo.location,
-            remote: empleo.remote,
-            requirements: empleo.requirements,
-            contact_link: empleo.contact_link
-          }
-        };
       }
 
       console.log("Creating post with data:", postData);
@@ -533,7 +365,6 @@ export function PostCreator({
       setVisibility("public");
       setPostType("regular");
       setSelectedFiles([]);
-      setFilePreviews([]);
       setContentStyle({
         backgroundKey: 'none',
         textColor: 'text-foreground',
@@ -547,14 +378,6 @@ export function PostCreator({
         contact_link: ""
       });
       setTempSkills("");
-      setProyecto({
-        title: "",
-        description: "",
-        required_skills: [],
-        status: 'planificacion',
-        contact_link: "",
-        max_participants: 5
-      });
       setEvento({
         title: "",
         description: "",
@@ -566,30 +389,6 @@ export function PostCreator({
         gradient_color: 'gradient-1',
         banner_file: null
       });
-      setEncuesta({
-        title: "",
-        description: "",
-        options: ["", ""],
-        multiple_choice: false
-      });
-      setDocumento({
-        title: "",
-        description: "",
-        category: 'guía',
-        file: undefined
-      });
-      setEmpleo({
-        title: "",
-        company: "",
-        description: "",
-        job_type: 'full-time',
-        location: "",
-        remote: false,
-        requirements: [],
-        contact_link: ""
-      });
-      setScheduledTime("");
-      setAutoDeleteTime("");
     } catch (error) {
       console.error("❌ Error creating post:", error);
       
@@ -671,41 +470,6 @@ export function PostCreator({
         const isValidProyecto = validationProyecto.hasTitle && validationProyecto.hasDescription && validationProyecto.validParticipants;
         console.log('📁 Proyecto validation:', { ...validationProyecto, isValidProyecto });
         return isValidProyecto;
-      } else if (postType === 'evento') {
-        const validationEvento = {
-          hasTitle: evento.title.trim().length >= 5,
-          hasDescription: evento.description.trim().length >= 10,
-          hasStartDate: evento.start_date.length > 0,
-          hasLocation: evento.location.trim().length > 0
-        };
-        const isValidEvento = Object.values(validationEvento).every(v => v);
-        console.log('📅 Evento validation:', { ...validationEvento, isValidEvento });
-        return isValidEvento;
-      } else if (postType === 'encuesta') {
-        const validationEncuesta = {
-          hasQuestion: encuesta.title.trim().length >= 5,
-          hasOptions: encuesta.options.filter(o => o.trim().length > 0).length >= 2
-        };
-        const isValidEncuesta = Object.values(validationEncuesta).every(v => v);
-        console.log('📊 Encuesta validation:', { ...validationEncuesta, isValidEncuesta });
-        return isValidEncuesta;
-      } else if (postType === 'documento') {
-        const validationDocumento = {
-          hasTitle: documento.title.trim().length >= 5
-        };
-        const isValidDocumento = Object.values(validationDocumento).every(v => v);
-        console.log('📄 Documento validation:', { ...validationDocumento, isValidDocumento });
-        return isValidDocumento;
-      } else if (postType === 'empleo') {
-        const validationEmpleo = {
-          hasTitle: empleo.title.trim().length >= 5,
-          hasCompany: empleo.company.trim().length >= 3,
-          hasDescription: empleo.description.trim().length >= 10,
-          hasLocation: empleo.location.trim().length >= 2
-        };
-        const isValidEmpleo = Object.values(validationEmpleo).every(v => v);
-        console.log('💼 Empleo validation:', { ...validationEmpleo, isValidEmpleo });
-        return isValidEmpleo;
       }
       
       console.log('❌ Unknown postType:', postType);
@@ -740,79 +504,82 @@ export function PostCreator({
         />
       )}
 
-      {/* Preview de múltiples archivos - Mejorado para móvil */}
+      {/* Preview de múltiples archivos */}
       {postType === 'regular' && selectedFiles.length > 0 && (
-        <div className="space-y-3 -mx-3 sm:mx-0 px-3 sm:px-0">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">
+            <span className="text-sm text-muted-foreground">
               {selectedFiles.length} archivo{selectedFiles.length > 1 ? 's' : ''} seleccionado{selectedFiles.length > 1 ? 's' : ''}
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={removeAllAttachments}
-              className="text-xs h-6 text-destructive hover:text-destructive"
+              className="text-xs h-6"
             >
               Eliminar todos
             </Button>
           </div>
-          
-          {/* Scroll horizontal en móvil para ver todas las imágenes */}
-          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 pb-2">
-            <div className="flex gap-2 w-fit sm:w-full sm:flex-wrap">
-              {selectedFiles.map((file, index) => (
-                <div key={index} className="relative flex-shrink-0">
-                  {file.type.startsWith('image/') ? (
-                    <img
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {selectedFiles.map((file, index) => (
+              <div key={index} className="relative">
+                {file.type.startsWith('image/') ? (
+                  <img
+                    src={filePreviews[index] || URL.createObjectURL(file)}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-md"
+                    onLoad={(e) => {
+                      // Cleanup object URL after load
+                      const url = filePreviews[index] || (e.target as HTMLImageElement).src;
+                      if (url.startsWith('blob:')) {
+                        // URL.createObjectURL ya está siendo usado, no necesitamos cleanup aquí
+                      }
+                    }}
+                  />
+                ) : file.type.startsWith('video/') ? (
+                  <div className="relative w-full h-24 bg-black rounded-md flex items-center justify-center">
+                    <video
                       src={filePreviews[index] || URL.createObjectURL(file)}
-                      alt={`Preview ${index + 1}`}
-                      className="h-28 w-28 sm:h-24 sm:w-24 object-cover rounded-md"
+                      className="w-full h-full object-cover rounded-md"
+                      muted
                     />
-                  ) : file.type.startsWith('video/') ? (
-                    <div className="relative h-28 w-28 sm:h-24 sm:w-24 bg-black rounded-md flex items-center justify-center">
-                      <video
-                        src={filePreviews[index] || URL.createObjectURL(file)}
-                        className="w-full h-full object-cover rounded-md"
-                        muted
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-black/50 rounded-full p-1">
-                          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                          </svg>
-                        </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-black/50 rounded-full p-1">
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                        </svg>
                       </div>
                     </div>
-                  ) : (
-                    <div className="h-28 w-28 sm:h-24 sm:w-24 bg-muted rounded-md flex items-center justify-center">
-                      <span className="text-xs text-center px-2 line-clamp-2">{file.name}</span>
-                    </div>
-                  )}
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full shadow-md"
-                    onClick={() => removeAttachment(index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-24 bg-muted rounded-md flex items-center justify-center">
+                    <span className="text-xs text-center px-2">{file.name}</span>
+                  </div>
+                )}
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-1 right-1 h-5 w-5 rounded-full"
+                  onClick={() => removeAttachment(index)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
           </div>
-          
-          {/* Botón para agregar más archivos */}
-          {selectedFiles.length < 10 && (
-            <AttachmentInput
-              type="image"
-              onFileSelect={handleFileSelect}
-              accept="image/*,video/*"
-              showLabel={true}
-              label={`Agregar más (${selectedFiles.length}/10)`}
-              buttonVariant="outline"
-              buttonClassName="w-full"
-            />
-          )}
+        </div>
+      )}
+
+      {/* Botón para agregar más archivos */}
+      {postType === 'regular' && selectedFiles.length > 0 && selectedFiles.length < 10 && (
+        <div>
+          <AttachmentInput
+            type="image"
+            onFileSelect={handleFileSelect}
+            accept="image/*,video/*"
+            showLabel={true}
+            label={`Agregar más (${selectedFiles.length}/10)`}
+          />
         </div>
       )}
 
@@ -969,270 +736,7 @@ export function PostCreator({
         </div>
       )}
 
-      {postType === 'evento' && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Título del evento</label>
-            <input
-              type="text"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="Ej: Conferencia de Tecnología 2024"
-              value={evento.title}
-              onChange={(e) => setEvento({ ...evento, title: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Descripción</label>
-            <Textarea
-              placeholder="Describe el evento"
-              value={evento.description}
-              onChange={(e) => setEvento({ ...evento, description: e.target.value })}
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Fecha de inicio</label>
-              <input
-                type="datetime-local"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={evento.start_date}
-                onChange={(e) => setEvento({ ...evento, start_date: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Ubicación</label>
-              <input
-                type="text"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="Ej: Centro de Convenciones"
-                value={evento.location}
-                onChange={(e) => setEvento({ ...evento, location: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Tipo de evento</label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={evento.location_type}
-              onChange={(e) => setEvento({ ...evento, location_type: e.target.value as any })}
-            >
-              <option value="presencial">Presencial</option>
-              <option value="virtual">Virtual</option>
-              <option value="híbrido">Híbrido</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {postType === 'encuesta' && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Pregunta</label>
-            <input
-              type="text"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="Ej: ¿Cuál es tu lenguaje favorito?"
-              value={encuesta.title}
-              onChange={(e) => setEncuesta({ ...encuesta, title: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Opciones</label>
-            {encuesta.options.map((option, index) => (
-              <input
-                key={index}
-                type="text"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder={`Opción ${index + 1}`}
-                value={option}
-                onChange={(e) => {
-                  const newOptions = [...encuesta.options];
-                  newOptions[index] = e.target.value;
-                  setEncuesta({ ...encuesta, options: newOptions });
-                }}
-              />
-            ))}
-            {encuesta.options.length < 5 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => setEncuesta({ ...encuesta, options: [...encuesta.options, ""] })}
-              >
-                Agregar opción
-              </Button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="multiple"
-              checked={encuesta.multiple_choice}
-              onChange={(e) => setEncuesta({ ...encuesta, multiple_choice: e.target.checked })}
-              className="rounded"
-            />
-            <label htmlFor="multiple" className="text-sm font-medium">Permitir múltiples respuestas</label>
-          </div>
-        </div>
-      )}
-
-      {postType === 'documento' && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Título del documento</label>
-            <input
-              type="text"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="Ej: Guía de mejores prácticas"
-              value={documento.title}
-              onChange={(e) => setDocumento({ ...documento, title: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Descripción (opcional)</label>
-            <Textarea
-              placeholder="Describe el contenido del documento"
-              value={documento.description}
-              onChange={(e) => setDocumento({ ...documento, description: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Categoría</label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={documento.category}
-              onChange={(e) => setDocumento({ ...documento, category: e.target.value as any })}
-            >
-              <option value="guía">Guía</option>
-              <option value="tutorial">Tutorial</option>
-              <option value="caso de estudio">Caso de estudio</option>
-              <option value="investigación">Investigación</option>
-              <option value="otro">Otro</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {postType === 'empleo' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Título del puesto</label>
-              <input
-                type="text"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="Ej: Desarrollador React Senior"
-                value={empleo.title}
-                onChange={(e) => setEmpleo({ ...empleo, title: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Empresa</label>
-              <input
-                type="text"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="Nombre de la empresa"
-                value={empleo.company}
-                onChange={(e) => setEmpleo({ ...empleo, company: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Descripción</label>
-            <Textarea
-              placeholder="Describe la vacante y responsabilidades"
-              value={empleo.description}
-              onChange={(e) => setEmpleo({ ...empleo, description: e.target.value })}
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tipo de empleo</label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={empleo.job_type}
-                onChange={(e) => setEmpleo({ ...empleo, job_type: e.target.value as any })}
-              >
-                <option value="full-time">Tiempo completo</option>
-                <option value="part-time">Tiempo parcial</option>
-                <option value="freelance">Freelance</option>
-                <option value="internship">Internship</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Ubicación</label>
-              <input
-                type="text"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="Ciudad o "Remoto""
-                value={empleo.location}
-                onChange={(e) => setEmpleo({ ...empleo, location: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="remote"
-              checked={empleo.remote}
-              onChange={(e) => setEmpleo({ ...empleo, remote: e.target.checked })}
-              className="rounded"
-            />
-            <label htmlFor="remote" className="text-sm font-medium">Trabajo remoto disponible</label>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Enlace de contacto</label>
-            <input
-              type="url"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="https://careers.example.com"
-              value={empleo.contact_link}
-              onChange={(e) => setEmpleo({ ...empleo, contact_link: e.target.value })}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Sección de programación y auto-eliminación */}
-      <div className="space-y-3 border-t pt-3">
-        <details className="group cursor-pointer">
-          <summary className="flex items-center justify-between text-sm font-medium hover:text-primary transition-colors">
-            <span className="flex items-center gap-2">
-              🕐 Opciones avanzadas
-            </span>
-            <span className="group-open:rotate-180 transition-transform">▼</span>
-          </summary>
-          <div className="space-y-3 mt-3">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Programar publicación (opcional)</label>
-              <input
-                type="datetime-local"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={scheduledTime}
-                onChange={(e) => setScheduledTime(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">Déjalo vacío para publicar ahora</p>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Auto-eliminar después de (opcional)</label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={autoDeleteTime}
-                onChange={(e) => setAutoDeleteTime(e.target.value)}
-              >
-                <option value="">No eliminar</option>
-                <option value="1h">1 hora</option>
-                <option value="6h">6 horas</option>
-                <option value="24h">24 horas</option>
-                <option value="7d">7 días</option>
-                <option value="30d">30 días</option>
-              </select>
-              <p className="text-xs text-muted-foreground">La publicación se eliminará automáticamente después del tiempo especificado</p>
-            </div>
-          </div>
-        </details>
-      </div>
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between sm:items-center">
         <VisibilitySelector 
           visibility={visibility}
           setVisibility={setVisibility}
