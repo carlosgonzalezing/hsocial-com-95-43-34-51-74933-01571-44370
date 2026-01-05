@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Production optimizations
-    minify: 'terser',
+    minify: 'esbuild',
     sourcemap: false,
     assetsInlineLimit: 0, // Prevent inline assets that can cause MIME issues
     terserOptions: {
