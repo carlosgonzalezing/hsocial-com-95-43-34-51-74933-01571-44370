@@ -10,7 +10,18 @@
     "lint": "eslint src",
     "preview": "vite preview",
     "seed:demo": "tsx scripts/seed-demo.ts",
-    "seed:demo:reset": "tsx scripts/seed-demo.ts --reset"
+    "seed:demo:reset": "tsx scripts/seed-demo.ts --reset",
+    "seed:bots": "tsx scripts/seed-bots.ts",
+    "seed:bots:reset": "tsx scripts/seed-bots.ts --reset",
+    "seed:new-bots": "tsx scripts/seed-new-bots.ts",
+    "seed:comments": "tsx scripts/seed-comments.ts",
+    "seed:comments:manual": "tsx scripts/create-comments-manual.ts --get-ids",
+    "seed:comments:create": "tsx scripts/create-comments-manual.ts",
+    "seed:soberania": "tsx scripts/seed-soberania.ts",
+    "content:schedule": "tsx scripts/smart-content-scheduler.ts",
+    "content:plan": "tsx scripts/smart-content-scheduler.ts --plan",
+    "content:test": "tsx scripts/test-content-generation.ts",
+    "content:realistic": "tsx scripts/create-simple-realistic.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",
@@ -96,6 +107,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
+    "dotenv": "^17.2.3",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
