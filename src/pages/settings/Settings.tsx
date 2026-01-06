@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, ChevronRight, User, Shield, Lock, Bell, HelpCircle, LogOut, Moon, Sun, Palette, Heart, BarChart3, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FullScreenPageLayout } from "@/components/layout/FullScreenPageLayout";
@@ -12,6 +11,20 @@ export default function Settings() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
+
+  const cycleTheme = () => {
+    const current = theme === "dark" || theme === "tech" ? theme : "light";
+    const next = current === "light" ? "dark" : current === "dark" ? "tech" : "light";
+    setTheme(next);
+  };
+
+  const themeLabel = theme === "tech" ? "Negro azulado" : theme === "dark" ? "Negro puro" : "Claro";
+  const themeDescription =
+    theme === "tech"
+      ? "Negro azulado premium (estilo tech)"
+      : theme === "dark"
+        ? "Negro puro (estilo X)"
+        : "Blanco limpio (estilo Instagram)";
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -160,25 +173,24 @@ export default function Settings() {
               <div className={`flex items-center justify-between ${isMobile ? 'px-3 py-2.5' : 'p-4'}`}>
                 <div className="flex items-center gap-3">
                   <div className={`rounded-full bg-muted/70 p-1.5 ${isMobile ? '' : 'p-2 rounded-lg bg-muted'}`}>
-                    {theme === "dark" ? (
-                      <Moon className={`h-4 w-4 text-indigo-600 ${isMobile ? '' : 'h-5 w-5'}`} />
-                    ) : (
+                    {theme === "light" ? (
                       <Sun className={`h-4 w-4 text-amber-500 ${isMobile ? '' : 'h-5 w-5'}`} />
+                    ) : (
+                      <Moon className={`h-4 w-4 ${theme === "tech" ? 'text-cyan-500' : 'text-indigo-600'} ${isMobile ? '' : 'h-5 w-5'}`} />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <h3 className={`font-medium text-foreground ${isMobile ? 'text-sm' : 'font-semibold'}`}>
-                      {theme === "dark" ? "Modo oscuro" : "Modo claro"}
+                      {themeLabel}
                     </h3>
                     <p className={`text-muted-foreground ${isMobile ? 'text-xs line-clamp-1 mt-0.5' : 'text-sm mt-1'}`}>
-                      {theme === "dark" ? "Interfaz oscura para mejor visualización nocturna" : "Interfaz clara y brillante"}
+                      {themeDescription}
                     </p>
                   </div>
                 </div>
-                <Switch 
-                  checked={theme === "dark"}
-                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
-                />
+                <Button variant="outline" size="sm" onClick={cycleTheme}>
+                  Cambiar
+                </Button>
               </div>
             </Card>
           </div>

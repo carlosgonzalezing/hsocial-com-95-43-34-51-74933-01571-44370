@@ -86,9 +86,13 @@ export function ActionsButtons({
   const hasReacted = userReaction !== null;
   const reactionData = hasReacted ? reactionIcons[userReaction] : null;
 
+  const baseActionClass = "h-11 sm:h-10 gap-2 rounded-md transition-colors";
+  const inactiveClass = "text-muted-foreground hover:text-foreground hover:bg-muted/60";
+  const activeClass = "text-primary hover:text-primary hover:bg-primary/10";
+
   return (
     <div className="px-2 sm:px-3 py-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-1">
         {/* Reaction button */}
         <div
           className="relative flex-1"
@@ -114,7 +118,7 @@ export function ActionsButtons({
             ref={buttonRef}
             variant="ghost"
             size="sm"
-            className={`w-full h-11 sm:h-10 hover:bg-muted/50 gap-2 ${hasReacted ? 'text-primary' : 'text-muted-foreground'}`}
+            className={`w-full ${baseActionClass} ${hasReacted ? activeClass : inactiveClass}`}
             onClick={handleReactionButtonClick} 
             onPointerDown={(e) => {
               if (e.pointerType !== 'mouse') {
@@ -137,7 +141,7 @@ export function ActionsButtons({
                 {reactionData.emoji}
               </span>
             ) : (
-              <ThumbsUp className="h-5 w-5" strokeWidth={1.5} />
+              <ThumbsUp className="h-5 w-5" strokeWidth={1.75} />
             )}
             <span className="text-sm font-medium hidden sm:inline">
               {hasReacted && reactionData ? reactionData.label : 'Me gusta'}
@@ -149,10 +153,10 @@ export function ActionsButtons({
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 h-11 sm:h-10 hover:bg-muted/50 gap-2 text-muted-foreground"
+          className={`flex-1 ${baseActionClass} ${inactiveClass}`}
           onClick={onComment}
         >
-          <MessageCircle className="h-5 w-5" strokeWidth={1.5} />
+          <MessageCircle className="h-5 w-5" strokeWidth={1.75} />
           <span className="text-sm font-medium hidden sm:inline">Comentar</span>
         </Button>
         
@@ -160,10 +164,10 @@ export function ActionsButtons({
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 h-11 sm:h-10 hover:bg-muted/50 gap-2 text-muted-foreground"
+          className={`flex-1 ${baseActionClass} ${inactiveClass}`}
           onClick={onShare}
         >
-          <Repeat2 className="h-5 w-5" strokeWidth={1.5} />
+          <Repeat2 className="h-5 w-5" strokeWidth={1.75} />
           <span className="text-sm font-medium hidden sm:inline">Volver a publicar</span>
         </Button>
         
@@ -171,10 +175,10 @@ export function ActionsButtons({
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 h-11 sm:h-10 hover:bg-muted/50 gap-2 text-muted-foreground"
+          className={`flex-1 ${baseActionClass} ${inactiveClass}`}
           onClick={onSend}
         >
-          <Send className="h-5 w-5" strokeWidth={1.5} />
+          <Send className="h-5 w-5" strokeWidth={1.75} />
           <span className="text-sm font-medium hidden sm:inline">Enviar</span>
         </Button>
       </div>

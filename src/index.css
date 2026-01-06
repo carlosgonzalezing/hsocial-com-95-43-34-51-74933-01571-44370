@@ -80,32 +80,32 @@
 
   .dark {
     /* Pure Black Mode (Instagram Dark) */
-    --background: 222 47% 4%; /* Pure black #000000 */
+    --background: 0 0% 0%; /* Pure black #000000 */
     --foreground: 210 20% 98%; /* Pure white text */
     
     --primary: 221 83% 53%; /* Pure white primary */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 7%; /* Very dark gray #0A0A0A */
+    --secondary: 0 0% 7%; /* Very dark gray #0A0A0A */
     --secondary-foreground: 210 20% 96%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --muted: 222 47% 7%; /* Very dark gray #0A0A0A */
+    --muted: 0 0% 7%; /* Very dark gray #0A0A0A */
     --muted-foreground: 215 20% 70%; /* #C5C6CA - Better contrast for dark mode */
 
-    --accent: 222 47% 7%;
+    --accent: 0 0% 7%;
     --accent-foreground: 210 20% 96%;
 
-    --popover: 222 47% 4%;
+    --popover: 0 0% 0%;
     --popover-foreground: 210 20% 96%;
 
-    --card: 222 47% 7%; /* Very dark gray #0A0A0A for card definition */
+    --card: 0 0% 6%; /* Very dark gray #0A0A0A for card definition */
     --card-foreground: 210 20% 96%;
 
-    --border: 222 47% 12%; /* Subtle border #141414 */
-    --input: 222 47% 10%;
+    --border: 0 0% 14%; /* Subtle border #141414 */
+    --input: 0 0% 10%;
     --ring: 221 83% 53%;
 
     /* Pure black theme specific colors */
@@ -113,6 +113,39 @@
     --facebook-text-secondary: 215 20% 70%; /* #B0B3B8 */
     --facebook-hover: 222 47% 12%; /* #141414 */
     --facebook-active: 222 47% 16%; /* #1F1F1F */
+  }
+
+  .dark.theme-tech {
+    /* Tech Blue-Black Mode (premium tech) */
+    --background: 221 62% 6%; /* #070B14 */
+    --foreground: 210 20% 98%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 50% 10%; /* #0E1526 */
+    --secondary-foreground: 210 20% 96%;
+
+    --muted: 222 48% 10%;
+    --muted-foreground: 215 20% 72%;
+
+    --accent: 222 48% 11%;
+    --accent-foreground: 210 20% 96%;
+
+    --popover: 221 62% 6%;
+    --popover-foreground: 210 20% 96%;
+
+    --card: 222 52% 9%; /* #0B1220 */
+    --card-foreground: 210 20% 96%;
+
+    --border: 222 42% 18%; /* #1B2A44 */
+    --input: 222 42% 16%;
+    --ring: 221 83% 53%;
+
+    --facebook-text-primary: 210 20% 96%;
+    --facebook-text-secondary: 215 20% 72%;
+    --facebook-hover: 222 42% 18%;
+    --facebook-active: 222 42% 22%;
   }
 }
 

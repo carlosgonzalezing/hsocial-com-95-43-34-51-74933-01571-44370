@@ -41,8 +41,30 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
   // Detectar si es un post de demostración (no permite interacciones)
   const isDemoPost = !!post.is_demo || !!post.demo_readonly;
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let isCancelled = false;
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isCancelled) setIsAuthenticated(!!session?.user);
+      } catch {
+        if (!isCancelled) setIsAuthenticated(false);
+      }
+    };
+    void checkSession();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isCancelled) setIsAuthenticated(!!session?.user);
+    });
+    return () => {
+      isCancelled = true;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const showDemoCta = () => {
     toast({
@@ -109,18 +131,20 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
   // Determinar si la publicación está fijada
   const isPinned = post.is_pinned;
 
-  const onCommentsClick = isDemoPost ? showDemoCta : toggleComments;
-  const onShareClick = isDemoPost ? showDemoCta : () => setShowShareModal(true);
-  const onSendClick = isDemoPost ? showDemoCta : () => setShowSendModal(true);
-  const onReactionClick = isDemoPost ? () => showDemoCta() : onReaction;
+  const shouldBlockInteractions = isDemoPost && !isAuthenticated;
+
+  const onCommentsClick = shouldBlockInteractions ? showDemoCta : toggleComments;
+  const onShareClick = shouldBlockInteractions ? showDemoCta : () => setShowShareModal(true);
+  const onSendClick = shouldBlockInteractions ? showDemoCta : () => setShowSendModal(true);
+  const onReactionClick = shouldBlockInteractions ? () => showDemoCta() : onReaction;
 
   return (
     <PostWrapper isHidden={isHidden} isIdeaPost={isIdeaPost} isPinned={isPinned}>
       <PostHeader 
         post={post} 
-        onDelete={isDemoPost ? undefined : (canDeletePost ? onDeletePost : undefined)}
-        isAuthor={isDemoPost ? false : isCurrentUserAuthor}
-        canDelete={isDemoPost ? false : canDeletePost}
+        onDelete={shouldBlockInteractions ? undefined : (canDeletePost ? onDeletePost : undefined)}
+        isAuthor={shouldBlockInteractions ? false : isCurrentUserAuthor}
+        canDelete={shouldBlockInteractions ? false : canDeletePost}
         isHidden={isHidden}
         content={post.content || ""}
         isIdeaPost={isIdeaPost}
@@ -160,7 +184,7 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
         commentsExpanded={showComments}
       />
       
-      {!isDemoPost && !hideComments && showComments && (
+      {!shouldBlockInteractions && !hideComments && showComments && (
         <Comments 
           postId={post.id}
           comments={comments}

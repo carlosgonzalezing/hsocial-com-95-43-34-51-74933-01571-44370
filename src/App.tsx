@@ -3,7 +3,7 @@ import React, { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/components/theme-provider";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -78,7 +78,7 @@ const App = () => {
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <ThemeProvider>
             <Toaster />
             <BrowserRouter>
               <AuthProvider>

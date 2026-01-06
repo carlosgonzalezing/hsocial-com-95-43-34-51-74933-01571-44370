@@ -13,7 +13,7 @@ export function PostWrapper({
 }: PostWrapperProps) {
   return (
     <Card 
-      className={`overflow-hidden w-full rounded-lg border border-border/30 bg-card shadow-sm ${isHidden ? 'opacity-70' : ''}`}
+      className={`overflow-hidden w-full rounded-xl border border-border/40 bg-card shadow-sm dark:shadow-none dark:border-white/10 ${isHidden ? 'opacity-70' : ''}`}
     >
       {children}
     </Card>

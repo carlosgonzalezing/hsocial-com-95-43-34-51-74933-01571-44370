@@ -6,8 +6,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { SimplifiedRegistration } from "@/components/auth/SimplifiedRegistration";
 import { AcademicOnboardingModal } from "@/components/onboarding/AcademicOnboardingModal";
 import { sendVerificationEmail } from "@/lib/auth/verification";
-import { useTheme } from "next-themes";
-import { Moon, Sun, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { RecoveryTokenHandler } from "@/components/auth/RecoveryTokenHandler";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SEOHead } from "@/utils/safe-seo";
@@ -18,7 +17,6 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showVerificationSuccess, setShowVerificationSuccess] = useState(false);
-  const { theme, setTheme } = useTheme();
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
   
   // Handle OAuth redirects and auth state changes
@@ -60,10 +58,6 @@ export default function Auth() {
       }, 10000);
     }
   }, []);
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
 
   // Fallback recovery token check
   useEffect(() => {

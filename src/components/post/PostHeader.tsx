@@ -148,17 +148,7 @@ export function PostHeader({
   };
 
   const renderDemoTag = () => {
-    if (!isDemoPost) return null;
-    
-    return (
-      <Badge 
-        variant="secondary" 
-        className="ml-2 flex items-center gap-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-      >
-        <Sparkles className="h-3 w-3" />
-        <span>Contenido Automatizado</span>
-      </Badge>
-    );
+    return null;
   };
   
   // No mostrar badges de carrera según requisitos visuales

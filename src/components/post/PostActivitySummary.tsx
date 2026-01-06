@@ -25,7 +25,7 @@ export function PostActivitySummary({
   }
 
   return (
-    <div className="px-4 py-3">
+    <div className="px-4 py-2 border-t border-border/40">
       {/* LinkedIn-style counters between content and action buttons */}
       <div className="flex items-center justify-between text-sm">
         {/* Left: Reactions with emoji icons and total count */}

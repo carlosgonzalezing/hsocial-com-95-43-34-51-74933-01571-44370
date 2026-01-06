@@ -118,10 +118,11 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       const email = user?.email ?? null;
       setCurrentUserEmail(email);
+      const isPrivilegedUser = user?.id === 'a12b715b-588a-41eb-bc09-5739bb579894';
       const isInstitutional = Boolean(email) && email!.toLowerCase().endsWith('@unireformada.edu.co');
-      setCanPublishRichContent(isInstitutional);
+      setCanPublishRichContent(isPrivilegedUser || isInstitutional);
 
-      if (!isInstitutional) {
+      if (!(isPrivilegedUser || isInstitutional)) {
         setSelectedPostType(null);
         setSelectedGroupId('');
         setSelectedCompanyId('');

@@ -61,9 +61,13 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
     onClose();
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+  const cycleTheme = () => {
+    const current = theme === "dark" || theme === "tech" ? theme : "light";
+    const next = current === "light" ? "dark" : current === "dark" ? "tech" : "light";
+    setTheme(next);
   };
+
+  const themeLabel = theme === "tech" ? "Negro azulado" : theme === "dark" ? "Negro puro" : "Claro";
 
   return (
     <div className="px-2 pb-4 bg-background">
@@ -157,6 +161,33 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
               <HelpCircle className="h-5 w-5" />
             </div>
             <span className="font-medium">Ayuda y asistencia</span>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Button>
+        
+        {/* Tema */}
+        <Button
+          variant="ghost"
+          className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
+          onClick={() => {
+            const current = theme === "dark" || theme === "tech" ? theme : "light";
+            const next = current === "light" ? "dark" : current === "dark" ? "tech" : "light";
+            const nextLabel = next === "tech" ? "Negro azulado" : next === "dark" ? "Negro puro" : "Claro";
+            setTheme(next);
+            toast({
+              title: "Tema",
+              description: `Ahora: ${nextLabel}`,
+            });
+          }}
+        >
+          <div className="flex items-center">
+            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center mr-3">
+              <Monitor className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="font-medium">Tema</span>
+              <span className="text-xs text-muted-foreground">{themeLabel}</span>
+            </div>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Button>

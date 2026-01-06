@@ -2,16 +2,19 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Moon, Sun, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
-import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 
 export default function AccessibilitySettings() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+  const cycleTheme = () => {
+    const current = theme === "dark" || theme === "tech" ? theme : "light";
+    const next = current === "light" ? "dark" : current === "dark" ? "tech" : "light";
+    setTheme(next);
   };
+
+  const themeLabel = theme === "tech" ? "Negro azulado" : theme === "dark" ? "Negro puro" : "Claro";
 
   return (
     <div className="container max-w-2xl mx-auto px-4 py-6">
@@ -28,7 +31,7 @@ export default function AccessibilitySettings() {
 
       <div className="space-y-4">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Modo oscuro</h2>
+          <h2 className="text-lg font-semibold mb-4">Tema</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Ajusta la apariencia de HSocial para reducir el deslumbramiento y dar a tus ojos un descanso.
           </p>
@@ -37,8 +40,8 @@ export default function AccessibilitySettings() {
             <div className="flex items-center gap-3">
               <Sun className="h-5 w-5" />
               <div>
-                <p className="font-medium">Desactivado</p>
-                <p className="text-xs text-muted-foreground">Modo claro estándar</p>
+                <p className="font-medium">Claro</p>
+                <p className="text-xs text-muted-foreground">Blanco limpio (estilo Instagram)</p>
               </div>
             </div>
             {theme === "light" && (
@@ -50,32 +53,37 @@ export default function AccessibilitySettings() {
             <div className="flex items-center gap-3">
               <Moon className="h-5 w-5" />
               <div>
-                <p className="font-medium">Activado</p>
-                <p className="text-xs text-muted-foreground">Reduce el brillo de la pantalla</p>
+                <p className="font-medium">Negro puro</p>
+                <p className="text-xs text-muted-foreground">Negro puro (estilo X)</p>
               </div>
             </div>
             {theme === "dark" && (
               <div className="h-2 w-2 rounded-full bg-primary" />
             )}
           </div>
+
+          <div className="flex items-center justify-between py-3 border-b">
+            <div className="flex items-center gap-3">
+              <Monitor className="h-5 w-5" />
+              <div>
+                <p className="font-medium">Negro azulado</p>
+                <p className="text-xs text-muted-foreground">Premium tech (iOS/Discord pro)</p>
+              </div>
+            </div>
+            {theme === "tech" && (
+              <div className="h-2 w-2 rounded-full bg-primary" />
+            )}
+          </div>
           
           <div className="flex items-center justify-between pt-4">
             <div className="flex items-center gap-2">
-              {theme === "dark" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-              <span className="font-medium">Modo oscuro</span>
+              <span className="font-medium">Actual:</span>
+              <span className="text-sm text-muted-foreground">{themeLabel}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {theme === "dark" ? "Activado" : "Desactivado"}
-              </span>
-              <Switch 
-                checked={theme === "dark"}
-                onCheckedChange={toggleTheme}
-              />
+              <Button variant="outline" size="sm" onClick={cycleTheme}>
+                Cambiar
+              </Button>
             </div>
           </div>
         </Card>
