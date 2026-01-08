@@ -24,10 +24,10 @@ export function useAuthRedirect() {
             });
             
             // For OAuth, redirect immediately to avoid loops
-            navigate('/', { replace: true });
+            navigate('/home', { replace: true });
           } else if (window.location.pathname === '/auth') {
             // For regular auth, only redirect if on auth page
-            navigate('/', { replace: true });
+            navigate('/home', { replace: true });
           }
         } else if (event === 'SIGNED_OUT') {
           // Only redirect if we're not already on auth page

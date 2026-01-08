@@ -10,7 +10,8 @@ import {
   Trophy,
   Bookmark,
   HeartHandshake,
-  PlaySquare
+  PlaySquare,
+  Brain
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -85,7 +86,7 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
       
       <Separator className="my-1" />
       
-      {/* Tabla de Popularidad */}
+      {/* Coquitos Destacados */}
       <div className="py-1">
         <Button
           variant="ghost"
@@ -94,9 +95,9 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
         >
           <div className="flex items-center">
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center mr-3">
-              <Trophy className="h-5 w-5 text-yellow-500" />
+              <Brain className="h-5 w-5 text-purple-500" />
             </div>
-            <span className="font-medium">Tabla de Popularidad</span>
+            <span className="font-medium">Coquitos Destacados</span>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Button>

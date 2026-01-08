@@ -88,11 +88,16 @@ const App = () => {
               {/* Critical pages - no lazy loading */}
               <Route path="/auth" element={<Auth />} />
               
-              <Route path="/" element={
-                <AuthGuard>
-                  <Index />
-                </AuthGuard>
-              } />
+              <Route path="/" element={<Index />} />
+
+              <Route
+                path="/home"
+                element={
+                  <AuthGuard>
+                    <Index />
+                  </AuthGuard>
+                }
+              />
               
               {/* Core features - lazy loaded */}
               <Route path="/password-reset" element={
@@ -327,11 +332,9 @@ const App = () => {
               
               {/* 404 fallback */}
               <Route path="*" element={
-                <AuthGuard>
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <NotFound />
-                  </Suspense>
-                </AuthGuard>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <NotFound />
+                </Suspense>
               } />
               </Routes>
               </AuthProvider>

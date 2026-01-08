@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { getMultiplePostSharesCounts } from "@/lib/api/posts/queries/shares";
 
 async function enrichPosts(
@@ -359,6 +360,19 @@ export async function getPostsPage(params: {
   return {
     posts: enriched,
     nextCursor: enriched.length === limit ? nextCursor : undefined,
+  };
+}
+
+export async function getPublicFeedPreview(limit = 5) {
+  const { data, error } = await supabase
+    .rpc('get_public_feed_preview', {
+      limit_count: limit,
+    });
+  if (error) throw error;
+
+  const posts = (data || []) as Database['public']['Functions']['get_public_feed_preview']['Returns'];
+  return {
+    posts,
   };
 }
 

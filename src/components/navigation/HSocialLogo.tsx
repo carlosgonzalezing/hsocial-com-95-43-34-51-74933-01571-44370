@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface HSocialLogoProps {
   className?: string;
@@ -36,6 +37,25 @@ export const HSocialLogo = ({ className = "", showText = true, size = "md", onCl
     </div>
   );
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    check();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      if (authListener) authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   if (onClick) {
     return (
       <button onClick={onClick} className="cursor-pointer">
@@ -45,7 +65,7 @@ export const HSocialLogo = ({ className = "", showText = true, size = "md", onCl
   }
 
   return (
-    <Link to="/" className="cursor-pointer">
+    <Link to={isAuthenticated ? "/home" : "/"} className="cursor-pointer">
       {content}
     </Link>
   );

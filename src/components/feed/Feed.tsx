@@ -1,11 +1,15 @@
 import { FeedSkeleton } from "./FeedSkeleton";
 import { EmptyFeed } from "./EmptyFeed";
+import { PublicFeedWall } from "./PublicFeedWall";
 import type { Post } from "@/types/post";
 import { FeedContent } from "./FeedContent";
 import { usePersonalizedFeed } from "@/hooks/feed/use-personalized-feed";
 import { useRealtimeFeedSimple } from "@/hooks/feed/hooks/use-realtime-feed-simple";
 import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/providers/AuthProvider";
+import { getPublicFeedPreview } from "@/lib/api";
 
 function getScrollParent(el: HTMLElement | null): HTMLElement | null {
   if (!el) return null;
@@ -30,6 +34,19 @@ interface FeedProps {
 
 export function Feed({ userId, groupId, companyId }: FeedProps) {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+
+  const {
+    data: publicPreview,
+    isLoading: isPublicLoading,
+    isError: isPublicError,
+  } = useQuery({
+    queryKey: ["posts", "public-preview"],
+    queryFn: () => getPublicFeedPreview(5),
+    enabled: !isAuthenticated,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
   const {
     posts,
     isLoading,
@@ -48,6 +65,7 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (!hasNextPage) return;
 
     const rootEl = loaderRef.current ? getScrollParent(loaderRef.current) : null;
@@ -110,10 +128,10 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
       }
       observer.disconnect();
     };
-  }, [hasNextPage, maybeLoadMore, posts.length]);
+  }, [isAuthenticated, hasNextPage, maybeLoadMore, posts.length]);
 
   // Set up real-time subscriptions for feed, reactions and comments
-  useRealtimeFeedSimple(userId);
+  useRealtimeFeedSimple(isAuthenticated ? userId : undefined);
 
   useEffect(() => {
     const handler = () => {
@@ -123,6 +141,34 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
     window.addEventListener('hsocial:home_refresh', handler);
     return () => window.removeEventListener('hsocial:home_refresh', handler);
   }, [queryClient]);
+
+  if (!isAuthenticated) {
+    if (isPublicLoading) {
+      return <FeedSkeleton />;
+    }
+
+    if (isPublicError) {
+      return <EmptyFeed />;
+    }
+
+    const previewPosts = (publicPreview?.posts || []) as Post[];
+    if (previewPosts.length === 0) {
+      return <EmptyFeed />;
+    }
+
+    return (
+      <div className="feed-container mx-auto w-full max-w-[680px] px-2 lg:px-0">
+        <FeedContent
+          posts={previewPosts}
+          trackPostView={async () => {}}
+          trackPostInteraction={async () => {}}
+        />
+        <div className="mt-6">
+          <PublicFeedWall />
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <FeedSkeleton />;

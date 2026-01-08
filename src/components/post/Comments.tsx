@@ -3,6 +3,9 @@ import { CommentsList } from "./comments/CommentsList";
 import { CommentInput } from "./comments/CommentInput";
 import type { Comment } from "@/types/post";
 import type { ReactionType } from "@/types/database/social.types";
+import { useAuth } from "@/providers/AuthProvider";
+import { Link } from "react-router-dom";
+import { LogIn } from "lucide-react";
 
 interface CommentsProps {
   postId: string;
@@ -37,8 +40,31 @@ export function Comments({
   setCommentImage,
   postAuthorId
 }: CommentsProps) {
+  const { isAuthenticated } = useAuth();
+
   // Solo renderizamos los comentarios si showComments es true
   if (!showComments) return null;
+
+  // If not authenticated, show login prompt
+  if (!isAuthenticated) {
+    return (
+      <div className="mt-4 px-4 py-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col items-center justify-center text-center">
+          <LogIn className="w-8 h-8 text-gray-400 mb-3" />
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            Inicia sesión para ver y escribir comentarios
+          </p>
+          <Link
+            to="/auth"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            <LogIn className="w-4 h-4" />
+            Iniciar sesión
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 space-y-4 px-0 md:px-4">

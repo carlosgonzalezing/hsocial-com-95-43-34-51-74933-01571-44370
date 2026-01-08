@@ -4,14 +4,16 @@ import { FacebookLayout } from "@/components/layout/FacebookLayout";
 import { SimpleOnboardingModal } from "@/components/onboarding/SimpleOnboardingModal";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { QuickPostBox } from "@/components/feed/QuickPostBox";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function Index() {
   const { showOnboarding, completeOnboarding } = useOnboarding();
+  const { isAuthenticated } = useAuth();
 
   return (
     <FacebookLayout>
       <div className="w-full bg-background min-h-screen">
-        <QuickPostBox />
+        {isAuthenticated && <QuickPostBox />}
         <Feed />
       </div>
 

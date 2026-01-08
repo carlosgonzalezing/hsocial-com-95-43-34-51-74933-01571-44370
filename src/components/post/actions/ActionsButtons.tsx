@@ -6,6 +6,8 @@ import { ReactionType } from "@/types/database/social.types";
 import { reactionIcons } from "../reactions/ReactionIcons";
 import { ReactionMenu } from "../reactions/ReactionMenu";
 import { useLongPress } from "../reactions/hooks/use-long-press";
+import { useAuth } from "@/providers/AuthProvider";
+import { useNavigate } from "react-router-dom";
 
 interface ActionsButtonsProps {
   postId: string;
@@ -36,8 +38,19 @@ export function ActionsButtons({
   commentsExpanded,
   sharesCount = 0
 }: ActionsButtonsProps) {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleAuthRequired = useCallback(() => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return true;
+    }
+    return false;
+  }, [isAuthenticated, navigate]);
   
   const handleReactionClick = (type: ReactionType) => {
+    if (handleAuthRequired()) return;
     if (onReaction) {
       onReaction(postId, type);
     } else if (handleReaction) {
@@ -154,7 +167,10 @@ export function ActionsButtons({
           variant="ghost"
           size="sm"
           className={`flex-1 ${baseActionClass} ${inactiveClass}`}
-          onClick={onComment}
+          onClick={() => {
+            if (handleAuthRequired()) return;
+            onComment();
+          }}
         >
           <MessageCircle className="h-5 w-5" strokeWidth={1.75} />
           <span className="text-sm font-medium hidden sm:inline">Comentar</span>
@@ -165,7 +181,10 @@ export function ActionsButtons({
           variant="ghost"
           size="sm"
           className={`flex-1 ${baseActionClass} ${inactiveClass}`}
-          onClick={onShare}
+          onClick={() => {
+            if (handleAuthRequired()) return;
+            onShare?.();
+          }}
         >
           <Repeat2 className="h-5 w-5" strokeWidth={1.75} />
           <span className="text-sm font-medium hidden sm:inline">Volver a publicar</span>
@@ -176,7 +195,10 @@ export function ActionsButtons({
           variant="ghost"
           size="sm"
           className={`flex-1 ${baseActionClass} ${inactiveClass}`}
-          onClick={onSend}
+          onClick={() => {
+            if (handleAuthRequired()) return;
+            onSend?.();
+          }}
         >
           <Send className="h-5 w-5" strokeWidth={1.75} />
           <span className="text-sm font-medium hidden sm:inline">Enviar</span>

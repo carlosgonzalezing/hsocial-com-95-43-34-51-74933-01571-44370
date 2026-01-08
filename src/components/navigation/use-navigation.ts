@@ -119,7 +119,7 @@ export function useNavigation() {
           table: "posts"
         },
         (payload) => {
-          if (location.pathname !== "/" && payload.new) {
+          if (location.pathname !== "/home" && payload.new) {
             const post = payload.new as any;
             // Si no es una publicación propia
             if (post.user_id !== currentUserId) {
@@ -171,8 +171,8 @@ export function useNavigation() {
     setNewPosts(0);
 
     // Navegar siempre al inicio del feed
-    if (location.pathname !== "/") {
-      navigate("/");
+    if (location.pathname !== "/home") {
+      navigate("/home");
     }
     
     // Hacer scroll hasta la primera publicación

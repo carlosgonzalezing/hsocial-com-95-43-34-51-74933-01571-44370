@@ -86,10 +86,10 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
     {
       icon: Home,
       label: "Inicio",
-      path: "/",
+      path: "/home",
       onClick: handleHomeClick,
       badge: newPosts > 0 ? newPosts : null,
-      isActive: location.pathname === "/"
+      isActive: location.pathname === "/home"
     },
     {
       icon: Compass,
@@ -137,7 +137,11 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
         {/* Simplified top bar - Instagram Style */}
         <div className="flex items-center justify-between h-14 px-3">
           {/* Logo - "H Social" */}
-          <HSocialLogo size="md" showText={true} />
+          <HSocialLogo
+            size="md"
+            showText={true}
+            onClick={() => navigate(isAuthenticated ? "/home" : "/")}
+          />
           
           {/* Search + Actions - Right */}
           <div className="flex items-center gap-1">
@@ -206,7 +210,11 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
       <div className="w-full flex items-center justify-between h-full px-2 lg:px-4">
         {/* Logo and Search - Left */}
         <div className="flex items-center gap-4 flex-shrink-0 w-80">
-          <HSocialLogo size="md" showText={true} />
+          <HSocialLogo
+            size="md"
+            showText={true}
+            onClick={() => navigate(isAuthenticated ? "/home" : "/")}
+          />
           
           {/* Search bar - desktop inline search */}
           <div className="relative flex-1">

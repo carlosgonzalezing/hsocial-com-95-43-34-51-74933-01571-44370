@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Search, Lightbulb, FolderOpen, Users, Trophy } from "lucide-react";
+import { Search, Lightbulb, FolderOpen, Users, Trophy, Brain } from "lucide-react";
 import { IdeaGrid } from "@/components/explore/IdeaGrid";
 import { ProjectGrid } from "@/components/explore/ProjectGrid";
 import { GroupGrid } from "@/components/explore/GroupGrid";
@@ -57,8 +57,8 @@ export default function Explore() {
               value="lideres" 
               className="shrink-0 gap-2 text-foreground data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary px-3 text-xs sm:text-sm"
             >
-              <Trophy className="h-4 w-4" />
-              Líderes
+              <Brain className="h-4 w-4" />
+              Coquitos
             </TabsTrigger>
           </TabsList>
 
