@@ -26,6 +26,20 @@ interface ModalPublicacionWebProps {
   initialPostType?: PostType;
 }
 
+ async function sendIdeaPublishedAutoMessage(recipientUserId: string) {
+   try {
+     if (!recipientUserId) return;
+     const { error } = await supabase.rpc('send_idea_published_dm', {
+       recipient_user_id: recipientUserId,
+     });
+     if (error) {
+       console.error('Error sending idea auto message via RPC:', error);
+     }
+   } catch (error) {
+     console.error('Error sending idea auto message:', error);
+   }
+ }
+
 const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   isVisible,
   onClose,
@@ -397,6 +411,10 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
 
       if (insertError) throw insertError;
 
+      if (selectedPostType === 'idea') {
+        sendIdeaPublishedAutoMessage(user.id);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       queryClient.invalidateQueries({ queryKey: ['personalized-feed'] });
       queryClient.invalidateQueries({ queryKey: ['feed-posts'] });
@@ -705,7 +723,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
               <textarea
                 value={ideaDescription}
                 onChange={(e) => setIdeaDescription(e.target.value)}
-                placeholder="Descripción de la idea"
+                placeholder={`Problema:\nDescribe qué problema has identificado y por qué es importante.\n\nPara quién:\n¿A quién afecta este problema? (estudiantes, empresas, comunidades, etc.)\n\nIdea / solución inicial:\n¿Qué propones hacer para resolverlo? No tiene que estar perfecta.\n\nQué buscas ahora:\n¿Equipo, feedback, validación, alguien con habilidades específicas?`}
                 rows={4}
                 className="w-full resize-none rounded-md border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-2 text-sm"
               />

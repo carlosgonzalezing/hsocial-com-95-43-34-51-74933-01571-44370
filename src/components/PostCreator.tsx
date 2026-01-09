@@ -74,6 +74,20 @@ interface PostCreatorProps {
   initialPostType?: string;
 }
 
+ async function sendIdeaPublishedAutoMessage(recipientUserId: string) {
+   try {
+     if (!recipientUserId) return;
+     const { error } = await supabase.rpc('send_idea_published_dm', {
+       recipient_user_id: recipientUserId,
+     });
+     if (error) {
+       console.error('Error sending idea auto message via RPC:', error);
+     }
+   } catch (error) {
+     console.error('Error sending idea auto message:', error);
+   }
+ }
+
 export function PostCreator({ 
   onPostCreated,
   textareaRef: externalTextareaRef,
@@ -463,10 +477,22 @@ export function PostCreator({
       }
 
       console.log('Post created successfully:', newPost);
+
+       if (postType === 'idea') {
+         sendIdeaPublishedAutoMessage(session.user.id);
+       }
       
       // Invalidate queries to update feed immediately
       queryClient.invalidateQueries({ queryKey: ["posts"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["personalized-feed"] });
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["project-posts"] });
+
+      try {
+        window.dispatchEvent(new Event('hsocial:home_refresh'));
+      } catch {
+        // ignore
+      }
 
       mobileToasts.postCreated();
 
@@ -722,7 +748,7 @@ export function PostCreator({
             </label>
             <Textarea
               id="idea-description"
-              placeholder="Describe tu idea en detalle"
+              placeholder={`Problema:\nDescribe qué problema has identificado y por qué es importante.\n\nPara quién:\n¿A quién afecta este problema? (estudiantes, empresas, comunidades, etc.)\n\nIdea / solución inicial:\n¿Qué propones hacer para resolverlo? No tiene que estar perfecta.\n\nQué buscas ahora:\n¿Equipo, feedback, validación, alguien con habilidades específicas?`}
               value={idea.description}
               onChange={(e) => setIdea({ ...idea, description: e.target.value })}
             />

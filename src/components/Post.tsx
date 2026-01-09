@@ -43,6 +43,8 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  const [resolvedSharedPost, setResolvedSharedPost] = useState<PostType | null>(null);
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -138,6 +140,48 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
   const onSendClick = shouldBlockInteractions ? showDemoCta : () => setShowSendModal(true);
   const onReactionClick = shouldBlockInteractions ? () => showDemoCta() : onReaction;
 
+  useEffect(() => {
+    const loadSharedPost = async () => {
+      try {
+        if (!post.shared_post_id) {
+          setResolvedSharedPost(null);
+          return;
+        }
+
+        if (post.shared_post) {
+          setResolvedSharedPost(post.shared_post as any);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('posts')
+          .select(`
+            *,
+            profiles:profiles(*),
+            comments:comments(count),
+            post_shares:post_shares(count),
+            reactions:reactions(reaction_type, user_id),
+            academic_events:academic_events(*)
+          `)
+          .eq('id', post.shared_post_id)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!data) {
+          setResolvedSharedPost(null);
+          return;
+        }
+
+        setResolvedSharedPost(data as any);
+      } catch (e) {
+        console.error('Error loading shared_post:', e);
+        setResolvedSharedPost(null);
+      }
+    };
+
+    void loadSharedPost();
+  }, [post.shared_post_id, post.shared_post]);
+
   return (
     <PostWrapper isHidden={isHidden} isIdeaPost={isIdeaPost} isPinned={isPinned}>
       <PostHeader 
@@ -152,7 +196,7 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
       />
       
       {isSharedPost ? (
-        <SharedPostView post={post} />
+        <SharedPostView post={post} resolvedSharedPost={resolvedSharedPost} />
       ) : isIdeaPost ? (
         <IdeaPostView post={post} />
       ) : isEventPost ? (
@@ -221,15 +265,15 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
 }
 
 // Componente de ayuda para la vista de publicación compartida
-function SharedPostView({ post }: { post: PostType }) {
+function SharedPostView({ post, resolvedSharedPost }: { post: PostType; resolvedSharedPost: PostType | null }) {
   return (
     <div className="px-0 md:px-4 pb-4">
       {post.content && (
         <p className="text-sm whitespace-pre-wrap break-words mb-4 px-4 md:px-0">{post.content}</p>
       )}
       <div className="border border-border rounded-none md:rounded-lg overflow-hidden">
-        {post.shared_post && (
-          <SharedPostContent post={post.shared_post} />
+        {(resolvedSharedPost || post.shared_post) && (
+          <SharedPostContent post={(resolvedSharedPost || post.shared_post) as any} />
         )}
       </div>
     </div>

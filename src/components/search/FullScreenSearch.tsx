@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Search, X, Clock, UserPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,8 @@ export function FullScreenSearch({ isOpen, onClose }: FullScreenSearchProps) {
   const [friendSuggestions, setFriendSuggestions] = useState<FriendSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const debouncedQuery = useDebounce(searchQuery, 300);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -45,6 +46,22 @@ export function FullScreenSearch({ isOpen, onClose }: FullScreenSearchProps) {
     if (isOpen && friendSuggestions.length === 0) {
       loadFriendSuggestions();
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const t = window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+
+    return () => {
+      window.clearTimeout(t);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [isOpen]);
 
   // Perform search when query changes
@@ -72,7 +89,10 @@ export function FullScreenSearch({ isOpen, onClose }: FullScreenSearchProps) {
     setIsSearching(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setSearchResults([]);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('profiles')
@@ -180,6 +200,7 @@ export function FullScreenSearch({ isOpen, onClose }: FullScreenSearchProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-10 border-none bg-white dark:bg-muted/50 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
             autoFocus
+            ref={inputRef}
           />
           {searchQuery && (
             <Button

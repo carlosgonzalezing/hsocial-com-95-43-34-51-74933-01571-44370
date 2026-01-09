@@ -10,6 +10,10 @@ export function transformPostData(post: any): Post {
     ? post.academic_events[0]
     : (post?.academic_events ?? null);
 
+  const sharedPostRow = Array.isArray(post?.shared_post)
+    ? post.shared_post[0]
+    : (post?.shared_post ?? null);
+
   // Transform post data into the expected format
   return {
     id: post.id,
@@ -51,7 +55,7 @@ export function transformPostData(post: any): Post {
     visibility: post.visibility,
     is_pinned: post.is_pinned,
     // If there's a shared post, transform it too
-    shared_post: post.shared_post ? transformPostData(post.shared_post) : undefined
+    shared_post: sharedPostRow ? transformPostData(sharedPostRow) : undefined
   };
 }
 
