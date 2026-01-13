@@ -3,12 +3,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Feed } from "@/components/feed/Feed";
 import { Grid, Lightbulb, FolderOpen, FolderKanban, Briefcase } from "lucide-react";
+import { PinnedProjectsSection } from "./PinnedProjectsSection";
 
 interface ProfileContentProps {
   profileId: string;
+  isOwner?: boolean;
 }
 
-export function ProfileContent({ profileId }: ProfileContentProps) {
+export function ProfileContent({ profileId, isOwner = false }: ProfileContentProps) {
   return (
     <Tabs defaultValue="posts" className="w-full">
       <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0">
@@ -66,11 +68,7 @@ export function ProfileContent({ profileId }: ProfileContentProps) {
       </TabsContent>
 
       <TabsContent value="projects" className="mt-0">
-        <Card className="p-8">
-          <p className="text-center text-muted-foreground">
-            Próximamente podrás mostrar tus proyectos destacados y en curso.
-          </p>
-        </Card>
+        <PinnedProjectsSection profileId={profileId} isOwner={isOwner} />
       </TabsContent>
 
       <TabsContent value="services" className="mt-0">

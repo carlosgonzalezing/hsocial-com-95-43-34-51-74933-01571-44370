@@ -67,7 +67,28 @@ export function SimpleProjectCreatorModal({ open, onOpenChange }: SimpleProjectC
 
         <div className="space-y-4">
           <Input placeholder="Título del proyecto" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Textarea placeholder="Descripción breve" value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
+          <Textarea
+            placeholder={`Contexto académico
+¿Este proyecto hace parte de una materia, semillero, práctica o iniciativa personal?
+
+Problema u objetivo
+¿Qué necesidad busca resolver o qué objetivo tiene el proyecto?
+
+Qué se ha desarrollado hasta ahora
+Describe brevemente el avance actual (idea, prototipo, MVP, investigación, etc.).
+
+Tecnologías / herramientas
+Lenguajes, frameworks, software o metodologías utilizadas.
+
+Estado del proyecto
+En idea / En desarrollo / Finalizado.
+
+Qué se busca ahora
+Colaboradores, feedback, validación, difusión, apoyo económico, etc.`}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={8}
+          />
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecciona categoría" />

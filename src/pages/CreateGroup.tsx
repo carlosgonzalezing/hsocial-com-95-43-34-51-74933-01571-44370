@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 function slugify(input: string) {
   return input
@@ -32,6 +33,7 @@ function slugify(input: string) {
 export default function CreateGroup() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -112,6 +114,8 @@ export default function CreateGroup() {
             ? "Tu grupo quedó pendiente de aprobación."
             : message || "Grupo creado exitosamente.",
       });
+
+      queryClient.invalidateQueries({ queryKey: ["explore-groups"] });
 
       navigate(`/groups/${groupSlug || groupId}`);
     } catch (e: any) {

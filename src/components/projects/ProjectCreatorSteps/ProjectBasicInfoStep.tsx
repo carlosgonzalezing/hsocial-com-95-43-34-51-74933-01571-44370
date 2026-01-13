@@ -44,7 +44,23 @@ export function ProjectBasicInfoStep({ formData, updateFormData }: ProjectBasicI
         </Label>
         <Textarea
           id="description"
-          placeholder="Describe detalladamente tu proyecto, su propósito y funcionalidades principales..."
+          placeholder={`Contexto académico
+¿Este proyecto hace parte de una materia, semillero, práctica o iniciativa personal?
+
+Problema u objetivo
+¿Qué necesidad busca resolver o qué objetivo tiene el proyecto?
+
+Qué se ha desarrollado hasta ahora
+Describe brevemente el avance actual (idea, prototipo, MVP, investigación, etc.).
+
+Tecnologías / herramientas
+Lenguajes, frameworks, software o metodologías utilizadas.
+
+Estado del proyecto
+En idea / En desarrollo / Finalizado.
+
+Qué se busca ahora
+Colaboradores, feedback, validación, difusión, apoyo económico, etc.`}
           value={formData.description}
           onChange={(e) => updateFormData({ description: e.target.value })}
           className="min-h-[120px] resize-none"

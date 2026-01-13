@@ -39,6 +39,8 @@ const GroupDetail = React.lazy(() => import("@/pages/GroupDetail"));
 const CreateGroup = React.lazy(() => import("@/pages/CreateGroup"));
 const Companies = React.lazy(() => import("@/pages/Companies"));
 const CompanyDetail = React.lazy(() => import("@/pages/CompanyDetail"));
+const Pricing = React.lazy(() => import("@/pages/Pricing"));
+const DebugPremium = React.lazy(() => import("@/pages/DebugPremium"));
 const Settings = React.lazy(() => import("@/pages/settings/Settings"));
 const AccountSettings = React.lazy(() => import("@/pages/settings/AccountSettings"));
 const PersonalizationSettings = React.lazy(() => import("@/pages/settings/PersonalizationSettings"));
@@ -172,6 +174,22 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <Explore />
+                  </Suspense>
+                </AuthGuard>
+              } />
+
+              <Route path="/pricing" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Pricing />
+                  </Suspense>
+                </AuthGuard>
+              } />
+
+              <Route path="/debug-premium" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <DebugPremium />
                   </Suspense>
                 </AuthGuard>
               } />

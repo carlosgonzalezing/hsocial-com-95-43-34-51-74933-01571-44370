@@ -12,11 +12,31 @@ export function GroupGrid({ searchQuery }: { searchQuery: string }) {
   const { data: groups, isLoading } = useQuery({
     queryKey: ["explore-groups", searchQuery],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_public_groups", {
-        limit_count: 50,
-      });
-      if (error) throw error;
-      return data ?? [];
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const [publicGroups, userGroups] = await Promise.all([
+        supabase.rpc("get_public_groups", {
+          limit_count: 50,
+        }),
+        user?.id
+          ? supabase.rpc("get_user_groups", {
+              user_id_param: user.id,
+            })
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (publicGroups.error) throw publicGroups.error;
+      if (userGroups.error) throw userGroups.error;
+
+      const merged: any[] = [...(publicGroups.data ?? []), ...(userGroups.data ?? [])];
+      const byId = new Map<string, any>();
+      for (const g of merged) {
+        if (!g?.id) continue;
+        byId.set(String(g.id), g);
+      }
+      return Array.from(byId.values());
     },
   });
 

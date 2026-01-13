@@ -227,7 +227,7 @@ export default function Profile() {
                 <ProfileInfo profile={profile} />
               </div>
               <div className={`${!isMobile ? 'md:col-span-2' : ''}`}>
-                <ProfileContent profileId={profile.id} />
+                <ProfileContent profileId={profile.id} isOwner={currentUserId === profile.id} />
               </div>
             </div>
           </div>

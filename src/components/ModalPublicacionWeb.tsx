@@ -85,6 +85,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   const [ideaDescription, setIdeaDescription] = useState('');
   const [projectTitle, setProjectTitle] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
+  const [projectStatus, setProjectStatus] = useState<'idea' | 'in_progress' | 'completed'>('in_progress');
 
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -270,7 +271,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
       return Boolean(serviceCategory.trim()) && Boolean(content.trim() || selectedFiles.length > 0);
     }
     return Boolean(content.trim() || selectedFiles.length > 0);
-  }, [content, selectedFiles.length, selectedPostType, ideaTitle, ideaDescription, projectTitle, projectDescription, pollQuestion, pollOptions, eventTitle, eventDescription, eventStartDate, eventLocationType, eventMeetingLink, eventLocation, serviceCategory]);
+  }, [content, selectedFiles.length, selectedPostType, ideaTitle, ideaDescription, projectTitle, projectDescription, projectStatus, pollQuestion, pollOptions, eventTitle, eventDescription, eventStartDate, eventLocationType, eventMeetingLink, eventLocation, serviceCategory]);
 
   const handlePublish = async () => {
     if (effectivePublishing) return;
@@ -382,7 +383,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
           description: projectDescription.trim(),
           participants: [],
         };
-        postData.project_status = 'in_progress';
+        postData.project_status = projectStatus;
       } else if (selectedPostType === 'encuesta') {
         postData.post_type = 'poll';
         const cleanOptions = pollOptions.map(o => o.trim()).filter(Boolean);
@@ -783,12 +784,35 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
                 placeholder="Título del proyecto"
                 className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-2 text-sm"
               />
+              
+              {/* Selector de estado del proyecto */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Estado del proyecto:
+                </label>
+                <Select value={projectStatus} onValueChange={(value: 'idea' | 'in_progress' | 'completed') => setProjectStatus(value)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecciona el estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="idea">Idea</SelectItem>
+                    <SelectItem value="in_progress">En desarrollo</SelectItem>
+                    <SelectItem value="completed">Terminado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <textarea
                 value={projectDescription}
                 onChange={(e) => setProjectDescription(e.target.value)}
-                placeholder="Descripción del proyecto"
+                placeholder={`Describe tu proyecto de forma clara y concisa:
+
+• Objetivo principal
+• Tecnologías utilizadas  
+• Estado actual
+• Qué buscas (colaboradores, feedback, etc.)`}
                 rows={4}
-                className="w-full resize-none rounded-md border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-2 text-sm"
+                className="w-full resize-none rounded-md border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
           )}

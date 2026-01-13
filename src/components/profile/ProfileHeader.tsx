@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ProfileCover } from "./ProfileCover";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -14,7 +13,9 @@ import { trackPremiumProfileView } from "@/lib/api/profile-viewers";
 import { useEffect } from "react";
 import type { Profile } from "@/pages/Profile";
 import { supabase } from "@/integrations/supabase/client";
-
+import { usePremium } from "@/hooks/use-premium";
+import { Badge } from "@/components/ui/badge";
+import { Crown } from "lucide-react";
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -28,6 +29,7 @@ export function ProfileHeader({ profile, currentUserId, onImageUpload, onProfile
   const [fullscreenImage, setFullscreenImage] = useState<{url: string, type: 'avatar' | 'cover'} | null>(null);
   const { hasGivenHeart, heartsCount, isLoading: heartLoading, toggleHeart } = useProfileHeart(profile.id);
   const isMobile = useIsMobile();
+  const { isPremium } = usePremium();
   const [currentExperience, setCurrentExperience] = useState<{ title: string; company_name: string } | null>(null);
 
   const isOwner = currentUserId === profile.id;
@@ -121,15 +123,17 @@ export function ProfileHeader({ profile, currentUserId, onImageUpload, onProfile
         onOpenFullscreen={openFullScreenCover}
       />
 
-      <div className={`relative px-2 md:px-6 -mt-[64px] profile-header`}>
+      <div className={`relative px-2 md:px-6 profile-header`}>
         <div className={`flex ${isMobile ? 'flex-col' : 'items-end'} gap-4`}>
-          <ProfileAvatar
-            avatarUrl={profile.avatar_url}
-            username={profile.username}
-            isOwner={isOwner}
-            onUpload={handleAvatarUpload}
-            onOpenFullscreen={openFullScreenAvatar}
-          />
+          <div className="-mt-[64px]">
+            <ProfileAvatar
+              avatarUrl={profile.avatar_url}
+              username={profile.username}
+              isOwner={isOwner}
+              onUpload={handleAvatarUpload}
+              onOpenFullscreen={openFullScreenAvatar}
+            />
+          </div>
           
           <div className="flex-1 mt-2 md:mt-0">
             <div className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center justify-between'}`}>
@@ -138,6 +142,13 @@ export function ProfileHeader({ profile, currentUserId, onImageUpload, onProfile
                   <h1 className="text-xl md:text-2xl font-bold">
                     {profile.username || "Usuario sin nombre"}
                   </h1>
+
+                  {isPremium && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Crown className="h-3.5 w-3.5" />
+                      Premium Pro
+                    </Badge>
+                  )}
                   
                 </div>
 

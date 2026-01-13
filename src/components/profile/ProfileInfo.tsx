@@ -11,6 +11,7 @@ import { GraduationCap, CalendarDays, Heart, Briefcase, Sparkles, Plus, X, Trash
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Profile } from "@/pages/Profile";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -21,6 +22,7 @@ interface ProfileInfoProps {
 
 export function ProfileInfo({ profile }: ProfileInfoProps) {
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const isCompany = (profile as any)?.account_type === 'company';
   const [skills, setSkills] = useState<string[]>([]);
   const [skillsTableAvailable, setSkillsTableAvailable] = useState(true);
@@ -103,11 +105,21 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
 
     try {
       if (payload.is_current) {
-        await (supabase as any)
+        const { error: currentUpdateError } = await (supabase as any)
           .from('profile_experiences')
           .update({ is_current: false })
           .eq('profile_id', profile.id)
           .eq('is_current', true);
+
+        if (currentUpdateError) {
+          toast({
+            variant: 'destructive',
+            title: 'No se pudo guardar',
+            description: String((currentUpdateError as any)?.message || 'Error actualizando experiencia actual')
+          });
+          setExperiences(prev);
+          return;
+        }
       }
 
       const { data, error } = await (supabase as any)
@@ -118,6 +130,11 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
 
       if (error) {
         setExperiences(prev);
+        toast({
+          variant: 'destructive',
+          title: 'No se pudo guardar la experiencia',
+          description: String((error as any)?.message || 'Error guardando experiencia')
+        });
         return;
       }
 
@@ -144,8 +161,18 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
       setExpEndDate("");
       setExpIsCurrent(false);
       setExpDescription("");
+
+      toast({
+        title: 'Guardado',
+        description: 'Tu experiencia se guardó correctamente.'
+      });
     } catch {
       setExperiences(prev);
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo guardar la experiencia',
+        description: 'Ocurrió un error inesperado al guardar.'
+      });
     } finally {
       setIsSavingExperience(false);
     }
@@ -169,9 +196,19 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
 
       if (error) {
         setExperiences(prev);
+        toast({
+          variant: 'destructive',
+          title: 'No se pudo eliminar',
+          description: String((error as any)?.message || 'Error eliminando experiencia')
+        });
       }
     } catch {
       setExperiences(prev);
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo eliminar',
+        description: 'Ocurrió un error inesperado al eliminar.'
+      });
     } finally {
       setIsSavingExperience(false);
     }
@@ -295,7 +332,7 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
       }
     };
 
-    if (profile?.id && isOwner) {
+    if (profile?.id) {
       loadSkills();
     }
 
@@ -335,9 +372,26 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
         if (!message.toLowerCase().includes('duplicate') && !message.toLowerCase().includes('unique')) {
           setSkills(prevSkills);
         }
+
+        toast({
+          variant: 'destructive',
+          title: 'No se pudo guardar la habilidad',
+          description: message || 'Error guardando habilidad'
+        });
+        return;
       }
+
+      toast({
+        title: 'Guardado',
+        description: 'Tu habilidad se guardó correctamente.'
+      });
     } catch {
       setSkills(prevSkills);
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo guardar la habilidad',
+        description: 'Ocurrió un error inesperado al guardar.'
+      });
     } finally {
       setIsSavingSkill(false);
     }
@@ -361,9 +415,19 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
 
       if (error) {
         setSkills(prevSkills);
+        toast({
+          variant: 'destructive',
+          title: 'No se pudo eliminar',
+          description: String((error as any)?.message || 'Error eliminando habilidad')
+        });
       }
     } catch {
       setSkills(prevSkills);
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo eliminar',
+        description: 'Ocurrió un error inesperado al eliminar.'
+      });
     } finally {
       setIsSavingSkill(false);
     }
@@ -435,11 +499,11 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
                       </Badge>
                     ))
                   ) : (
-                    <>
-                      <Badge variant="secondary" className="text-xs">React</Badge>
-                      <Badge variant="secondary" className="text-xs">UI/UX</Badge>
-                      <Badge variant="secondary" className="text-xs">Gestión de proyectos</Badge>
-                    </>
+                    <p className="text-xs text-muted-foreground">
+                      {isOwner
+                        ? "Aún no has agregado habilidades. Escribe una y presiona el botón + para guardarla."
+                        : "Este perfil aún no tiene habilidades registradas."}
+                    </p>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -583,7 +647,9 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Próximamente podrás agregar tu experiencia laboral (cargo, empresa, fechas y logros).
+                {isOwner
+                  ? "Aún no has agregado experiencia. Completa el formulario y presiona el botón + para guardarla."
+                  : "Este perfil aún no tiene experiencia registrada."}
               </p>
             )}
           </div>

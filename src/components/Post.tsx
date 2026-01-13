@@ -9,6 +9,7 @@ import { usePost } from "@/hooks/use-post";
 import { PostWrapper } from "./post/PostWrapper";
 import { useState, useEffect } from "react";
 import { IdeaContent } from "./post/IdeaContent";
+import { ProjectContent } from "./post/ProjectContent";
 import { PostOptionsMenu } from "./post/actions/PostOptionsMenu";
 import { EventCard } from "./events/EventCard";
 import { EventDetailModal } from "./events/EventDetailModal";
@@ -413,11 +414,13 @@ function ProjectPostView({ post }: { post: PostType }) {
   
   return (
     <div className="px-0 md:px-4 pb-2">
-      <IdeaContent 
+      <ProjectContent 
         idea={post.idea} 
         content={post.content || ''}
         postId={post.id}
         postOwnerId={post.user_id}
+        mediaUrls={post.media_urls || undefined}
+        projectStatus={post.project_status}
       />
     </div>
   );

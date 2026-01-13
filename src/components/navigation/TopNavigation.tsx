@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, MessageCircle, Users, Bell, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen, Compass } from "lucide-react";
+import { Home, MessageCircle, Users, Bell, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen, Compass, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -145,6 +145,17 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
           
           {/* Search + Actions - Right */}
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full text-foreground hover:bg-muted"
+              onClick={() => navigate("/pricing")}
+              aria-label="Premium"
+              title="Premium"
+            >
+              <Crown className="h-6 w-6" />
+            </Button>
+
             {/* Search button (abre buscador de pantalla completa) */}
             <Button
               variant="ghost"
@@ -262,6 +273,16 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
         <div className="flex items-center gap-1 flex-shrink-0 w-80 justify-end">
           {isAuthenticated && (
             <>
+              <Button
+                variant="outline"
+                className="h-10 px-3 rounded-full"
+                onClick={() => navigate("/pricing")}
+                title="Premium"
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                Premium
+              </Button>
+
               {/* Profile */}
               <Button
                 variant="ghost"
