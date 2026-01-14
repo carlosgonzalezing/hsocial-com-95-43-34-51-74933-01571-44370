@@ -103,6 +103,79 @@ export default function Profile() {
         const { count: postsCount, error: postsError } = postsResult;
         const { count: heartsCount, error: heartsError } = heartsResult;
 
+        // Si el perfil no existe, crearlo automáticamente para el usuario actual
+        if (profileError && profileError.code === 'PGRST116' && user?.id === profileId) {
+          console.log('Profile not found, creating profile for user:', user?.id);
+          try {
+            const { data: newProfileData, error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                username: user.email?.split('@')[0] || 'user',
+                bio: null,
+                avatar_url: user.user_metadata?.avatar_url || null,
+                cover_url: null,
+                location: null,
+                education: null,
+                career: null,
+                semester: null,
+                birth_date: null,
+                relationship_status: null,
+                account_type: 'personal',
+                company_name: null,
+                institution_name: null,
+                academic_role: null,
+                followers_count: 0,
+                following_count: 0,
+                posts_count: 0,
+                hearts_count: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                last_seen: null,
+                status: 'online'
+              })
+              .select()
+              .single();
+
+            if (!createError && newProfileData) {
+              console.log('Profile created successfully:', newProfileData);
+              // Usar el perfil recién creado
+              const typedProfileData = newProfileData as unknown as ProfileTable['Row'];
+              
+              const newProfile: Profile = {
+                id: typedProfileData.id,
+                username: typedProfileData.username,
+                bio: typedProfileData.bio,
+                avatar_url: typedProfileData.avatar_url,
+                cover_url: typedProfileData.cover_url,
+                location: null,
+                education: null,
+                career: typedProfileData.career,
+                semester: typedProfileData.semester,
+                birth_date: typedProfileData.birth_date,
+                relationship_status: typedProfileData.relationship_status,
+                account_type: typedProfileData.account_type ?? null,
+                company_name: (typedProfileData as any)?.company_name ?? null,
+                institution_name: typedProfileData.institution_name,
+                academic_role: typedProfileData.academic_role,
+                followers_count: followersCount || 0,
+                following_count: followingCount || 0,
+                posts_count: postsCount || 0,
+                hearts_count: heartsCount || 0,
+                created_at: typedProfileData.created_at,
+                updated_at: typedProfileData.updated_at
+              };
+
+              console.log('Profile loaded successfully:', newProfile);
+              setProfile(newProfile);
+              setLoading(false);
+              return;
+            }
+          } catch (createErr) {
+            console.error('Error creating profile:', createErr);
+          }
+        }
+
         if (profileError || !profileData) {
           console.error('Error fetching profile:', profileError);
           setError(true);
@@ -227,7 +300,14 @@ export default function Profile() {
                 <ProfileInfo profile={profile} />
               </div>
               <div className={`${!isMobile ? 'md:col-span-2' : ''}`}>
-                <ProfileContent profileId={profile.id} isOwner={currentUserId === profile.id} />
+                <ProfileContent 
+                  profileId={profile.id} 
+                  isOwner={currentUserId === profile.id}
+                  profile={profile}
+                  followersCount={profile.followers_count}
+                  postsCount={profile.posts_count}
+                  followingCount={profile.following_count}
+                />
               </div>
             </div>
           </div>

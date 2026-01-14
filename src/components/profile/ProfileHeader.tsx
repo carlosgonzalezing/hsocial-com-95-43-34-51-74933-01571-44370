@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ProfileCover } from "./ProfileCover";
 import { ProfileAvatar } from "./ProfileAvatar";
-import { ProfileStats } from "./ProfileStats";
 import { ProfileActions } from "./ProfileActions";
 import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog";
 // Removed ChatDialog - using global chat only
@@ -166,11 +165,6 @@ export function ProfileHeader({ profile, currentUserId, onImageUpload, onProfile
                     )}
                   </div>
                 )}
-                <ProfileStats 
-                  followersCount={profile.followers_count}
-                  postsCount={profile.posts_count}
-                  followingCount={profile.following_count}
-                />
               </div>
               
               <ProfileActions

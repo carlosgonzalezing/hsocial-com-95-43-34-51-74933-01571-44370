@@ -2,15 +2,30 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Feed } from "@/components/feed/Feed";
-import { Grid, Lightbulb, FolderOpen, FolderKanban, Briefcase } from "lucide-react";
+import { Grid, Lightbulb, FolderOpen, FolderKanban, Briefcase, Award, FileText, ExternalLink } from "lucide-react";
 import { PinnedProjectsSection } from "./PinnedProjectsSection";
+import { ProfilePortfolio } from "./ProfilePortfolio";
+import { ProfileBadges } from "./ProfileBadges";
+import { ProfileStats } from "./ProfileStats";
+import type { Profile } from "@/pages/Profile";
 
 interface ProfileContentProps {
   profileId: string;
   isOwner?: boolean;
+  profile: Profile;
+  followersCount: number;
+  postsCount: number;
+  followingCount: number;
 }
 
-export function ProfileContent({ profileId, isOwner = false }: ProfileContentProps) {
+export function ProfileContent({ 
+  profileId, 
+  isOwner = false, 
+  profile,
+  followersCount,
+  postsCount,
+  followingCount
+}: ProfileContentProps) {
   return (
     <Tabs defaultValue="posts" className="w-full">
       <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0">
@@ -51,6 +66,22 @@ export function ProfileContent({ profileId, isOwner = false }: ProfileContentPro
           <Briefcase className="h-4 w-4" />
           <span className="hidden sm:inline">Servicios</span>
         </TabsTrigger>
+
+        <TabsTrigger 
+          value="portfolio"
+          className="flex items-center gap-2 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+        >
+          <FileText className="h-4 w-4" />
+          <span className="hidden sm:inline">Portafolio</span>
+        </TabsTrigger>
+
+        <TabsTrigger 
+          value="stats"
+          className="flex items-center gap-2 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+        >
+          <Award className="h-4 w-4" />
+          <span className="hidden sm:inline">Estadísticas</span>
+        </TabsTrigger>
       </TabsList>
       
       <TabsContent value="posts" className="mt-0">
@@ -77,6 +108,14 @@ export function ProfileContent({ profileId, isOwner = false }: ProfileContentPro
             Próximamente podrás publicar servicios y recibir solicitudes.
           </p>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="portfolio" className="mt-0">
+        <ProfilePortfolio profile={profile} isOwner={isOwner} />
+      </TabsContent>
+
+      <TabsContent value="stats" className="mt-0">
+        <div className="h-0" />
       </TabsContent>
     </Tabs>
   );

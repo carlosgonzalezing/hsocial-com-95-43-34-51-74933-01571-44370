@@ -55,7 +55,7 @@ export function EventCard({
   };
 
   return (
-    <div className={`relative rounded-xl p-6 text-white cursor-pointer transition-transform hover:scale-[1.02] ${gradientClass} min-h-[200px]`} onClick={onClick}>
+    <div className={`relative rounded-xl p-4 text-white cursor-pointer ${gradientClass} min-h-[140px]`} onClick={onClick}>
       {/* Background pattern/overlay */}
       <div className="absolute inset-0 bg-black/10"></div>
       
@@ -72,7 +72,7 @@ export function EventCard({
       
       {/* Content */}
       <div className="relative z-10 max-w-[calc(100%-5rem)]">
-        <h3 className="text-xl font-bold mb-1">{title}</h3>
+        <h3 className="text-lg font-bold mb-1">{title}</h3>
         {subtitle && (
           <p className="text-white/90 text-sm mb-2">{subtitle}</p>
         )}

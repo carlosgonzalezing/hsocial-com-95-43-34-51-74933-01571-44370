@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FilePreview } from "../FilePreview";
 import { ImageModal } from "./ImageModal";
@@ -21,7 +21,7 @@ interface PostContentProps {
   postId: string;
 }
 
-export function PostContent({ post, postId }: PostContentProps) {
+function PostContentComponent({ post, postId }: PostContentProps) {
   const navigate = useNavigate();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -59,16 +59,17 @@ export function PostContent({ post, postId }: PostContentProps) {
   // Check if the post has event
   const hasEvent = !!post.event;
 
-  console.log('PostContent rendering:', { 
-    postId: post.id, 
-    hasMedia, 
-    mediaUrl: post.media_url, 
-    mediaType: post.media_type,
-    hasMarketplace,
-    hasIdea,
-    hasEvent,
-    hasPoll
-  });
+  // Remove excessive logging for performance
+  // console.log('PostContent rendering:', { 
+  //   postId: post.id, 
+  //   hasMedia, 
+  //   mediaUrl: post.media_url, 
+  //   mediaType: post.media_type,
+  //   hasMarketplace,
+  //   hasIdea,
+  //   hasEvent,
+  //   hasPoll
+  // });
 
   // Get background preset for styled content
   const backgroundPreset = post.content_style?.backgroundKey 
@@ -110,7 +111,7 @@ export function PostContent({ post, postId }: PostContentProps) {
               content={displayContent || ''}
               className={
                 isStyledTextPost 
-                  ? "relative z-10 text-xl font-semibold text-white text-center py-16 px-4 md:px-6 whitespace-pre-wrap break-words"
+                  ? "relative z-10 text-lg font-semibold text-white text-center py-10 px-4 md:px-6 whitespace-pre-wrap break-words"
                   : "text-[15px] leading-relaxed whitespace-pre-wrap break-words post-content px-4 md:px-0 text-foreground"
               }
             />
@@ -135,7 +136,7 @@ export function PostContent({ post, postId }: PostContentProps) {
             // Un solo archivo: mostrar directamente
             <div className="w-full">
               {mediaItems[0].type === 'image' ? (
-                <div className="w-full overflow-hidden h-[420px] sm:h-[520px]">
+                <div className="w-full overflow-hidden h-[320px] sm:h-[420px]">
                   <PostImage
                     src={mediaItems[0].url}
                     alt="Contenido multimedia del post"
@@ -146,7 +147,7 @@ export function PostContent({ post, postId }: PostContentProps) {
               ) : (
                 <video
                   src={mediaItems[0].url}
-                  className="w-full max-h-[520px] object-contain rounded-none cursor-pointer"
+                  className="w-full max-h-[420px] object-contain rounded-none cursor-pointer"
                   onClick={() => {
                     // Treat single video posts as Reels to provide the requested vertical viewer experience
                     navigate(`/reels/${post.id}`);
@@ -282,3 +283,5 @@ export function PostContent({ post, postId }: PostContentProps) {
     </div>
   );
 }
+
+export const PostContent = memo(PostContentComponent);

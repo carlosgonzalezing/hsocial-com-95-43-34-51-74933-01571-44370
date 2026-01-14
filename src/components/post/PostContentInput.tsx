@@ -152,7 +152,7 @@ export function PostContentInput({
     if (contentStyle?.isTextOnly && contentStyle.backgroundKey !== 'none') {
       // Facebook-style background with text overlay
       return {
-        className: "min-h-[200px] resize-none border-0 text-center text-xl font-semibold px-6 py-8 text-white placeholder:text-white/70 focus-visible:ring-0 bg-transparent relative z-10",
+        className: "min-h-[160px] resize-none border-0 text-center text-lg font-semibold px-6 py-6 text-white placeholder:text-white/70 focus-visible:ring-0 bg-transparent relative z-10",
         style: {
           background: 'transparent'
         }

@@ -102,7 +102,7 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
     <>
       <div className="px-0 md:px-4 pb-2">
         {/* Header del proyecto */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-3">
               <Briefcase className="h-5 w-5 text-blue-500" />
@@ -115,7 +115,7 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
               )}
             </div>
             
-            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">{idea.title}</h3>
+            <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">{idea.title}</h3>
             
             {idea.participants && idea.participants.length > 0 && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
@@ -144,13 +144,13 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
 
         {/* Imagen del proyecto si existe - Diseño mejorado con clic para ampliar */}
         {mediaUrls && mediaUrls.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="relative rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 group cursor-pointer"
                  onClick={() => openImageModal(0)}>
               <img
                 src={mediaUrls[0]}
                 alt={idea.title}
-                className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-56 sm:h-64 object-cover transition-transform duration-300 group-hover:scale-105"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
@@ -178,7 +178,7 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
         )}
 
         {/* Descripción del proyecto con "Ver más" */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="prose prose-sm max-w-none dark:prose-invert">
             <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
               <MentionsText content={displayText} />
@@ -210,7 +210,7 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
 
         {/* Información adicional del proyecto - Diseño mejorado */}
         {(idea.estimated_duration || idea.expected_impact || idea.category) && (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {idea.category && (
                 <div>

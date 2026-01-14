@@ -176,7 +176,7 @@ export function PostHeader({
   const getAvatarContent = () => {
     if (isIncognito) {
       return (
-        <Avatar className="h-10 w-10 bg-gray-500">
+        <Avatar className="h-9 w-9 bg-gray-500">
           <AvatarFallback className="bg-gray-500 text-white">
             <EyeOff className="h-5 w-5" />
           </AvatarFallback>
@@ -189,7 +189,7 @@ export function PostHeader({
     if (companyId && company?.name) {
       return (
         <Link to={`/companies/${company.slug || company.id}`}>
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-9 w-9">
             <AvatarImage src={company.logo_url || undefined} />
             <AvatarFallback>{company.name?.[0]}</AvatarFallback>
           </Avatar>
@@ -199,7 +199,7 @@ export function PostHeader({
     
     return (
       <Link to={`/profile/${post.user_id}`}>
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-9 w-9">
           <AvatarImage src={post.profiles?.avatar_url || undefined} />
           <AvatarFallback>{post.profiles?.username?.[0]}</AvatarFallback>
         </Avatar>
@@ -275,7 +275,7 @@ export function PostHeader({
   const isMobile = useIsMobile();
 
   return (
-    <div className={`flex justify-between items-start px-4 py-4 md:px-6 md:py-5 ${isHidden ? 'opacity-50' : ''}`}>
+    <div className={`flex justify-between items-start px-4 py-3 md:px-5 md:py-4 ${isHidden ? 'opacity-50' : ''}`}>
       <div className="flex items-start space-x-3">
         {getAvatarContent()}
         <div>

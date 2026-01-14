@@ -34,7 +34,7 @@ export function MediaCarousel({ mediaItems, className = "" }: MediaCarouselProps
     return (
       <div className={`w-full ${className}`}>
         {currentMedia.type === 'image' ? (
-          <div className="w-full overflow-hidden h-[420px] sm:h-[520px]">
+          <div className="w-full overflow-hidden h-[320px] sm:h-[420px]">
             <PostImage
               src={currentMedia.url}
               alt="Contenido multimedia"
@@ -45,7 +45,7 @@ export function MediaCarousel({ mediaItems, className = "" }: MediaCarouselProps
         ) : (
           <video
             src={currentMedia.url}
-            className="w-full max-h-[520px] object-contain rounded-none cursor-pointer"
+            className="w-full max-h-[420px] object-contain rounded-none cursor-pointer"
             onClick={() => openAtIndex(0)}
             controls
             preload="metadata"
@@ -62,7 +62,7 @@ export function MediaCarousel({ mediaItems, className = "" }: MediaCarouselProps
         {/* Grid tipo Facebook con altura fija */}
         {(() => {
           const total = mediaItems.length;
-          const heightClass = "h-[420px] sm:h-[520px]";
+          const heightClass = "h-[320px] sm:h-[420px]";
 
           const Tile = ({ item, index, overlayText }: { item: MediaItem; index: number; overlayText?: string }) => (
             <button

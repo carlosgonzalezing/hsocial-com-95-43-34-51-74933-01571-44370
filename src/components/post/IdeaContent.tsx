@@ -21,6 +21,7 @@ interface IdeaContentProps {
 export function IdeaContent({ idea, content, postId, postOwnerId }: IdeaContentProps) {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   
   const { data: participants = [] } = useIdeaParticipants(postId);
   const { data: requestStatus } = useUserRequestStatus(postId, postOwnerId);
@@ -49,6 +50,13 @@ export function IdeaContent({ idea, content, postId, postOwnerId }: IdeaContentP
     setShowRequestDialog(false);
   };
 
+  const fullDescriptionText = (idea.description || content || '').trim();
+  const shouldTruncateDescription = fullDescriptionText.length > 380;
+  const truncatedDescriptionText = shouldTruncateDescription
+    ? fullDescriptionText.substring(0, 380) + '...'
+    : fullDescriptionText;
+  const displayDescriptionText = showFullDescription ? fullDescriptionText : truncatedDescriptionText;
+
   const getPhaseColor = (phase?: string) => {
     switch (phase) {
       case 'ideation': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
@@ -73,7 +81,7 @@ export function IdeaContent({ idea, content, postId, postOwnerId }: IdeaContentP
     <div className="space-y-3">
       <div className="px-4 py-3 rounded-lg border border-border bg-card">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           {idea.project_phase && (
             <Badge className={getPhaseColor(idea.project_phase)}>
               {idea.project_phase}
@@ -86,19 +94,29 @@ export function IdeaContent({ idea, content, postId, postOwnerId }: IdeaContentP
 
         {/* Title */}
         {idea.title && (
-          <h3 className="font-semibold text-lg mb-2 text-foreground">
+          <h3 className="font-semibold text-base mb-2 text-foreground">
             {idea.title}
           </h3>
         )}
 
         {/* Description */}
         <MentionsText 
-          content={idea.description || content || ''} 
-          className="text-muted-foreground whitespace-pre-wrap break-words mb-4" 
+          content={displayDescriptionText} 
+          className="text-sm text-muted-foreground whitespace-pre-wrap break-words mb-3" 
         />
 
+        {shouldTruncateDescription && (
+          <button
+            type="button"
+            onClick={() => setShowFullDescription((v) => !v)}
+            className="text-xs text-muted-foreground hover:underline mb-3"
+          >
+            {showFullDescription ? 'Ver menos' : 'Ver más'}
+          </button>
+        )}
+
         {/* Project Details */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Category & Duration */}
           <div className="flex flex-wrap gap-2 items-center text-sm text-muted-foreground">
             {idea.category && (
@@ -141,7 +159,7 @@ export function IdeaContent({ idea, content, postId, postOwnerId }: IdeaContentP
               </div>
               <div className="space-y-2 ml-6">
                 {idea.needed_roles.map((role, index) => (
-                  <div key={index} className="border border-border rounded-lg p-3 bg-muted/50">
+                  <div key={index} className="border border-border rounded-lg p-2 bg-muted/50">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-medium text-sm text-foreground">{role.title}</span>
                       <Badge className={getCommitmentColor(role.commitment_level)}>
