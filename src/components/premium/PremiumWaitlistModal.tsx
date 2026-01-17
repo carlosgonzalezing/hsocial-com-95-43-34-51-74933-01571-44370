@@ -39,9 +39,9 @@ export function PremiumWaitlistModal({ children }: { children: React.ReactNode }
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Activa Premium Pro</DialogTitle>
+          <DialogTitle>Prueba Premium Pro 7 días</DialogTitle>
           <DialogDescription>
-            Déjanos tu WhatsApp y email y te contactaremos para activar tu suscripción.
+            Déjanos tu WhatsApp y email para habilitar tu prueba y verificar tu cuenta.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -68,7 +68,7 @@ export function PremiumWaitlistModal({ children }: { children: React.ReactNode }
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Enviando..." : "Enviar solicitud"}
+            {loading ? "Enviando..." : "Empezar prueba"}
           </Button>
         </form>
       </DialogContent>
