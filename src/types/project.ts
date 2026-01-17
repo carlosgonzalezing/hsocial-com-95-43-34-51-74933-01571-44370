@@ -9,6 +9,7 @@ export interface Project {
   technologies: string[];
   tags: string[];
   image_url?: string;
+  media_urls?: string[];
   github_url?: string;
   demo_url?: string;
   documentation_url?: string;

@@ -77,6 +77,7 @@ export default function Projects() {
         comments_count: post.comments_count || 0,
         views_count: 0,
         image_url: post.media_urls && post.media_urls.length > 0 ? post.media_urls[0] : undefined,
+        media_urls: post.media_urls || [],
         created_at: post.created_at,
         updated_at: post.updated_at
       };

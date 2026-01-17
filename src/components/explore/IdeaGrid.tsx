@@ -2,13 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Lightbulb, Users } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useIdeaParticipantsCount } from "@/hooks/ideas/use-idea-participants-count";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Post } from "@/components/Post";
+import type { Post as PostType } from "@/types/post";
+import { JoinIdeaButton } from "@/components/post/actions/join-idea/JoinIdeaButton";
 
 export function IdeaGrid({ searchQuery }: { searchQuery: string }) {
-  const navigate = useNavigate();
+  const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
+  const [showPostModal, setShowPostModal] = useState(false);
   
   const { data: ideas, isLoading } = useQuery({
     queryKey: ['explore-ideas', searchQuery],
@@ -53,15 +59,19 @@ export function IdeaGrid({ searchQuery }: { searchQuery: string }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {ideas?.map((idea) => {
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {ideas?.map((idea) => {
         const participantCount = participantCounts?.get(idea.id) || 0;
         
         return (
           <Card 
             key={idea.id} 
             className="overflow-hidden cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 bg-card border border-border"
-            onClick={() => navigate(`/`)}
+            onClick={() => {
+              setSelectedPost(idea as PostType);
+              setShowPostModal(true);
+            }}
           >
             {/* Imagen o placeholder */}
             {idea.media_url ? (
@@ -99,10 +109,57 @@ export function IdeaGrid({ searchQuery }: { searchQuery: string }) {
                   {participantCount} {participantCount === 1 ? 'participante' : 'participantes'}
                 </Badge>
               )}
+
+              <div className="pt-1 flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPost(idea as PostType);
+                    setShowPostModal(true);
+                  }}
+                >
+                  Ver publicación
+                </Button>
+
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  <JoinIdeaButton
+                    postId={idea.id}
+                    size="sm"
+                    className="h-8 px-3 text-xs"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         );
-      })}
-    </div>
+        })}
+      </div>
+
+      <Dialog
+        open={showPostModal && !!selectedPost}
+        onOpenChange={(open) => {
+          setShowPostModal(open);
+          if (!open) setSelectedPost(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="px-4 py-3 border-b border-border">
+            <DialogTitle className="text-base">Publicación</DialogTitle>
+          </DialogHeader>
+
+          <div className="p-4">
+            {selectedPost && <Post post={selectedPost} />}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -1,8 +1,10 @@
-import React from 'react';
-import { Eye, Heart, MessageCircle, Users, Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye, Heart, MessageCircle, Users, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PROJECT_STATUS_CONFIG, type Project } from '@/types/project';
@@ -13,37 +15,85 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
+  const [showImageGallery, setShowImageGallery] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const statusConfig = PROJECT_STATUS_CONFIG[project.status];
+  
+  // Get all images from media_urls or use image_url as fallback
+  const projectImages = project.media_urls && project.media_urls.length > 0 
+    ? project.media_urls 
+    : project.image_url 
+      ? [project.image_url] 
+      : [];
   
   const displayTechs = project.technologies.slice(0, 4);
   const remainingTechsCount = project.technologies.length - 4;
 
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (projectImages.length > 0) {
+      setShowImageGallery(true);
+      setCurrentImageIndex(0);
+    }
+  };
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev - 1 + projectImages.length) % projectImages.length);
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1) % projectImages.length);
+  };
+
   return (
-    <Card 
-      className="group cursor-pointer overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 bg-card border-border/50"
-      onClick={onClick}
-    >
-      {/* Horizontal Layout: Image Left, Content Right */}
-      <div className="flex flex-col md:flex-row">
-        {/* Project Image - Left Side */}
-        <div className="relative md:w-2/5 aspect-[16/9] md:aspect-auto bg-gradient-to-br from-primary/10 via-primary/5 to-background overflow-hidden">
-          {project.image_url ? (
-            <img
-              src={project.image_url}
-              alt={project.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-6xl opacity-20">📁</div>
-            </div>
-          )}
+    <>
+      <Card 
+        className="group cursor-pointer overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 bg-card border-border/50"
+        onClick={onClick}
+      >
+        {/* Horizontal Layout: Image Left, Content Right */}
+        <div className="flex flex-col md:flex-row">
+          {/* Project Image - Left Side */}
+          <div className="relative md:w-2/5 aspect-[16/9] md:aspect-auto bg-gradient-to-br from-primary/10 via-primary/5 to-background overflow-hidden">
+            {projectImages.length > 0 ? (
+              <>
+                <img
+                  src={projectImages[0]}
+                  alt={project.title}
+                  className="relative z-10 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 cursor-pointer"
+                  onClick={handleImageClick}
+                />
+                
+                {/* Image counter and "Ver más" overlay for multiple images */}
+                {projectImages.length > 1 && (
+                  <div 
+                    className="absolute inset-0 z-20 bg-black/40 backdrop-blur-sm flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    onClick={handleImageClick}
+                  >
+                    <div className="text-center">
+                      <div className="text-white text-lg font-semibold mb-1">
+                        +{projectImages.length - 1} imágenes
+                      </div>
+                      <div className="text-white text-sm bg-white/20 backdrop-blur-md rounded-full px-4 py-2 border border-white/30">
+                        Ver más
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-6xl opacity-20">📁</div>
+              </div>
+            )}
           
           {/* Gradient overlay for better badge visibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20" />
+          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-t from-black/30 via-transparent to-black/20" />
           
           {/* Status Badge - Top Left */}
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-3 left-3 z-30">
             <Badge 
               className={`${statusConfig.color} text-white font-bold px-3 py-1.5 text-xs uppercase tracking-wide shadow-lg backdrop-blur-sm`}
             >
@@ -53,7 +103,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
 
           {/* Collaboration Badge - Top Right */}
           {project.seeking_collaborators && (
-            <div className="absolute top-3 right-3">
+            <div className="absolute top-3 right-3 z-30">
               <Badge className="bg-emerald-500 text-white font-bold px-3 py-1.5 text-xs shadow-lg backdrop-blur-sm">
                 🤝 Busca colaboradores
               </Badge>
@@ -61,7 +111,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           )}
 
           {/* Views count overlay - Bottom Right */}
-          <div className="absolute bottom-3 right-3">
+          <div className="absolute bottom-3 right-3 z-30">
             <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5 text-white text-xs font-medium">
               <Eye size={12} className="opacity-80" />
               <span>{project.views_count.toLocaleString()}</span>
@@ -77,9 +127,23 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           </h3>
 
           {/* Description */}
-          <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
+          <p className="text-muted-foreground text-sm line-clamp-3 md:line-clamp-4 leading-relaxed">
             {project.short_description || project.description}
           </p>
+
+          <div>
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+              }}
+            >
+              Ver más
+            </Button>
+          </div>
 
           {/* Technologies */}
           <div className="flex flex-wrap gap-2">
@@ -151,5 +215,86 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         </div>
       </div>
     </Card>
+
+    {/* Image Gallery Dialog */}
+    <Dialog open={showImageGallery} onOpenChange={setShowImageGallery}>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+        <div className="relative">
+          {/* Close button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowImageGallery(false);
+            }}
+            className="absolute top-4 right-4 z-50 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white hover:bg-black/70 transition-colors"
+          >
+            <X size={20} />
+          </button>
+
+          {/* Image display */}
+          <div className="relative bg-black">
+            <img
+              src={projectImages[currentImageIndex]}
+              alt={`${project.title} - Imagen ${currentImageIndex + 1}`}
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+
+            {/* Navigation buttons */}
+            {projectImages.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 backdrop-blur-sm rounded-full p-3 text-white hover:bg-black/70 transition-colors"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 backdrop-blur-sm rounded-full p-3 text-white hover:bg-black/70 transition-colors"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )}
+
+            {/* Image counter */}
+            {projectImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 text-white text-sm">
+                {currentImageIndex + 1} / {projectImages.length}
+              </div>
+            )}
+          </div>
+
+          {/* Image thumbnails */}
+          {projectImages.length > 1 && (
+            <div className="p-4 bg-gray-100 dark:bg-gray-900 border-t">
+              <div className="flex gap-2 overflow-x-auto">
+                {projectImages.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                      index === currentImageIndex
+                        ? 'border-primary ring-2 ring-primary/50'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
