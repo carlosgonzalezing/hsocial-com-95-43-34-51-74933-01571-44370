@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Post } from "@/components/Post";
 import type { Post as PostType } from "@/types/post";
 import { JoinIdeaButton } from "@/components/post/actions/join-idea/JoinIdeaButton";
+import { toast } from "@/hooks/use-toast";
 
 export function IdeaGrid({ searchQuery }: { searchQuery: string }) {
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
@@ -26,6 +27,7 @@ export function IdeaGrid({ searchQuery }: { searchQuery: string }) {
           profiles(username, avatar_url)
         `)
         .eq('post_type', 'idea')
+        .not('idea', 'is', null)
         .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .limit(20);
@@ -63,6 +65,7 @@ export function IdeaGrid({ searchQuery }: { searchQuery: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {ideas?.map((idea) => {
         const participantCount = participantCounts?.get(idea.id) || 0;
+        const isJoinableIdea = !!(idea as any)?.idea;
         
         return (
           <Card 
@@ -130,11 +133,28 @@ export function IdeaGrid({ searchQuery }: { searchQuery: string }) {
                     e.stopPropagation();
                   }}
                 >
-                  <JoinIdeaButton
-                    postId={idea.id}
-                    size="sm"
-                    className="h-8 px-3 text-xs"
-                  />
+                  {isJoinableIdea ? (
+                    <JoinIdeaButton
+                      postId={idea.id}
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                    />
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                      onClick={() => {
+                        toast({
+                          title: "No disponible",
+                          description: "Esta publicación no está configurada como idea colaborativa para recibir solicitudes.",
+                        });
+                      }}
+                    >
+                      No disponible
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
