@@ -3,6 +3,7 @@ import {
   Bell,
   Bookmark,
   Briefcase,
+  BarChart3,
   Compass,
   Home,
   MessageCircle,
@@ -56,6 +57,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
     { icon: Compass, label: "Explorar", path: "/explore" },
     { icon: Users, label: "Grupos", path: "/groups" },
     { icon: Briefcase, label: "Proyectos", path: "/projects" },
+    { icon: BarChart3, label: "Analytics Pro", path: "/analytics" },
     { icon: Video, label: "Reels", path: "/reels" },
     { icon: Bookmark, label: "Guardados", path: "/saved" },
   ];
