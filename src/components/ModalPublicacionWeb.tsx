@@ -86,6 +86,9 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   const [projectTitle, setProjectTitle] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [projectStatus, setProjectStatus] = useState<'idea' | 'in_progress' | 'completed'>('in_progress');
+  const [projectTechnologies, setProjectTechnologies] = useState<string[]>([]);
+  const [projectDemoUrl, setProjectDemoUrl] = useState('');
+  const [techInput, setTechInput] = useState('');
 
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -271,7 +274,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
       return Boolean(serviceCategory.trim()) && Boolean(content.trim() || selectedFiles.length > 0);
     }
     return Boolean(content.trim() || selectedFiles.length > 0);
-  }, [content, selectedFiles.length, selectedPostType, ideaTitle, ideaDescription, projectTitle, projectDescription, projectStatus, pollQuestion, pollOptions, eventTitle, eventDescription, eventStartDate, eventLocationType, eventMeetingLink, eventLocation, serviceCategory]);
+  }, [content, selectedFiles.length, selectedPostType, ideaTitle, ideaDescription, projectTitle, projectDescription, projectStatus, projectTechnologies, projectDemoUrl, pollQuestion, pollOptions, eventTitle, eventDescription, eventStartDate, eventLocationType, eventMeetingLink, eventLocation, serviceCategory]);
 
   const handlePublish = async () => {
     if (effectivePublishing) return;
@@ -381,9 +384,15 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         postData.idea = {
           title: projectTitle.trim(),
           description: projectDescription.trim(),
+          category: 'Otro',
+          resources_needed: projectTechnologies,
+          expected_impact: '',
+          demo_url: projectDemoUrl.trim() || null,
           participants: [],
         };
         postData.project_status = projectStatus;
+        postData.technologies = projectTechnologies;
+        postData.demo_url = projectDemoUrl.trim() || null;
       } else if (selectedPostType === 'encuesta') {
         postData.post_type = 'poll';
         const cleanOptions = pollOptions.map(o => o.trim()).filter(Boolean);
@@ -802,13 +811,89 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
                 </Select>
               </div>
               
+              {/* Campo Tecnologías */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Tecnologías utilizadas:
+                </label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {projectTechnologies.map((tech, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-sm"
+                    >
+                      {tech}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProjectTechnologies(prev => prev.filter((_, i) => i !== index));
+                        }}
+                        className="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={techInput}
+                    onChange={(e) => setTechInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && techInput.trim()) {
+                        e.preventDefault();
+                        if (projectTechnologies.length < 8 && !projectTechnologies.includes(techInput.trim())) {
+                          setProjectTechnologies(prev => [...prev, techInput.trim()]);
+                          setTechInput('');
+                        }
+                      }
+                    }}
+                    placeholder="Ej: React, Node.js, Python..."
+                    className="flex-1 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-2 text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-9"
+                    onClick={() => {
+                      if (techInput.trim() && projectTechnologies.length < 8 && !projectTechnologies.includes(techInput.trim())) {
+                        setProjectTechnologies(prev => [...prev, techInput.trim()]);
+                        setTechInput('');
+                      }
+                    }}
+                    disabled={!techInput.trim() || projectTechnologies.length >= 8}
+                  >
+                    Agregar
+                  </Button>
+                </div>
+                {projectTechnologies.length >= 8 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Máximo 8 tecnologías
+                  </p>
+                )}
+              </div>
+              
+              {/* Campo URL Demo */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Link de demo/preview (opcional):
+                </label>
+                <input
+                  type="url"
+                  value={projectDemoUrl}
+                  onChange={(e) => setProjectDemoUrl(e.target.value)}
+                  placeholder="https://mi-proyecto-demo.com"
+                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-2 text-sm"
+                />
+              </div>
+              
               <textarea
                 value={projectDescription}
                 onChange={(e) => setProjectDescription(e.target.value)}
                 placeholder={`Describe tu proyecto de forma clara y concisa:
 
 • Objetivo principal
-• Tecnologías utilizadas  
 • Estado actual
 • Qué buscas (colaboradores, feedback, etc.)`}
                 rows={4}

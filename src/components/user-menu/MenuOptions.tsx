@@ -265,9 +265,9 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
       {/* Footer Links */}
       <div className="px-3 py-4 mt-2">
         <div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
-          <button className="hover:underline" onClick={() => handleNavigate("/settings/privacy")}>Privacidad</button>
+          <button className="hover:underline" onClick={() => handleNavigate("/privacy")}>Política de Privacidad</button>
           <span>·</span>
-          <button className="hover:underline" onClick={() => toast({ title: "Condiciones", description: "Próximamente" })}>Condiciones</button>
+          <button className="hover:underline" onClick={() => handleNavigate("/terms")}>Términos y Condiciones</button>
           <span>·</span>
           <button className="hover:underline" onClick={() => toast({ title: "Publicidad", description: "Próximamente" })}>Publicidad</button>
           <span>·</span>

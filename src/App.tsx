@@ -41,6 +41,8 @@ const Companies = React.lazy(() => import("@/pages/Companies"));
 const CompanyDetail = React.lazy(() => import("@/pages/CompanyDetail"));
 const Pricing = React.lazy(() => import("@/pages/Pricing"));
 const DebugPremium = React.lazy(() => import("@/pages/DebugPremium"));
+const TermsOfService = React.lazy(() => import("@/pages/TermsOfService"));
+const PrivacyPolicy = React.lazy(() => import("@/pages/PrivacyPolicy"));
 const Settings = React.lazy(() => import("@/pages/settings/Settings"));
 const AccountSettings = React.lazy(() => import("@/pages/settings/AccountSettings"));
 const PersonalizationSettings = React.lazy(() => import("@/pages/settings/PersonalizationSettings"));
@@ -185,6 +187,24 @@ const App = () => {
                   </Suspense>
                 </AuthGuard>
               } />
+
+              <Route
+                path="/terms"
+                element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <TermsOfService />
+                  </Suspense>
+                }
+              />
+
+              <Route
+                path="/privacy"
+                element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PrivacyPolicy />
+                  </Suspense>
+                }
+              />
 
               <Route path="/debug-premium" element={
                 <AuthGuard>

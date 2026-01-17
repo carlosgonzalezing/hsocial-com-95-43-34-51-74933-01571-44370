@@ -1,9 +1,11 @@
 import { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { TopNavigation } from '@/components/navigation/TopNavigation';
 import { MobileBottomNavigation } from '@/components/navigation/MobileBottomNavigation';
 import { LeftSidebar } from './LeftSidebar';
 import { RightSidebar } from './RightSidebar';
 import { ChatSystem } from './ChatSystem';
+
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ChatSystemProvider } from '@/hooks/use-chat-system';
 import { NotificationPermissionBanner } from '@/components/notifications/NotificationPermissionBanner';
@@ -15,6 +17,18 @@ interface FacebookLayoutProps {
   hideLeftSidebar?: boolean;
   hideRightSidebar?: boolean;
   hideNavigation?: boolean;
+}
+
+function AppLegalFooter() {
+  return (
+    <footer className="w-full px-4 py-6 text-xs text-muted-foreground">
+      <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-2">
+        <Link to="/privacy" className="hover:underline">Política de Privacidad</Link>
+        <span>·</span>
+        <Link to="/terms" className="hover:underline">Términos y Condiciones</Link>
+      </div>
+    </footer>
+  );
 }
 
 export function FacebookLayout({ 
@@ -98,6 +112,7 @@ export function FacebookLayout({
             <div className="w-full px-0 mx-auto max-w-full">
               {currentUserId && <NotificationPermissionBanner />}
               {children}
+              <AppLegalFooter />
             </div>
           </main>
           
@@ -142,6 +157,7 @@ export function FacebookLayout({
               {/* Notification banner */}
               {currentUserId && <NotificationPermissionBanner />}
               {children}
+              <AppLegalFooter />
             </div>
           </main>
           

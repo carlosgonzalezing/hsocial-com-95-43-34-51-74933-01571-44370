@@ -27,6 +27,7 @@ export default function Projects() {
         .from('posts')
         .select(`
           *,
+          media_urls,
           profiles!posts_user_id_fkey (
             id,
             username,
@@ -75,6 +76,7 @@ export default function Projects() {
         likes_count: post.reactions_count || 0,
         comments_count: post.comments_count || 0,
         views_count: 0,
+        image_url: post.media_urls && post.media_urls.length > 0 ? post.media_urls[0] : undefined,
         created_at: post.created_at,
         updated_at: post.updated_at
       };
