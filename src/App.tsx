@@ -55,6 +55,7 @@ const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const IdeaParticipants = React.lazy(() => import("@/pages/IdeaParticipants"));
 const IdeaChat = React.lazy(() => import("@/pages/IdeaChat"));
 const ProjectDetail = React.lazy(() => import("@/pages/ProjectDetail"));
+const Analytics = React.lazy(() => import("@/pages/Analytics"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -184,6 +185,14 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <Pricing />
+                  </Suspense>
+                </AuthGuard>
+              } />
+
+              <Route path="/analytics" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Analytics />
                   </Suspense>
                 </AuthGuard>
               } />

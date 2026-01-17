@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ import { useProjectViews, useProjectComments } from '@/hooks/projects';
 import { usePostReactions } from '@/hooks/posts/use-post-reactions';
 import { ReactionType } from '@/types/database/social.types';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProjectModalProps {
   project: Project;
@@ -45,9 +47,25 @@ export function ProjectModal({ project, open, onOpenChange }: ProjectModalProps)
   const statusConfig = PROJECT_STATUS_CONFIG[project.status];
   
   // Hooks for views, reactions, and comments
-  const { viewsCount, viewers } = useProjectViews(project.id);
+  const { viewsCount, viewers } = useProjectViews(project.id, project.author_id);
   const { userReaction, onReaction } = usePostReactions(project.id);
   const { comments, submitComment, isSubmitting } = useProjectComments(project.id);
+
+  const trackProjectEvent = async (eventType: 'project_click_demo' | 'project_click_contact') => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await (supabase as any).rpc('track_analytics_event', {
+        p_event_type: eventType,
+        p_entity_type: 'post',
+        p_entity_id: project.id,
+        p_owner_id: project.author_id,
+        p_is_anonymous: !user,
+        p_metadata: {}
+      });
+    } catch {
+      // ignore
+    }
+  };
 
   // Count total reactions (from posts table if available)
   const reactionsCount = project.likes_count || 0;
@@ -270,7 +288,10 @@ export function ProjectModal({ project, open, onOpenChange }: ProjectModalProps)
             {/* Contact Team Button */}
             <div className="flex gap-3">
               <Button 
-                onClick={() => setShowContactModal(true)}
+                onClick={() => {
+                  trackProjectEvent('project_click_contact');
+                  setShowContactModal(true);
+                }}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
               >
                 <Mail size={16} />
@@ -316,7 +337,12 @@ export function ProjectModal({ project, open, onOpenChange }: ProjectModalProps)
             {/* Demo and Documentation Links */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {project.demo_url && (
-                <Button variant="outline" className="flex items-center gap-2 justify-center" asChild>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 justify-center"
+                  onClick={() => trackProjectEvent('project_click_demo')}
+                  asChild
+                >
                   <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink size={16} />
                     Demo en Vivo

@@ -1,11 +1,23 @@
-// Stub profile viewers - premium_profile_viewers and engagement_metrics tables removed
+import { supabase } from "@/integrations/supabase/client";
 
 export async function trackProfileView(profileId: string, viewerIpAddress?: string) {
-  console.log('Profile viewers tracking disabled');
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    await (supabase as any).rpc('track_analytics_event', {
+      p_event_type: 'profile_view',
+      p_entity_type: 'profile',
+      p_entity_id: profileId,
+      p_owner_id: profileId,
+      p_is_anonymous: !user,
+      p_metadata: viewerIpAddress ? { ip_address: viewerIpAddress } : {}
+    });
+  } catch {
+    // ignore
+  }
 }
 
 export async function trackPremiumProfileView(profileId: string, viewerIpAddress?: string) {
-  console.log('Premium profile viewers tracking disabled');
+  await trackProfileView(profileId, viewerIpAddress);
 }
 
 export async function getProfileViewers(profileId: string, limit = 10) {

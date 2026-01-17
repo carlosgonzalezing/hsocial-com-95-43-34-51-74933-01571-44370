@@ -50,8 +50,26 @@ export default function ProjectDetail() {
     enabled: !!postId
   });
 
-  const { viewsCount } = useProjectViews(postId || '');
+  const { viewsCount } = useProjectViews(postId || '', (project as any)?.user_id);
   const { comments, submitComment, isSubmitting } = useProjectComments(postId || '');
+
+  const trackProjectEvent = async (eventType: 'project_click_contact') => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const ownerId = (project as any)?.user_id;
+      if (!ownerId || !postId) return;
+      await (supabase as any).rpc('track_analytics_event', {
+        p_event_type: eventType,
+        p_entity_type: 'post',
+        p_entity_id: postId,
+        p_owner_id: ownerId,
+        p_is_anonymous: !user,
+        p_metadata: {}
+      });
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSubmitComment = () => {
     if (commentContent.trim()) {
@@ -194,7 +212,12 @@ export default function ProjectDetail() {
           <h2 className="text-xl font-semibold mb-3">Enlaces</h2>
           <div className="space-y-2">
             {projectData.contact_link && (
-              <Button variant="outline" className="w-full justify-start" asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => trackProjectEvent('project_click_contact')}
+                asChild
+              >
                 <a href={projectData.contact_link} target="_blank" rel="noopener noreferrer">
                   <Globe className="h-4 w-4 mr-2" />
                   Contactar
