@@ -121,71 +121,11 @@ export default function IdeaChat() {
 
     if (!canCreate) return null;
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session?.access_token) {
-      throw new Error('Sesión inválida. Vuelve a iniciar sesión.');
-    }
+    const { data: newChannelId, error: rpcError } = await supabase
+      .rpc("get_or_create_idea_channel", { p_post_id: pid } as any);
 
-    const createChannel = async () => {
-      return supabase
-        .from("canales")
-        .insert({ nombre: title ? `Idea: ${title}` : "Chat de idea", es_privado: true })
-        .select("id")
-        .single();
-    };
-
-    let { data: newChannel, error: createChannelError } = await createChannel();
-
-    if (createChannelError?.code === '42501') {
-      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-      if (!refreshError && refreshed.session?.access_token) {
-        const retry = await createChannel();
-        newChannel = retry.data;
-        createChannelError = retry.error;
-      }
-    }
-
-    if (createChannelError) throw createChannelError;
-
-    const newChannelId = (newChannel as any)?.id as string | undefined;
-    if (!newChannelId) return null;
-
-    const { error: linkError } = await supabase
-      .from("idea_channels")
-      .insert({ post_id: pid, channel_id: newChannelId } as any);
-
-    if (linkError) throw linkError;
-
-    {
-      const { error: ownerMemberError } = await supabase
-        .from("miembros_canal")
-        .insert({ id_canal: newChannelId, id_usuario: ownerId } as any);
-
-      if (ownerMemberError && ownerMemberError.code !== '23505') {
-        throw ownerMemberError;
-      }
-    }
-
-    const { data: participants, error: participantsError } = await supabase
-      .from("idea_participants")
-      .select("user_id")
-      .eq("post_id", pid);
-
-    if (participantsError) throw participantsError;
-
-    for (const participant of participants || []) {
-      const participantId = (participant as any).user_id as string | undefined;
-      if (!participantId) continue;
-      const { error: participantMemberError } = await supabase
-        .from("miembros_canal")
-        .insert({ id_canal: newChannelId, id_usuario: participantId } as any);
-
-      if (participantMemberError && participantMemberError.code !== '23505') {
-        throw participantMemberError;
-      }
-    }
-
-    return newChannelId;
+    if (rpcError) throw rpcError;
+    return (newChannelId as any) || null;
   };
 
   useEffect(() => {
