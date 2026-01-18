@@ -1,7 +1,9 @@
--- Analytics Pro: project-level lists and daily series
+-- Update analytics RPC to include technologies field
+-- This migration updates the existing get_my_projects_analytics function to return technologies
 
--- 1) RPC: list my projects with metrics for last N days
+-- Drop and recreate the function with technologies field
 DROP FUNCTION IF EXISTS public.get_my_projects_analytics(integer, integer);
+
 CREATE OR REPLACE FUNCTION public.get_my_projects_analytics(p_days integer DEFAULT 7, p_limit integer DEFAULT 50)
 RETURNS TABLE(
   post_id uuid,
@@ -60,47 +62,3 @@ AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_my_projects_analytics(integer, integer) TO authenticated;
-
--- 2) RPC: daily series for a single project
-DROP FUNCTION IF EXISTS public.get_my_project_daily(uuid, integer);
-CREATE OR REPLACE FUNCTION public.get_my_project_daily(p_post_id uuid, p_days integer DEFAULT 7)
-RETURNS TABLE(
-  day date,
-  views integer,
-  demo_clicks integer,
-  contact_clicks integer
-)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  WITH params AS (
-    SELECT LEAST(GREATEST(p_days, 1), 90) AS days
-  ),
-  days AS (
-    SELECT generate_series(
-      (CURRENT_DATE - ((SELECT days FROM params) - 1)),
-      CURRENT_DATE,
-      interval '1 day'
-    )::date AS day
-  ),
-  agg AS (
-    SELECT ade.day, ade.event_type, SUM(ade.count)::integer AS cnt
-    FROM public.analytics_daily_entity ade
-    WHERE ade.owner_id = auth.uid()
-      AND ade.entity_type = 'post'
-      AND ade.entity_id = p_post_id
-      AND ade.day >= (CURRENT_DATE - ((SELECT days FROM params) - 1))
-    GROUP BY ade.day, ade.event_type
-  )
-  SELECT
-    d.day,
-    COALESCE((SELECT cnt FROM agg WHERE day = d.day AND event_type = 'project_view'), 0) AS views,
-    COALESCE((SELECT cnt FROM agg WHERE day = d.day AND event_type = 'project_click_demo'), 0) AS demo_clicks,
-    COALESCE((SELECT cnt FROM agg WHERE day = d.day AND event_type = 'project_click_contact'), 0) AS contact_clicks
-  FROM days d
-  ORDER BY d.day;
-$$;
-
-GRANT EXECUTE ON FUNCTION public.get_my_project_daily(uuid, integer) TO authenticated;

@@ -54,6 +54,7 @@ type MyProjectRow = {
   views: number;
   demo_clicks: number;
   contact_clicks: number;
+  technologies: string[] | null;
 };
 
 type ProjectDailyRow = {
@@ -371,6 +372,7 @@ export default function Analytics() {
                           <thead>
                             <tr className="text-left text-muted-foreground">
                               <th className="py-2 pr-3">Proyecto</th>
+                              <th className="py-2 pr-3">Tecnologías</th>
                               <th className="py-2 pr-3">Vistas</th>
                               <th className="py-2 pr-3">Demo</th>
                               <th className="py-2 pr-3">Contacto</th>
@@ -386,6 +388,24 @@ export default function Analytics() {
                               return (
                                 <tr key={p.post_id} className="border-t border-border/60">
                                   <td className="py-3 pr-3 font-medium">{p.title}</td>
+                                  <td className="py-3 pr-3">
+                                    {p.technologies && p.technologies.length > 0 ? (
+                                      <div className="flex flex-wrap gap-1">
+                                        {p.technologies.slice(0, 2).map((tech, index) => (
+                                          <Badge key={index} variant="secondary" className="text-xs">
+                                            {tech}
+                                          </Badge>
+                                        ))}
+                                        {p.technologies.length > 2 && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            +{p.technologies.length - 2}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground text-xs">-</span>
+                                    )}
+                                  </td>
                                   <td className="py-3 pr-3">{p.views}</td>
                                   <td className="py-3 pr-3">{p.demo_clicks}</td>
                                   <td className="py-3 pr-3">{p.contact_clicks}</td>
