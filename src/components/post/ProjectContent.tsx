@@ -20,9 +20,10 @@ interface ProjectContentProps {
   mediaUrls?: string[];
   projectStatus?: 'idea' | 'in_progress' | 'completed' | null;
   technologies?: string[] | null;
+  demoUrl?: string | null;
 }
 
-export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls = [], projectStatus, technologies }: ProjectContentProps) {
+export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls = [], projectStatus, technologies, demoUrl }: ProjectContentProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { isPremium } = usePremium();
   const { pinnedProjects } = usePinnedProjects(currentUserId);
@@ -31,6 +32,11 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  const effectiveTechnologies = (technologies && technologies.length > 0)
+    ? technologies
+    : (idea.resources_needed || []);
+  const effectiveDemoUrl = demoUrl || idea.demo_url || null;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -210,24 +216,24 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
         </div>
 
         {/* Información adicional del proyecto - Diseño mejorado */}
-        {(technologies && technologies.length > 0) || (idea.estimated_duration || idea.expected_impact) && (
+        {((effectiveTechnologies && effectiveTechnologies.length > 0) || idea.estimated_duration || idea.expected_impact) && (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {technologies && technologies.length > 0 && (
+              {effectiveTechnologies && effectiveTechnologies.length > 0 && (
                 <div>
                   <h4 className="font-medium text-sm mb-2 flex items-center gap-2 text-gray-900 dark:text-gray-100">
                     <Target className="h-4 w-4 text-blue-500" />
                     Tecnologías
                   </h4>
                   <div className="flex flex-wrap gap-1">
-                    {technologies.slice(0, 3).map((tech, index) => (
+                    {effectiveTechnologies.slice(0, 3).map((tech, index) => (
                       <Badge key={index} variant="outline" className="text-xs bg-white dark:bg-gray-800">
                         {tech}
                       </Badge>
                     ))}
-                    {technologies.length > 3 && (
+                    {effectiveTechnologies.length > 3 && (
                       <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800">
-                        +{technologies.length - 3}
+                        +{effectiveTechnologies.length - 3}
                       </Badge>
                     )}
                   </div>
@@ -256,21 +262,34 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
 
         {/* Botones de acción - Diseño mejorado */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
-          {idea.contact_link && (
+          {(effectiveDemoUrl || idea.contact_link) && (
             <div className="flex gap-3">
-              <Button asChild variant="outline" className="flex-1">
-                <a href={idea.contact_link} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Ver proyecto completo
-                </a>
-              </Button>
-              
-              <Button asChild variant="default" className="flex-1">
-                <a href={idea.contact_link} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Contactar
-                </a>
-              </Button>
+              {idea.contact_link ? (
+                <>
+                  {effectiveDemoUrl && (
+                    <Button asChild variant="outline" className="flex-1">
+                      <a href={effectiveDemoUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Vista previa
+                      </a>
+                    </Button>
+                  )}
+
+                  <Button asChild variant="default" className="flex-1">
+                    <a href={idea.contact_link} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Contactar
+                    </a>
+                  </Button>
+                </>
+              ) : (
+                <Button asChild variant="default" className="flex-1">
+                  <a href={effectiveDemoUrl || "#"} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Vista previa
+                  </a>
+                </Button>
+              )}
             </div>
           )}
         </div>

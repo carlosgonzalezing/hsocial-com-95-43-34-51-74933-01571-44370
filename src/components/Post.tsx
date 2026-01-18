@@ -422,6 +422,7 @@ function ProjectPostView({ post }: { post: PostType }) {
         mediaUrls={post.media_urls || undefined}
         projectStatus={post.project_status}
         technologies={post.technologies}
+        demoUrl={post.demo_url}
       />
     </div>
   );

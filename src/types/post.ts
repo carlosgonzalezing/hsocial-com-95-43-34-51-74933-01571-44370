@@ -48,6 +48,7 @@ export interface Post {
   content_style?: ContentStyle | null; // Add content style for background/text formatting
   project_status?: 'idea' | 'in_progress' | 'completed' | null; // Ideas → Projects flow
   technologies?: string[] | null; // Technologies used in the project
+  demo_url?: string | null;
 
   is_demo?: boolean;
   demo_category?: string | null;
@@ -92,6 +93,7 @@ export interface Idea {
   estimated_duration?: string;
   expected_impact?: string;
   resources_needed?: Array<string>;
+  demo_url?: string | null;
   collaboration_type?: 'remote' | 'hybrid' | 'in-person';
   location_preference?: string;
   contact_link?: string; // WhatsApp, Telegram, or other contact link
