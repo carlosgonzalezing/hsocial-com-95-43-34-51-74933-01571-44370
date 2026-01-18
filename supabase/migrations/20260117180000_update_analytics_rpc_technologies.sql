@@ -11,7 +11,8 @@ RETURNS TABLE(
   views integer,
   demo_clicks integer,
   contact_clicks integer,
-  technologies text[]
+  technologies text[],
+  demo_url text
 )
 LANGUAGE sql
 STABLE
@@ -54,7 +55,8 @@ AS $$
     COALESCE(r.views, 0) AS views,
     COALESCE(r.demo_clicks, 0) AS demo_clicks,
     COALESCE(r.contact_clicks, 0) AS contact_clicks,
-    p.technologies
+    p.technologies,
+    p.demo_url
   FROM my_projects mp
   JOIN public.posts p ON p.id = mp.id
   LEFT JOIN rolled r ON r.post_id = mp.id

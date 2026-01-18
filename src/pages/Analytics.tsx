@@ -55,6 +55,7 @@ type MyProjectRow = {
   demo_clicks: number;
   contact_clicks: number;
   technologies: string[] | null;
+  demo_url: string | null;
 };
 
 type ProjectDailyRow = {
@@ -373,6 +374,7 @@ export default function Analytics() {
                             <tr className="text-left text-muted-foreground">
                               <th className="py-2 pr-3">Proyecto</th>
                               <th className="py-2 pr-3">Tecnologías</th>
+                              <th className="py-2 pr-3">Demo URL</th>
                               <th className="py-2 pr-3">Vistas</th>
                               <th className="py-2 pr-3">Demo</th>
                               <th className="py-2 pr-3">Contacto</th>
@@ -402,6 +404,21 @@ export default function Analytics() {
                                           </Badge>
                                         )}
                                       </div>
+                                    ) : (
+                                      <span className="text-muted-foreground text-xs">-</span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 pr-3">
+                                    {p.demo_url ? (
+                                      <a 
+                                        href={p.demo_url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs flex items-center gap-1"
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Ver demo
+                                      </a>
                                     ) : (
                                       <span className="text-muted-foreground text-xs">-</span>
                                     )}
