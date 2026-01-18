@@ -421,6 +421,7 @@ function ProjectPostView({ post }: { post: PostType }) {
         postOwnerId={post.user_id}
         mediaUrls={post.media_urls || undefined}
         projectStatus={post.project_status}
+        technologies={post.technologies}
       />
     </div>
   );

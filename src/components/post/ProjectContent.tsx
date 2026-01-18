@@ -19,9 +19,10 @@ interface ProjectContentProps {
   postOwnerId: string;
   mediaUrls?: string[];
   projectStatus?: 'idea' | 'in_progress' | 'completed' | null;
+  technologies?: string[] | null;
 }
 
-export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls = [], projectStatus }: ProjectContentProps) {
+export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls = [], projectStatus, technologies }: ProjectContentProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { isPremium } = usePremium();
   const { pinnedProjects } = usePinnedProjects(currentUserId);
@@ -209,18 +210,27 @@ export function ProjectContent({ idea, content, postId, postOwnerId, mediaUrls =
         </div>
 
         {/* Información adicional del proyecto - Diseño mejorado */}
-        {(idea.estimated_duration || idea.expected_impact || idea.category) && (
+        {(technologies && technologies.length > 0) || (idea.estimated_duration || idea.expected_impact) && (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {idea.category && (
+              {technologies && technologies.length > 0 && (
                 <div>
                   <h4 className="font-medium text-sm mb-2 flex items-center gap-2 text-gray-900 dark:text-gray-100">
                     <Target className="h-4 w-4 text-blue-500" />
-                    Categoría
+                    Tecnologías
                   </h4>
-                  <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800">
-                    {idea.category}
-                  </Badge>
+                  <div className="flex flex-wrap gap-1">
+                    {technologies.slice(0, 3).map((tech, index) => (
+                      <Badge key={index} variant="outline" className="text-xs bg-white dark:bg-gray-800">
+                        {tech}
+                      </Badge>
+                    ))}
+                    {technologies.length > 3 && (
+                      <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800">
+                        +{technologies.length - 3}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               )}
 

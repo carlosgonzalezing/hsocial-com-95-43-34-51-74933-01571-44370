@@ -47,6 +47,7 @@ export interface Post {
   userHasReacted?: boolean; // Add missing property
   content_style?: ContentStyle | null; // Add content style for background/text formatting
   project_status?: 'idea' | 'in_progress' | 'completed' | null; // Ideas → Projects flow
+  technologies?: string[] | null; // Technologies used in the project
 
   is_demo?: boolean;
   demo_category?: string | null;
