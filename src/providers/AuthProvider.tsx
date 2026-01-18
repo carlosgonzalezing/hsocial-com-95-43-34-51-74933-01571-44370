@@ -38,6 +38,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const presenceIntervalRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
 
+  const buildProfilePayload = (u: User) => {
+    const username =
+      u.user_metadata?.name ||
+      u.user_metadata?.full_name ||
+      u.email?.split('@')[0] ||
+      'Usuario';
+
+    return {
+      id: u.id,
+      username,
+      career: u.user_metadata?.career || null,
+      semester: u.user_metadata?.semester || null,
+      birth_date: u.user_metadata?.birth_date || null,
+      account_type: u.user_metadata?.account_type || 'person',
+      person_status: u.user_metadata?.person_status || null,
+      updated_at: new Date().toISOString(),
+    };
+  };
+
   useEffect(() => {
     console.log('🔐 AuthProvider: Setting up auth listener...');
     
@@ -82,10 +101,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const prevUserId = userIdRef.current;
             if (prevUserId) {
-              await supabase
+              await (supabase as any)
                 .from('profiles')
-                .update({ status: 'offline', last_seen: new Date().toISOString() })
-                .eq('id', prevUserId);
+                .upsert(
+                  {
+                    id: prevUserId,
+                    status: 'offline',
+                    last_seen: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  },
+                  { onConflict: 'id' }
+                );
             }
             userIdRef.current = null;
           } catch {
@@ -135,10 +161,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const setPresence = async (status: 'online' | 'away' | 'offline') => {
       try {
         const now = new Date().toISOString();
-        await supabase
+        await ensureProfileExists(user);
+        await (supabase as any)
           .from('profiles')
-          .update({ status, last_seen: now })
-          .eq('id', user.id);
+          .upsert(
+            {
+              id: user.id,
+              status,
+              last_seen: now,
+              updated_at: now,
+            },
+            { onConflict: 'id' }
+          );
       } catch {
         // Best-effort
       }
@@ -181,32 +215,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const ensureProfileExists = async (user: User) => {
     try {
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single();
+      const payload = buildProfilePayload(user);
 
-      if (!existingProfile) {
-        const username = user.user_metadata?.name || 
-                        user.user_metadata?.full_name || 
-                        user.email?.split('@')[0] || 
-                        'Usuario';
-        
-        await supabase
-          .from('profiles')
-          .insert([{
-            id: user.id,
-            username: username,
-            career: user.user_metadata?.career || null,
-            semester: user.user_metadata?.semester || null,
-            birth_date: user.user_metadata?.birth_date || null,
-            account_type: user.user_metadata?.account_type || 'person',
-            person_status: user.user_metadata?.person_status || null
-          }]);
-        
-        console.log('✅ Profile created for user:', user.email);
-      }
+      await (supabase as any)
+        .from('profiles')
+        .upsert(payload, { onConflict: 'id' });
     } catch (error) {
       console.error('❌ Error ensuring profile exists:', error);
     }

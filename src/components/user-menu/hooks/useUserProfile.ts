@@ -17,15 +17,25 @@ export function useUserProfile() {
         setUserId(user.id);
         
         // Fetch profile data
-        const { data: profileData } = await supabase
+        const { data: profileData, error } = await supabase
           .from('profiles')
           .select('username, avatar_url, birth_date')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
+
+        if (error) {
+          setUsername(user.email?.split('@')[0] || 'Usuario');
+          setAvatarUrl(null);
+          setIsLoading(false);
+          return;
+        }
           
         if (profileData) {
           setUsername(profileData.username || 'Usuario');
           setAvatarUrl(profileData.avatar_url);
+        } else {
+          setUsername(user.email?.split('@')[0] || 'Usuario');
+          setAvatarUrl(null);
         }
       }
       setIsLoading(false);

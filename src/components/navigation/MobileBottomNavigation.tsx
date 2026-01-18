@@ -39,7 +39,7 @@ export function MobileBottomNavigation({
         .from("profiles")
         .select("avatar_url")
         .eq("id", currentUserId)
-        .single();
+        .maybeSingle();
 
       if (!isMounted) return;
 
