@@ -20,14 +20,21 @@ export function SocialAuthButtons({ loading, setLoading, mode }: SocialAuthButto
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/auth`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
       if (error) throw error;
+      
+      // Store the auth mode for post-OAuth handling
+      localStorage.setItem('auth_mode', mode);
       
       // OAuth redirect will happen, so no need to navigate here
     } catch (error: any) {
@@ -35,7 +42,7 @@ export function SocialAuthButtons({ loading, setLoading, mode }: SocialAuthButto
       toast({
         variant: "destructive",
         title: "Error de autenticación",
-        description: `No se pudo ${mode === 'login' ? 'iniciar sesión' : 'registrar'} con Google. ${error.message}`,
+        description: `No se pudo ${mode === 'login' ? 'iniciar sesión' : 'registrar'} con Google. ${error.message || 'Intenta de nuevo.'}`,
       });
     } finally {
       setSocialLoading(null);
@@ -61,7 +68,7 @@ export function SocialAuthButtons({ loading, setLoading, mode }: SocialAuthButto
         {socialLoading === 'google' ? (
           <div className="flex items-center gap-2">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            <span>Conectando...</span>
+            <span>Conectando con Google...</span>
           </div>
         ) : (
           <div className="flex items-center gap-3">
@@ -83,10 +90,16 @@ export function SocialAuthButtons({ loading, setLoading, mode }: SocialAuthButto
                 fill="#EA4335"
               />
             </svg>
-            Continuar con Google
+            {mode === 'register' ? 'Registrarse con Google' : 'Continuar con Google'}
           </div>
         )}
       </Button>
+      
+      {mode === 'register' && (
+        <p className="text-xs text-muted-foreground text-center">
+          Al registrarte, aceptas nuestros términos y condiciones
+        </p>
+      )}
     </div>
   );
 }

@@ -14,20 +14,52 @@ export function useAuthRedirect() {
         console.log('Auth event:', event, session?.user?.id);
         
         if (event === 'SIGNED_IN' && session) {
-          // Check if this is an OAuth signin
           const provider = session.user?.app_metadata?.provider;
+          const isNewUser = session.user?.user_metadata?.is_new_user ?? false;
+          const authMode = localStorage.getItem('auth_mode');
+          
+          // Clean up stored auth mode
+          localStorage.removeItem('auth_mode');
           
           if (provider === 'google') {
-            toast({
-              title: "¡Bienvenido!",
-              description: "Has iniciado sesión correctamente con Google.",
-            });
+            // Ensure profile exists for Google users
+            try {
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: session.user.id,
+                  username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario',
+                  avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+                  updated_at: new Date().toISOString(),
+                }, {
+                  onConflict: 'id'
+                });
+              
+              if (profileError) {
+                console.error('Error creating profile for Google user:', profileError);
+              }
+            } catch (error) {
+              console.error('Error ensuring profile exists:', error);
+            }
             
-            // For OAuth, redirect immediately to avoid loops
-            navigate('/home', { replace: true });
+            // Show appropriate message based on whether it's a new user or login
+            if (isNewUser || authMode === 'register') {
+              toast({
+                title: "¡Bienvenido a H Social!",
+                description: "Tu cuenta ha sido creada exitosamente con Google.",
+              });
+            } else {
+              toast({
+                title: "¡Hola de nuevo!",
+                description: "Has iniciado sesión correctamente con Google.",
+              });
+            }
+            
+            // Redirect to home
+            navigate('/', { replace: true });
           } else if (window.location.pathname === '/auth') {
             // For regular auth, only redirect if on auth page
-            navigate('/home', { replace: true });
+            navigate('/', { replace: true });
           }
         } else if (event === 'SIGNED_OUT') {
           // Only redirect if we're not already on auth page
