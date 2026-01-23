@@ -30,7 +30,7 @@ interface ModalPublicacionWebProps {
  async function sendIdeaPublishedAutoMessage(recipientUserId: string) {
    try {
      if (!recipientUserId) return;
-     const { error } = await supabase.rpc('send_idea_published_dm', {
+     const { error } = await (supabase as any).rpc('send_idea_published_dm', {
        recipient_user_id: recipientUserId,
      });
      if (error) {
@@ -51,9 +51,6 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
-  const [canPublishRichContent, setCanPublishRichContent] = useState<boolean>(true);
 
   const [userGroups, setUserGroups] = useState<
     Array<{
@@ -130,29 +127,6 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
       setSelectedCompanyId('');
     }
   }, [initialPostType, isVisible]);
-
-  useEffect(() => {
-    if (!isVisible) return;
-
-    const loadAccess = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const email = user?.email ?? null;
-      setCurrentUserEmail(email);
-      const isPrivilegedUser = user?.id === 'a12b715b-588a-41eb-bc09-5739bb579894';
-      const isInstitutional = Boolean(email) && email!.toLowerCase().endsWith('@unireformada.edu.co');
-      setCanPublishRichContent(isPrivilegedUser || isInstitutional);
-
-      if (!(isPrivilegedUser || isInstitutional)) {
-        setSelectedPostType(null);
-        setSelectedGroupId('');
-        setSelectedCompanyId('');
-        setSelectedFiles([]);
-        setFilePreviews([]);
-      }
-    };
-
-    loadAccess();
-  }, [isVisible]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -467,7 +441,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
       
       if (isFirstPost) {
         // Add first post badge to profile
-        await supabase
+        await (supabase as any)
           .from('profile_badges')
           .upsert({
             profile_id: user.id,
@@ -510,16 +484,6 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   };
 
   const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!canPublishRichContent) {
-      e.target.value = '';
-      toast({
-        title: 'Cuenta limitada',
-        description: 'Solo puedes publicar texto. Usa tu correo institucional (@unireformada.edu.co) para subir imágenes o videos.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
@@ -592,15 +556,6 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   };
 
   const handlePostTypeSelect = (type: PostType) => {
-    if (!canPublishRichContent) {
-      toast({
-        title: 'Cuenta limitada',
-        description: 'Verifica tu correo institucional para publicar ideas, proyectos, encuestas, eventos, empleos o servicios.',
-        variant: 'destructive'
-      });
-      setShowPostTypeMenu(false);
-      return;
-    }
     setSelectedPostType(type);
     if (type !== 'servicios') {
       setServiceCategory('');
@@ -704,12 +659,6 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
               )}
             </div>
 
-            {!canPublishRichContent && (
-              <div className="border-b px-3 py-2 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/30">
-                Cuenta limitada ({currentUserEmail || 'sin email'}): solo puedes publicar texto normal. Para desbloquear imágenes, videos y tipos avanzados, inicia sesión con tu correo institucional @unireformada.edu.co.
-              </div>
-            )}
-
             {/* Company selector */}
             <div className="min-w-[180px] max-w-full">
               <Select
@@ -719,7 +668,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
                   setSelectedCompanyId(next);
                   if (next) setSelectedGroupId('');
                 }}
-                disabled={!canPublishRichContent || isLoadingCompanies || selectedPostType === 'evento'}
+                disabled={isLoadingCompanies || selectedPostType === 'evento'}
               >
                 <SelectTrigger className="h-9 rounded-full border border-gray-200 bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
                   <SelectValue placeholder="Mi perfil" />
@@ -740,7 +689,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
               <Select
                 value={selectedGroupId || 'profile'}
                 onValueChange={(value) => setSelectedGroupId(value === 'profile' ? '' : value)}
-                disabled={!canPublishRichContent || isLoadingGroups || userGroups.length === 0 || Boolean(selectedCompanyId)}
+                disabled={isLoadingGroups || userGroups.length === 0 || Boolean(selectedCompanyId)}
               >
                 <SelectTrigger className="h-9 rounded-full border border-gray-200 bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
                   <SelectValue placeholder="Mi perfil" />
@@ -1161,8 +1110,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         {/* Bottom Bar */}
         <div className="flex items-center border-t px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:px-4">
           <label className={cn(
-            "cursor-pointer rounded-full p-2 text-green-500 hover:bg-gray-100 dark:hover:bg-gray-700",
-            !canPublishRichContent && "pointer-events-none opacity-50"
+            "cursor-pointer rounded-full p-2 text-green-500 hover:bg-gray-100 dark:hover:bg-gray-700"
           )}>
             <input 
               type="file" 
@@ -1170,7 +1118,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
               accept="image/*,video/*" 
               multiple
               onChange={handleMediaSelect}
-              disabled={!canPublishRichContent}
+              disabled={false}
             />
             <ImageIcon className="h-5 w-5" />
           </label>
@@ -1180,19 +1128,10 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
           <div className="relative" ref={menuRef}>
             <button 
               onClick={() => {
-                if (!canPublishRichContent) {
-                  toast({
-                    title: 'Cuenta limitada',
-                    description: 'Verifica tu correo institucional para usar tipos de publicación.',
-                    variant: 'destructive'
-                  });
-                  return;
-                }
                 setShowPostTypeMenu(!showPostTypeMenu);
               }}
               className={cn(
-                "flex items-center rounded-full p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700",
-                !canPublishRichContent && "opacity-50"
+                "flex items-center rounded-full p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700"
               )}
             >
               <Plus className="h-5 w-5" />
