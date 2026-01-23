@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { uploadMediaFile, getMediaType } from "@/lib/api/posts/storage";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { FirstPostBadge } from '@/components/badges/FirstPostBadge';
 
 export type PostType = 'idea' | 'proyecto' | 'encuesta' | 'evento' | 'empleo' | 'servicios' | null;
 
@@ -98,6 +99,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   const [eventStartDate, setEventStartDate] = useState('');
   const [eventEndDate, setEventEndDate] = useState('');
   const [eventLocationType, setEventLocationType] = useState<'presencial' | 'virtual' | 'híbrido'>('presencial');
+  const [showFirstPostBadge, setShowFirstPostBadge] = useState(false);
   const [eventLocation, setEventLocation] = useState('');
   const [eventMeetingLink, setEventMeetingLink] = useState('');
   const [eventCategory, setEventCategory] = useState<'conference' | 'seminar' | 'workshop' | 'hackathon' | 'webinar' | 'networking' | 'career_fair'>('conference');
@@ -420,6 +422,34 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         .insert(postData);
 
       if (insertError) throw insertError;
+
+      // Check if this is the user's first post
+      const { data: existingPosts } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      const isFirstPost = existingPosts && existingPosts.length === 1;
+      
+      if (isFirstPost) {
+        // Add first post badge to profile
+        await supabase
+          .from('profile_badges')
+          .upsert({
+            profile_id: user.id,
+            badge_type: 'first_post',
+            badge_name: 'Primera Publicación',
+            badge_description: '¡Compartiste tu primera idea con la comunidad!',
+            badge_icon: 'trophy',
+            badge_color: 'gold',
+            earned_date: new Date().toISOString()
+          }, {
+            onConflict: 'profile_id,badge_type'
+          });
+        
+        // Show the badge modal
+        setShowFirstPostBadge(true);
+      }
 
       if (selectedPostType === 'idea') {
         sendIdeaPublishedAutoMessage(user.id);
@@ -1189,6 +1219,12 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         </div>
         </form>
       </div>
+      
+      {/* First Post Badge Modal */}
+      <FirstPostBadge 
+        isOpen={showFirstPostBadge}
+        onClose={() => setShowFirstPostBadge(false)}
+      />
     </div>
   );
 };
