@@ -5,8 +5,8 @@ import { Post } from "@/types/post";
 /**
  * Hook for managing post-related state
  */
-export function usePostState(post: Post, hideComments = false) {
-  const [showComments, setShowComments] = useState(false);
+export function usePostState(post: Post, hideComments = false, initialShowComments = false) {
+  const [showComments, setShowComments] = useState(initialShowComments);
   const [newComment, setNewComment] = useState("");
   const [commentImage, setCommentImage] = useState<File | null>(null);
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);

@@ -11,7 +11,7 @@ import {
   useCommentSubmit
 } from "./posts";
 
-export function usePost(post: Post, hideComments = false) {
+export function usePost(post: Post, hideComments = false, initialShowComments = false) {
   // Core state and functions
   const {
     showComments,
@@ -27,7 +27,7 @@ export function usePost(post: Post, hideComments = false) {
     setReplyTo,
     toggleComments,
     handleCancelReply
-  } = usePostState(post, hideComments);
+  } = usePostState(post, hideComments, initialShowComments);
   
   // Check if current user is post author
   // Use either user_id or author_id

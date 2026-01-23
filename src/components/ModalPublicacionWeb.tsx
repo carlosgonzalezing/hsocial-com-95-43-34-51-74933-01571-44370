@@ -417,11 +417,45 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         postData.post_type = 'regular';
       }
 
-      const { error: insertError } = await supabase
+      const { data: insertedPost, error: insertError } = await supabase
         .from('posts')
-        .insert(postData);
+        .insert(postData)
+        .select('id')
+        .maybeSingle();
 
       if (insertError) throw insertError;
+
+      const insertedPostId = insertedPost?.id as string | undefined;
+
+      // Variable reinforcement: award points for meaningful contributions
+      try {
+        let eventType: string | null = null;
+        if (selectedPostType === 'idea') eventType = 'publish_idea';
+        if (selectedPostType === 'proyecto') eventType = 'publish_project';
+
+        if (eventType && insertedPostId) {
+          await (supabase as any).rpc('eng_award_points', {
+            p_event_type: eventType,
+            p_entity_type: 'post',
+            p_entity_id: insertedPostId,
+          });
+
+          const { data: surprise } = await (supabase as any).rpc('eng_try_surprise', {
+            p_source_event: eventType,
+            p_entity_type: 'post',
+            p_entity_id: insertedPostId,
+          });
+
+          if (surprise?.awarded && Number(surprise.awarded) > 0) {
+            toast({
+              title: '¡Sorpresa! 🎁',
+              description: `Ganaste +${surprise.awarded} puntos extra por tu aporte.`,
+            });
+          }
+        }
+      } catch (e) {
+        // ignore gamification errors
+      }
 
       // Check if this is the user's first post
       const { data: existingPosts } = await supabase

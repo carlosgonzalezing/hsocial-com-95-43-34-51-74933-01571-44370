@@ -31,7 +31,9 @@ export function NotificationGroups({
 
     // Slight delay to ensure dropdown is closed before navigation
     setTimeout(() => {
-      if (notification.post_id) {
+      if (notification.post_id && notification.comment_id) {
+        navigate(`/post/${notification.post_id}?comment=${notification.comment_id}`);
+      } else if (notification.post_id) {
         navigate(`/post/${notification.post_id}`);
       }
       

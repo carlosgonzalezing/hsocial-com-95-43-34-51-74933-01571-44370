@@ -80,7 +80,9 @@ const Notifications = () => {
   const hasUnread = filteredNotifications.some((n: any) => !n.read);
 
   const handleNotificationClick = (notification: any) => {
-    if (notification.post_id) {
+    if (notification.post_id && notification.comment_id) {
+      navigate(`/post/${notification.post_id}?comment=${notification.comment_id}`);
+    } else if (notification.post_id) {
       navigate(`/post/${notification.post_id}`);
     }
     

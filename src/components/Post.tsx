@@ -26,19 +26,20 @@ interface PostProps {
   post: PostType;
   hideComments?: boolean;
   isHidden?: boolean;
+  initialShowComments?: boolean;
 }
 
-export function Post({ post, hideComments = false, isHidden = false }: PostProps) {
+export function Post({ post, hideComments = false, isHidden = false, initialShowComments = false }: PostProps) {
   // Verificación de seguridad si el post es inválido
   if (!post || !post.id) {
     console.error("Invalid post object:", post);
     return null;
   }
 
-  return <PostInner post={post} hideComments={hideComments} isHidden={isHidden} />;
+  return <PostInner post={post} hideComments={hideComments} isHidden={isHidden} initialShowComments={initialShowComments} />;
 }
 
-function PostInner({ post, hideComments = false, isHidden = false }: PostProps) {
+function PostInner({ post, hideComments = false, isHidden = false, initialShowComments = false }: PostProps) {
   // Detectar si es un post de demostración (no permite interacciones)
   const isDemoPost = !!post.is_demo || !!post.demo_readonly;
 
@@ -121,7 +122,7 @@ function PostInner({ post, hideComments = false, isHidden = false }: PostProps) 
     handleCancelReply,
     handleDeleteComment,
     setNewComment,
-  } = usePost(post, hideComments);
+  } = usePost(post, hideComments, initialShowComments);
 
   // Determinar si esta es una publicación compartida
   const isSharedPost = !!post.shared_post;

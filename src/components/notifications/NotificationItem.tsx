@@ -56,6 +56,35 @@ export const NotificationItem = ({
   const touchCurrentX = useRef(0);
   const MIN_SWIPE_DISTANCE = 50;
 
+  const buildNotificationTarget = () => {
+    // Chat/message
+    if (notification.type === 'message') {
+      return { kind: 'chat' as const };
+    }
+
+    // Profile-related
+    if (notification.type === 'profile_heart_received') {
+      return { kind: 'profile' as const, path: `/profile/${notification.sender.id}` };
+    }
+
+    // Comment-related notifications
+    if (["post_comment", "comment_reply", "comment_like", "mention"].includes(notification.type)) {
+      if (notification.post_id && notification.comment_id) {
+        return { kind: 'route' as const, path: `/post/${notification.post_id}?comment=${notification.comment_id}` };
+      }
+      if (notification.post_id) {
+        return { kind: 'route' as const, path: `/post/${notification.post_id}` };
+      }
+    }
+
+    // Post-related notifications
+    if (notification.post_id) {
+      return { kind: 'route' as const, path: `/post/${notification.post_id}` };
+    }
+
+    return { kind: 'none' as const };
+  };
+
   // Get the name to display (full name or username)
   const getSenderDisplayName = () => {
     return notification.sender.full_name || notification.sender.username;
@@ -75,12 +104,25 @@ export const NotificationItem = ({
     
     if (onClick) {
       onClick();
-    } else if (notification.post_id) {
-      navigate(`/post/${notification.post_id}`);
-      
-      if (onMarkAsRead) {
-        onMarkAsRead();
+      return;
+    }
+
+    const target = buildNotificationTarget();
+
+    if (target.kind === 'chat') {
+      if (onOpenChat) {
+        onOpenChat(notification.sender.id);
+      } else {
+        navigate(`/messages?user=${notification.sender.id}`);
       }
+    } else if (target.kind === 'profile') {
+      navigate(target.path);
+    } else if (target.kind === 'route') {
+      navigate(target.path);
+    }
+
+    if (onMarkAsRead) {
+      onMarkAsRead();
     }
   };
 
@@ -126,7 +168,8 @@ export const NotificationItem = ({
     setTranslateX(0);
   };
 
-  const isClickable = notification.post_id || notification.type === 'friend_request';
+  const computedTarget = buildNotificationTarget();
+  const isClickable = notification.type !== 'friend_request' && computedTarget.kind !== 'none';
   const formattedDate = formatDate(notification.created_at);
 
   return (

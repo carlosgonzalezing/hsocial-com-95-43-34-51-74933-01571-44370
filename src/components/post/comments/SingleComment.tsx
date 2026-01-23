@@ -45,7 +45,7 @@ export function SingleComment({
   }, [onReaction]);
 
   return (
-    <div className={`flex flex-col gap-1 ${isReply ? "ml-8" : ""}`}>
+    <div id={`comment-${comment.id}`} className={`flex flex-col gap-1 ${isReply ? "ml-8" : ""}`}>
       {/* Header with avatar and author */}
       <CommentHeader
         userId={comment.user_id}

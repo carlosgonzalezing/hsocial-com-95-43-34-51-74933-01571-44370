@@ -56,6 +56,7 @@ const IdeaParticipants = React.lazy(() => import("@/pages/IdeaParticipants"));
 const IdeaChat = React.lazy(() => import("@/pages/IdeaChat"));
 const ProjectDetail = React.lazy(() => import("@/pages/ProjectDetail"));
 const Analytics = React.lazy(() => import("@/pages/Analytics"));
+const PostDetail = React.lazy(() => import("@/pages/PostDetail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -114,6 +115,14 @@ const App = () => {
                 <AuthGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <Profile />
+                  </Suspense>
+                </AuthGuard>
+              } />
+
+              <Route path="/post/:postId" element={
+                <AuthGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PostDetail />
                   </Suspense>
                 </AuthGuard>
               } />
