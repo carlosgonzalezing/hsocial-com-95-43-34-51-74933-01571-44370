@@ -30,7 +30,7 @@ interface ModalPublicacionWebProps {
  async function sendIdeaPublishedAutoMessage(recipientUserId: string) {
    try {
      if (!recipientUserId) return;
-     const { error } = await (supabase as any).rpc('send_idea_published_dm', {
+     const { error } = await supabase.rpc('send_idea_published_dm', {
        recipient_user_id: recipientUserId,
      });
      if (error) {
@@ -465,8 +465,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
 
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       queryClient.invalidateQueries({ queryKey: ['personalized-feed'] });
-      queryClient.invalidateQueries({ queryKey: ['feed-posts'] });
-      queryClient.invalidateQueries({ queryKey: ['project-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts', undefined, undefined, undefined, 'infinite'] });
 
       onPublish?.(content, selectedPostType, selectedFiles[0] || null);
       toast({ title: 'Publicado', description: 'Tu publicación se creó correctamente' });
