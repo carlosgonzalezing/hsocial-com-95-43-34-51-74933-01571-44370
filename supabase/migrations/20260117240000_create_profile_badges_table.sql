@@ -15,6 +15,12 @@ CREATE TABLE IF NOT EXISTS public.profile_badges (
 -- Enable RLS
 ALTER TABLE public.profile_badges ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (to make migration idempotent)
+DROP POLICY IF EXISTS "Users can view their own badges" ON public.profile_badges;
+DROP POLICY IF EXISTS "Users can view public badges" ON public.profile_badges;
+DROP POLICY IF EXISTS "System can insert badges" ON public.profile_badges;
+DROP POLICY IF EXISTS "System can update badges" ON public.profile_badges;
+
 -- Policies
 CREATE POLICY "Users can view their own badges" ON public.profile_badges
   FOR SELECT USING (auth.uid() = profile_id);
