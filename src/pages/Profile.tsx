@@ -9,6 +9,7 @@ import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { ProfileContent } from "@/components/profile/ProfileContent";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQueryClient } from "@tanstack/react-query";
 import type { ProfileTable } from "@/types/database/profile.types";
 
 export type Profile = {
@@ -47,9 +48,13 @@ export default function Profile() {
   const { handleImageUpload } = useProfileImage();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   const handleProfileUpdate = (updatedProfile: Profile) => {
     setProfile(updatedProfile);
+    // Invalidate profile queries to refresh data on next load
+    queryClient.invalidateQueries({ queryKey: ['profile'] });
+    queryClient.invalidateQueries({ queryKey: ['profiles'] });
   };
 
   useEffect(() => {
@@ -154,7 +159,7 @@ export default function Profile() {
                 semester: typedProfileData.semester,
                 birth_date: typedProfileData.birth_date,
                 relationship_status: typedProfileData.relationship_status,
-                account_type: typedProfileData.account_type ?? null,
+                account_type: (typedProfileData as any)?.account_type ?? null,
                 company_name: (typedProfileData as any)?.company_name ?? null,
                 institution_name: typedProfileData.institution_name,
                 academic_role: typedProfileData.academic_role,
