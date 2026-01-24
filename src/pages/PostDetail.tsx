@@ -17,7 +17,13 @@ export default function PostDetail() {
     queryFn: async () => {
       if (!postId) return null;
 
-      const { data, error } = await supabase
+      // Some environments may not support all embedded relationships in PostgREST,
+      // which results in a 400 Bad Request. Retry with a minimal select so
+      // notification deep links still work.
+      let data: any = null;
+      let error: any = null;
+
+      const richResult = await supabase
         .from("posts")
         .select(
           `
@@ -27,10 +33,30 @@ export default function PostDetail() {
           reactions:reactions(reaction_type, user_id),
           post_shares:post_shares(count),
           academic_events:academic_events(*)
-        `,
+        `
         )
         .eq("id", postId)
         .maybeSingle();
+
+      data = richResult.data;
+      error = richResult.error;
+
+      if (error) {
+        const minimalResult = await supabase
+          .from("posts")
+          .select(
+            `
+            *,
+            profiles:profiles(*),
+            comments:comments(count)
+          `
+          )
+          .eq("id", postId)
+          .maybeSingle();
+
+        data = minimalResult.data;
+        error = minimalResult.error;
+      }
 
       if (error) throw error;
       if (!data) return null;
