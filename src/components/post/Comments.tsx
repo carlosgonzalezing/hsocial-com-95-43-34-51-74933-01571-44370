@@ -22,6 +22,7 @@ interface CommentsProps {
   commentImage?: File | null;
   setCommentImage?: (file: File | null) => void;
   postAuthorId?: string;
+  totalCommentsCount?: number;
 }
 
 export function Comments({
@@ -38,29 +39,66 @@ export function Comments({
   showComments,
   commentImage,
   setCommentImage,
-  postAuthorId
+  postAuthorId,
+  totalCommentsCount
 }: CommentsProps) {
   const { isAuthenticated } = useAuth();
 
   // Solo renderizamos los comentarios si showComments es true
   if (!showComments) return null;
 
-  // If not authenticated, show login prompt
+  // Guest preview: show limited read-only comments + CTA
   if (!isAuthenticated) {
+    const previewCount = 2;
+    const previewComments = comments.slice(0, previewCount);
+    const realCount = typeof totalCommentsCount === "number" ? totalCommentsCount : comments.length;
+
     return (
-      <div className="mt-4 px-4 py-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col items-center justify-center text-center">
-          <LogIn className="w-8 h-8 text-gray-400 mb-3" />
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            Inicia sesión para ver y escribir comentarios
-          </p>
-          <Link
-            to="/auth"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            <LogIn className="w-4 h-4" />
-            Iniciar sesión
-          </Link>
+      <div className="mt-4 space-y-4 px-0 md:px-4">
+        <div className="px-4 md:px-0">
+          {previewComments.length > 0 ? (
+            <CommentsList
+              comments={previewComments}
+              onReaction={onReaction}
+              onReply={onReply}
+              onDeleteComment={onDeleteComment}
+              postAuthorId={postAuthorId}
+              readOnly={true}
+              hideReplies={true}
+            />
+          ) : (
+            <div className="px-4 py-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Inicia sesión para ser el primero en comentar
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="px-4 md:px-0">
+          <div className="px-4 py-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col items-center justify-center text-center">
+              <LogIn className="w-8 h-8 text-gray-400 mb-3" />
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Regístrate o inicia sesión para ver todos los comentarios y participar
+              </p>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/auth"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Iniciar sesión
+                </Link>
+
+                {realCount > previewCount && (
+                  <Link to="/auth" className="text-sm text-muted-foreground hover:underline">
+                    Ver todos ({realCount})
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

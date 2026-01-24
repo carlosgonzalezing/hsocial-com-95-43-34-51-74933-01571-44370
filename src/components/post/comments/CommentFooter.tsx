@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { CommentReactions } from "./CommentReactions";
 import { ReactionType } from "@/types/database/social.types";
+import { Link } from "react-router-dom";
 
 interface CommentFooterProps {
   commentId: string;
@@ -10,6 +11,7 @@ interface CommentFooterProps {
   reactionsCount: number;
   onReaction: (commentId: string, type: ReactionType) => void;
   onReply: () => void;
+  readOnly?: boolean;
 }
 
 export function CommentFooter({ 
@@ -17,7 +19,8 @@ export function CommentFooter({
   userReaction, 
   reactionsCount, 
   onReaction, 
-  onReply 
+  onReply,
+  readOnly = false
 }: CommentFooterProps) {
   // Convert string to ReactionType if needed and ensure it's a valid ReactionType
   let safeUserReaction = userReaction as ReactionType | null;
@@ -34,6 +37,20 @@ export function CommentFooter({
     // Pass a literal "love" string to ensure type safety
     onReaction(id, "love");
   };
+
+  if (readOnly) {
+    return (
+      <div className="flex items-center gap-3 mt-0.5">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <span>Me gusta</span>
+          <span>{reactionsCount}</span>
+        </div>
+        <Link to="/auth" className="text-xs text-muted-foreground hover:underline">
+          Inicia sesión para reaccionar o responder
+        </Link>
+      </div>
+    );
+  }
   
   return (
     <div className="flex items-center gap-3 mt-0.5">

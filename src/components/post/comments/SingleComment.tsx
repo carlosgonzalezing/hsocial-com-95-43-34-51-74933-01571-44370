@@ -7,6 +7,7 @@ import { ReportCommentDialog } from "./ReportCommentDialog";
 import { CommentActions } from "./CommentActions";
 import type { Comment } from "@/types/post";
 import type { ReactionType } from "@/types/database/social.types";
+import { Link } from "react-router-dom";
 
 interface SingleCommentProps {
   comment: Comment;
@@ -15,6 +16,8 @@ interface SingleCommentProps {
   onDeleteComment: (commentId: string) => void;
   isReply?: boolean;
   postAuthorId?: string;
+  readOnly?: boolean;
+  hideReplies?: boolean;
 }
 
 export function SingleComment({
@@ -23,7 +26,9 @@ export function SingleComment({
   onReply,
   onDeleteComment,
   isReply = false,
-  postAuthorId
+  postAuthorId,
+  readOnly = false,
+  hideReplies = false
 }: SingleCommentProps) {
   const handleReply = useCallback(() => {
     const username = comment.profiles?.username || "usuario";
@@ -38,11 +43,6 @@ export function SingleComment({
     // This is a placeholder for future edit functionality
     console.log("Edit comment:", comment.id);
   }, [comment.id]);
-
-  // Create a wrapper function that specifically passes "love" as the reaction type
-  const handleCommentReaction = useCallback((commentId: string) => {
-    onReaction(commentId, "love");
-  }, [onReaction]);
 
   return (
     <div id={`comment-${comment.id}`} className={`flex flex-col gap-1 ${isReply ? "ml-8" : ""}`}>
@@ -70,19 +70,22 @@ export function SingleComment({
             reactionsCount={comment.likes_count || 0}
             onReaction={onReaction}
             onReply={handleReply}
+            readOnly={readOnly}
           />
           
           <div className="flex-grow"></div>
-          
-          <ReportCommentDialog comment={comment} />
-          
-          <CommentActions 
-            onDelete={handleDelete}
-            onEdit={handleEdit}
-          />
+
+          {!readOnly && <ReportCommentDialog comment={comment} />}
+
+          {!readOnly && (
+            <CommentActions 
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+            />
+          )}
         </div>
-        
-        {comment.replies && comment.replies.length > 0 && (
+
+        {comment.replies && comment.replies.length > 0 && !hideReplies && (
           <div className="mt-2 space-y-2">
             {comment.replies.map((reply) => (
               <SingleComment
@@ -93,8 +96,21 @@ export function SingleComment({
                 onDeleteComment={onDeleteComment}
                 isReply={true}
                 postAuthorId={postAuthorId}
+                readOnly={readOnly}
+                hideReplies={hideReplies}
               />
             ))}
+          </div>
+        )}
+
+        {comment.replies && comment.replies.length > 0 && hideReplies && (
+          <div className="mt-2">
+            <Link
+              to="/auth"
+              className="text-xs text-muted-foreground hover:underline"
+            >
+              Inicia sesión para ver respuestas ({comment.replies.length})
+            </Link>
           </div>
         )}
       </div>

@@ -137,7 +137,7 @@ function PostInner({ post, hideComments = false, isHidden = false, initialShowCo
 
   const shouldBlockInteractions = isDemoPost && !isAuthenticated;
 
-  const onCommentsClick = shouldBlockInteractions ? showDemoCta : toggleComments;
+  const onCommentsClick = toggleComments;
   const onShareClick = shouldBlockInteractions ? showDemoCta : () => setShowShareModal(true);
   const onSendClick = shouldBlockInteractions ? showDemoCta : () => setShowSendModal(true);
   const onReactionClick = shouldBlockInteractions ? () => showDemoCta() : onReaction;
@@ -230,7 +230,7 @@ function PostInner({ post, hideComments = false, isHidden = false, initialShowCo
         commentsExpanded={showComments}
       />
       
-      {!shouldBlockInteractions && !hideComments && showComments && (
+      {!hideComments && showComments && (
         <Comments 
           postId={post.id}
           comments={comments}
@@ -246,6 +246,7 @@ function PostInner({ post, hideComments = false, isHidden = false, initialShowCo
           commentImage={commentImage}
           setCommentImage={setCommentImage}
           postAuthorId={post.user_id}
+          totalCommentsCount={(post as any).comments_count ?? (post as any).comments?.count}
         />
       )}
 

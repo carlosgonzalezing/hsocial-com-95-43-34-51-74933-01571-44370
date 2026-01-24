@@ -3,6 +3,32 @@ import { supabase } from "@/integrations/supabase/client";
 
 export async function fetchPostComments(postId: string) {
   try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const hasSession = !!sessionData.session;
+
+    // Guest mode: use RPC to avoid RLS issues with profiles/comments
+    if (!hasSession) {
+      const { data: previewCommentsRaw, error: previewError } = await (supabase as any).rpc(
+        "get_public_post_comments_preview",
+        {
+          p_post_id: postId,
+          limit_count: 2,
+        }
+      );
+
+      if (previewError) {
+        throw previewError;
+      }
+
+      const previewComments = (previewCommentsRaw || []) as any[];
+
+      return previewComments.map((comment: any) => ({
+        ...comment,
+        reactions: [],
+        user_reaction: null,
+      }));
+    }
+
     // Fetch comments without reactions embed to avoid ambiguity
     let { data: comments, error } = await supabase
       .from("comments")

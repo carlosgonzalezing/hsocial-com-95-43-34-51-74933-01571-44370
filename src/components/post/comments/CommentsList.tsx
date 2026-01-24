@@ -1,7 +1,7 @@
 
 import { SingleComment } from "./SingleComment";
 import type { Comment } from "@/types/post";
-import type { ReactionType } from "@/components/post/reactions/ReactionIcons";
+import type { ReactionType } from "@/types/database/social.types";
 
 interface CommentsListProps {
   comments: Comment[];
@@ -9,6 +9,8 @@ interface CommentsListProps {
   onReply: (id: string, username: string) => void;
   onDeleteComment: (commentId: string) => void;
   postAuthorId?: string;
+  readOnly?: boolean;
+  hideReplies?: boolean;
 }
 
 export function CommentsList({
@@ -16,7 +18,9 @@ export function CommentsList({
   onReaction,
   onReply,
   onDeleteComment,
-  postAuthorId
+  postAuthorId,
+  readOnly = false,
+  hideReplies = false
 }: CommentsListProps) {
   if (comments.length === 0) {
     return (
@@ -36,6 +40,8 @@ export function CommentsList({
           onReply={onReply}
           onDeleteComment={onDeleteComment}
           postAuthorId={postAuthorId}
+          readOnly={readOnly}
+          hideReplies={hideReplies}
         />
       ))}
     </div>

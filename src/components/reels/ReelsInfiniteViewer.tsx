@@ -289,6 +289,7 @@ const ReelItem = memo(function ReelItem({ post, isActive, onReaction, onViewTrac
               commentImage={commentImage}
               setCommentImage={setCommentImage}
               postAuthorId={post.user_id}
+              totalCommentsCount={(post as any).comments_count ?? (post as any).comments?.count}
             />
           </div>
         </div>
