@@ -3,10 +3,12 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { uploadWithOptimization } from "@/lib/storage/cloudflare-r2";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function useProfileImage() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleImageUpload = async (
     type: "avatar" | "cover",
@@ -58,6 +60,10 @@ export function useProfileImage() {
         .eq("id", user.id);
 
       if (updateError) throw updateError;
+
+      // Invalidate profile queries to refresh data across the app
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
 
       return publicUrl;
     } catch (error: any) {

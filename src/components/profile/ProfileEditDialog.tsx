@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ProfileBasicInfo } from "./form/ProfileBasicInfo";
 import { CareerSelect } from "./form/CareerSelect";
@@ -31,6 +32,7 @@ export function ProfileEditDialog({
 }: ProfileEditDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(formSchema),
@@ -83,6 +85,11 @@ export function ProfileEditDialog({
         
         console.log("Perfil actualizado:", updatedProfile);
         onUpdate(updatedProfile);
+        
+        // Invalidate profile queries to refresh data across the app
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+        queryClient.invalidateQueries({ queryKey: ['profiles'] });
+        
         toast({
           title: "Perfil actualizado",
           description: "Los cambios han sido guardados exitosamente",
