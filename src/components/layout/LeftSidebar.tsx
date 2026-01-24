@@ -29,26 +29,6 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
   const { unreadNotifications, newPosts, handleHomeClick, handleNotificationClick } = useNavigation();
   const [userProfile, setUserProfile] = useState<any>(null);
 
-  const iconStyles: Record<string, { bg: string; fg: string; activeBg: string; activeFg: string }> = {
-    "/followers": { bg: "bg-sky-100", fg: "text-sky-600", activeBg: "bg-sky-200", activeFg: "text-sky-700" },
-    "/messages": { bg: "bg-indigo-100", fg: "text-indigo-600", activeBg: "bg-indigo-200", activeFg: "text-indigo-700" },
-    "/notifications": { bg: "bg-amber-100", fg: "text-amber-600", activeBg: "bg-amber-200", activeFg: "text-amber-700" },
-    "/friends": { bg: "bg-teal-100", fg: "text-teal-600", activeBg: "bg-teal-200", activeFg: "text-teal-700" },
-    "/": { bg: "bg-blue-100", fg: "text-blue-600", activeBg: "bg-blue-200", activeFg: "text-blue-700" },
-    "/home": { bg: "bg-blue-100", fg: "text-blue-600", activeBg: "bg-blue-200", activeFg: "text-blue-700" },
-    "/explore": { bg: "bg-violet-100", fg: "text-violet-600", activeBg: "bg-violet-200", activeFg: "text-violet-700" },
-    "/groups": { bg: "bg-emerald-100", fg: "text-emerald-600", activeBg: "bg-emerald-200", activeFg: "text-emerald-700" },
-    "/projects": { bg: "bg-cyan-100", fg: "text-cyan-600", activeBg: "bg-cyan-200", activeFg: "text-cyan-700" },
-    "/analytics": { bg: "bg-rose-100", fg: "text-rose-600", activeBg: "bg-rose-200", activeFg: "text-rose-700" },
-    "/reels": { bg: "bg-fuchsia-100", fg: "text-fuchsia-600", activeBg: "bg-fuchsia-200", activeFg: "text-fuchsia-700" },
-    "/saved": { bg: "bg-pink-100", fg: "text-pink-600", activeBg: "bg-pink-200", activeFg: "text-pink-700" },
-    "/groups/create": { bg: "bg-slate-100", fg: "text-slate-700", activeBg: "bg-slate-200", activeFg: "text-slate-800" },
-  };
-
-  const defaultIconStyle = { bg: "bg-muted", fg: "text-foreground", activeBg: "bg-muted", activeFg: "text-foreground" };
-
-  const getIconStyle = (path: string) => iconStyles[path] ?? defaultIconStyle;
-
   // Load user profile
   useEffect(() => {
     if (!currentUserId) return;
@@ -85,7 +65,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
   return (
     <aside className="h-full bg-card border-r border-border overflow-y-auto custom-scrollbar">
       <div className="p-6">
-        <h2 className="text-xl font-bold text-foreground">Panel</h2>
+        <h2 className="text-xl font-semibold text-[#050505]">Panel</h2>
       </div>
 
       <div className="px-4 pb-4">
@@ -101,7 +81,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">{userProfile?.username || "Mi perfil"}</p>
+              <p className="text-lg font-semibold text-[#050505]">{userProfile?.username || "Mi perfil"}</p>
             </div>
           </Link>
         )}
@@ -117,50 +97,40 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
               className={({ isActive }) =>
                 cn(
                   "group flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  isActive ? "bg-primary/5" : "hover:bg-muted/50"
                 )
               }
             >
-              {(() => {
-                const style = getIconStyle(item.path);
+              {({ isActive }) => {
                 const iconWrapperClassName = cn(
-                  "h-9 w-9 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
-                  style.bg
+                  "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
+                  isActive ? "bg-primary/10" : "bg-transparent group-hover:bg-muted/40"
                 );
-                const iconClassName = cn("h-5 w-5", style.fg, "transition-colors");
+                const iconClassName = cn(
+                  "h-5 w-5 transition-colors",
+                  isActive ? "text-primary" : "text-[#65676B] group-hover:text-[#4b4d52]"
+                );
+                const labelClassName = cn(
+                  "flex-1 truncate",
+                  isActive ? "text-[#050505] font-semibold" : "text-[#1C1E21] font-medium"
+                );
                 return (
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      cn(
-                        iconWrapperClassName,
-                        isActive ? style.activeBg : style.bg
-                      )
-                    }
-                    onClick={(e) => e.preventDefault()}
-                    tabIndex={-1}
-                    aria-hidden
-                  >
-                    <item.icon
-                      className={cn(
-                        iconClassName,
-                        ({ isActive }: any) => (isActive ? style.activeFg : style.fg)
-                      )}
-                    />
-                  </NavLink>
+                  <>
+                    <span className={iconWrapperClassName}>
+                      <item.icon className={iconClassName} />
+                    </span>
+                    <span className={labelClassName}>{item.label}</span>
+                    {item.path === "/notifications" && unreadNotifications > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="h-5 min-w-[20px] flex items-center justify-center p-0 text-xs"
+                      >
+                        {unreadNotifications}
+                      </Badge>
+                    )}
+                  </>
                 );
-              })()}
-              <span className="flex-1">{item.label}</span>
-              {item.path === "/notifications" && unreadNotifications > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="h-5 min-w-[20px] flex items-center justify-center p-0 text-xs"
-                >
-                  {unreadNotifications}
-                </Badge>
-              )}
+              }}
             </NavLink>
           ))}
         </div>
@@ -175,50 +145,40 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
             className={({ isActive }) =>
               cn(
                 "group flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
-                isActive
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                isActive ? "bg-primary/5" : "hover:bg-muted/50"
               )
             }
           >
-            {(() => {
-              const style = getIconStyle(item.path);
+            {({ isActive }) => {
               const iconWrapperClassName = cn(
-                "h-9 w-9 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
-                style.bg
+                "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
+                isActive ? "bg-primary/10" : "bg-transparent group-hover:bg-muted/40"
               );
-              const iconClassName = cn("h-5 w-5", style.fg, "transition-colors");
+              const iconClassName = cn(
+                "h-5 w-5 transition-colors",
+                isActive ? "text-primary" : "text-[#65676B] group-hover:text-[#4b4d52]"
+              );
+              const labelClassName = cn(
+                "flex-1 truncate",
+                isActive ? "text-[#050505] font-semibold" : "text-[#1C1E21] font-medium"
+              );
               return (
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    cn(
-                      iconWrapperClassName,
-                      isActive ? style.activeBg : style.bg
-                    )
-                  }
-                  onClick={(e) => e.preventDefault()}
-                  tabIndex={-1}
-                  aria-hidden
-                >
-                  <item.icon
-                    className={cn(
-                      iconClassName,
-                      ({ isActive }: any) => (isActive ? style.activeFg : style.fg)
-                    )}
-                  />
-                </NavLink>
+                <>
+                  <span className={iconWrapperClassName}>
+                    <item.icon className={iconClassName} />
+                  </span>
+                  <span className={labelClassName}>{item.label}</span>
+                  {item.path === "/" && newPosts > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="h-5 min-w-[20px] flex items-center justify-center p-0 text-xs"
+                    >
+                      {newPosts}
+                    </Badge>
+                  )}
+                </>
               );
-            })()}
-            <span className="flex-1">{item.label}</span>
-            {item.path === "/" && newPosts > 0 && (
-              <Badge
-                variant="destructive"
-                className="h-5 min-w-[20px] flex items-center justify-center p-0 text-xs"
-              >
-                {newPosts}
-              </Badge>
-            )}
+            }}
           </NavLink>
         ))}
 
@@ -229,21 +189,34 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
           className={({ isActive }) =>
             cn(
               "group flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
-              isActive
-                ? "bg-primary/10 text-primary font-medium"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              isActive ? "bg-primary/5" : "hover:bg-muted/50"
             )
           }
         >
-          {(() => {
-            const style = getIconStyle("/groups/create");
-            return (
-              <span className={cn("h-9 w-9 rounded-full flex items-center justify-center shadow-sm ring-1 ring-black/5 group-hover:shadow-md", style.bg)}>
-                <Plus className={cn("h-5 w-5", style.fg)} />
-              </span>
+          {({ isActive }) => {
+            const labelClassName = cn(
+              "truncate",
+              isActive ? "text-[#050505] font-semibold" : "text-[#1C1E21] font-medium"
             );
-          })()}
-          <span>Crear grupo</span>
+            return (
+              <>
+                <span
+                  className={cn(
+                    "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
+                    isActive ? "bg-primary/10" : "bg-transparent group-hover:bg-muted/40"
+                  )}
+                >
+                  <Plus
+                    className={cn(
+                      "h-5 w-5 transition-colors",
+                      isActive ? "text-primary" : "text-[#65676B] group-hover:text-[#4b4d52]"
+                    )}
+                  />
+                </span>
+                <span className={labelClassName}>Crear grupo</span>
+              </>
+            );
+          }}
         </NavLink>
       </nav>
     </aside>

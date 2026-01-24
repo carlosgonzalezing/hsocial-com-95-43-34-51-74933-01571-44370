@@ -123,6 +123,7 @@ export function MobileBottomNavigation({
               (item.label === "Explorar" && location.pathname.startsWith('/explore'));
             
             const Icon = item.icon;
+            const style = getIconStyle(item.path, item.isAction);
             
             return (
               <button
@@ -143,7 +144,6 @@ export function MobileBottomNavigation({
               >
                 <div className="relative">
                   {(() => {
-                    const style = getIconStyle(item.path, item.isAction);
                     const bubbleClassName = cn(
                       "h-10 w-10 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
                       isActive ? style.activeBg : style.bg
@@ -158,7 +158,7 @@ export function MobileBottomNavigation({
                   {item.badge && (
                     <Badge 
                       variant="destructive" 
-                      className="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
+                      className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
                     >
                       {item.badge > 9 ? '9+' : item.badge}
                     </Badge>
@@ -166,7 +166,7 @@ export function MobileBottomNavigation({
                 </div>
                 <span className={cn(
                   "text-[10px]",
-                  isActive ? "text-foreground font-medium" : "text-muted-foreground"
+                  isActive ? cn(style.activeFg, "font-medium") : "text-muted-foreground"
                 )}>
                   {item.label}
                 </span>

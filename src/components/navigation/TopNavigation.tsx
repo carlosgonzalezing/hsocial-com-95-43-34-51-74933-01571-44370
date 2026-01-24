@@ -263,7 +263,7 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
                 {item.badge && item.badge > 0 && (
                   <Badge 
                     variant="destructive" 
-                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]"
                   >
                     {item.badge}
                   </Badge>
@@ -299,10 +299,10 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={userProfile?.avatar_url || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                    {userProfile?.username?.[0]?.toUpperCase() || "U"}
+                    {(userProfile?.username?.[0] ?? "U").toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="ml-2 text-sm font-medium text-foreground max-w-20 truncate">
+                <span className="ml-2 text-sm font-bold text-[#050505] max-w-20 truncate">
                   {userProfile?.username || 'Usuario'}
                 </span>
               </Button>

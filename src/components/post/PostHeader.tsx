@@ -210,7 +210,7 @@ export function PostHeader({
   const getUsernameElement = () => {
     if (isIncognito) {
       return (
-        <span className="font-semibold text-muted-foreground">
+        <span className="font-bold text-[#050505]">
           {getDisplayName()}
         </span>
       );
@@ -222,7 +222,7 @@ export function PostHeader({
       return (
         <Link 
           to={`/companies/${company.slug || company.id}`}
-          className="font-semibold hover:underline"
+          className="font-bold text-[#050505] hover:underline"
         >
           {getDisplayName()}
         </Link>
@@ -232,7 +232,7 @@ export function PostHeader({
     return (
       <Link 
         to={`/profile/${post.user_id}`} 
-        className="font-semibold hover:underline"
+        className="font-bold text-[#050505] hover:underline"
       >
         {getDisplayName()}
       </Link>
