@@ -97,11 +97,19 @@ export function ProfileEditDialog({
         onClose();
       }
     } catch (error) {
+      const message =
+        typeof (error as any)?.message === "string"
+          ? (error as any).message
+          : "No se pudo actualizar el perfil";
+      const details =
+        typeof (error as any)?.details === "string" ? (error as any).details : "";
+      const hint = typeof (error as any)?.hint === "string" ? (error as any).hint : "";
+
       console.error("Error updating profile:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo actualizar el perfil",
+        description: [message, details, hint].filter(Boolean).join(" · "),
       });
     } finally {
       setIsLoading(false);
