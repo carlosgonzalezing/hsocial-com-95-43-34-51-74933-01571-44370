@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, MessageCircle, Users, Bell, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen, Compass, Crown } from "lucide-react";
+import { Home, MessageCircle, Users, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen, Compass, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,7 +15,7 @@ import { HSocialLogo } from "./HSocialLogo";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import ModalPublicacionWeb from "@/components/ModalPublicacionWeb";
 import { useUser } from "@/hooks/use-user";
-import { toast } from "@/hooks/use-toast";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 interface TopNavigationProps {
   pendingRequestsCount: number;
@@ -24,7 +24,6 @@ interface TopNavigationProps {
 export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
   const {
     currentUserId,
-    unreadNotifications,
     newPosts,
     handleHomeClick,
     handleNotificationClick,
@@ -179,27 +178,11 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
             </Button>
 
             {/* Notificaciones */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full text-foreground hover:text-muted-foreground relative"
-              onClick={() => {
-                handleNotificationClick();
-                navigate("/notifications");
-              }}
-              aria-label="Notificaciones"
-              title="Notificaciones"
-            >
-              <Bell className="h-6 w-6" />
-              {unreadNotifications > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
-                >
-                  {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                </Badge>
-              )}
-            </Button>
+            <NotificationDropdown
+              triggerClassName="h-10 w-10 rounded-full text-foreground hover:text-muted-foreground relative"
+              iconClassName="h-6 w-6"
+              onOpen={handleNotificationClick}
+            />
             
             {/* Menú de usuario */}
             <UserMenu />
@@ -331,26 +314,11 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
               </Button>
 
               {/* Notifications */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 transition-colors relative"
-                onClick={() => {
-                  handleNotificationClick();
-                  navigate("/notifications");
-                }}
-                title="Notificaciones"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadNotifications > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                  >
-                    {unreadNotifications}
-                  </Badge>
-                )}
-              </Button>
+              <NotificationDropdown
+                triggerClassName="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 transition-colors relative"
+                iconClassName="h-5 w-5"
+                onOpen={handleNotificationClick}
+              />
 
               {/* User Menu */}
               <UserMenu />

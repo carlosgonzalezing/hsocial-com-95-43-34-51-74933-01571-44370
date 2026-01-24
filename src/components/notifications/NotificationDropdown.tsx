@@ -7,13 +7,21 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { NotificationDropdownHeader } from "./NotificationDropdownHeader";
 import { NotificationGroups } from "./NotificationGroups";
 import { NotificationTabs } from "./NotificationTabs";
+import { useNavigate } from "react-router-dom";
 
-export function NotificationDropdown() {
+interface NotificationDropdownProps {
+  triggerClassName?: string;
+  iconClassName?: string;
+  onOpen?: () => void;
+}
+
+export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }: NotificationDropdownProps) {
   const [open, setOpen] = useState(false);
   const { notifications, markAsRead, removeNotification } = useNotifications();
   const [hasUnread, setHasUnread] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const popoverRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (activeTab === 'friends') {
@@ -97,14 +105,26 @@ export function NotificationDropdown() {
     setOpen(false);
   };
 
+  const handleViewAll = () => {
+    setOpen(false);
+    navigate("/notifications");
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      onOpen?.();
+    }
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative rounded-full">
-          <Bell className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className={triggerClassName ?? "relative rounded-full"}>
+          <Bell className={iconClassName ?? "h-5 w-5"} />
           {hasUnread && (
             <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-              {tabCounts.all}
+              {tabCounts.all > 9 ? "9+" : tabCounts.all}
             </span>
           )}
         </Button>
@@ -115,7 +135,12 @@ export function NotificationDropdown() {
         // Clases ajustadas para posicionamiento fijo en la ventana (viewport)
         className="w-96 p-0 fixed right-4 top-[56px] z-50 max-h-[80vh] overflow-hidden"
       >
-        <NotificationDropdownHeader hasUnread={hasUnread} onMarkAllAsRead={handleMarkAllAsRead} onClose={handleClose} />
+        <NotificationDropdownHeader
+          hasUnread={hasUnread}
+          onMarkAllAsRead={handleMarkAllAsRead}
+          onViewAll={handleViewAll}
+          onClose={handleClose}
+        />
         
         <div className="px-3 py-2">
           <NotificationTabs
