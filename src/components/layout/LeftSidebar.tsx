@@ -116,7 +116,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
               onClick={item.onClick}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
+                  "group flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
                   isActive
                     ? "bg-primary/10 text-primary font-medium"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -126,7 +126,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
               {(() => {
                 const style = getIconStyle(item.path);
                 const iconWrapperClassName = cn(
-                  "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
+                  "h-9 w-9 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
                   style.bg
                 );
                 const iconClassName = cn("h-5 w-5", style.fg, "transition-colors");
@@ -174,7 +174,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
             onClick={item.onClick}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
+                "group flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
                 isActive
                   ? "bg-primary/10 text-primary font-medium"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -184,7 +184,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
             {(() => {
               const style = getIconStyle(item.path);
               const iconWrapperClassName = cn(
-                "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
+                "h-9 w-9 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
                 style.bg
               );
               const iconClassName = cn("h-5 w-5", style.fg, "transition-colors");
@@ -228,7 +228,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
           to="/groups/create"
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
+              "group flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors",
               isActive
                 ? "bg-primary/10 text-primary font-medium"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -238,7 +238,7 @@ export function LeftSidebar({ currentUserId }: LeftSidebarProps) {
           {(() => {
             const style = getIconStyle("/groups/create");
             return (
-              <span className={cn("h-9 w-9 rounded-full flex items-center justify-center", style.bg)}>
+              <span className={cn("h-9 w-9 rounded-full flex items-center justify-center shadow-sm ring-1 ring-black/5 group-hover:shadow-md", style.bg)}>
                 <Plus className={cn("h-5 w-5", style.fg)} />
               </span>
             );

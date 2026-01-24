@@ -120,7 +120,7 @@ export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className={triggerClassName ?? "relative rounded-full"}>
+        <Button variant="ghost" size="icon" className={triggerClassName ?? "relative rounded-full shadow-sm ring-1 ring-black/5 hover:shadow-md"}>
           <Bell className={iconClassName ?? "h-5 w-5"} />
           {hasUnread && (
             <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-medium">

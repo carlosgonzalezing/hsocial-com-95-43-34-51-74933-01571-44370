@@ -39,6 +39,18 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
   const [showPostModal, setShowPostModal] = useState(false);
   const { user } = useUser();
 
+  const centerIconStyles: Record<string, { bg: string; fg: string; activeBg: string; activeFg: string }> = {
+    "/home": { bg: "bg-blue-100", fg: "text-blue-600", activeBg: "bg-blue-200", activeFg: "text-blue-700" },
+    "/explore": { bg: "bg-violet-100", fg: "text-violet-600", activeBg: "bg-violet-200", activeFg: "text-violet-700" },
+    "/groups": { bg: "bg-emerald-100", fg: "text-emerald-600", activeBg: "bg-emerald-200", activeFg: "text-emerald-700" },
+    "/projects": { bg: "bg-cyan-100", fg: "text-cyan-600", activeBg: "bg-cyan-200", activeFg: "text-cyan-700" },
+    "/reels": { bg: "bg-fuchsia-100", fg: "text-fuchsia-600", activeBg: "bg-fuchsia-200", activeFg: "text-fuchsia-700" },
+  };
+
+  const defaultCenterIconStyle = { bg: "bg-muted", fg: "text-foreground", activeBg: "bg-muted", activeFg: "text-foreground" };
+
+  const getCenterIconStyle = (path: string) => centerIconStyles[path] ?? defaultCenterIconStyle;
+
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -179,7 +191,7 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
 
             {/* Notificaciones */}
             <NotificationDropdown
-              triggerClassName="h-10 w-10 rounded-full text-foreground hover:text-muted-foreground relative"
+              triggerClassName="h-10 w-10 rounded-full text-foreground hover:text-muted-foreground relative shadow-sm ring-1 ring-black/5 hover:shadow-md"
               iconClassName="h-6 w-6"
               onOpen={handleNotificationClick}
             />
@@ -227,15 +239,27 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
                 key={item.path}
                 to={item.path}
                 onClick={item.onClick}
-                className={`flex items-center justify-center h-12 w-32 rounded-xl transition-colors duration-200 relative group ${
-                  item.isActive
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
+                className={cn(
+                  "flex items-center justify-center h-12 w-32 rounded-xl transition-colors duration-200 relative group",
+                  item.isActive ? "bg-primary/10" : "hover:bg-muted"
+                )}
               >
-                <item.icon className={`h-6 w-6 transition-colors ${
-                  item.isActive ? 'stroke-2' : 'stroke-1.5'
-                }`} />
+                {(() => {
+                  const style = getCenterIconStyle(item.path);
+                  const bubbleClassName = cn(
+                    "h-10 w-10 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
+                    item.isActive ? style.activeBg : style.bg
+                  );
+                  const iconClassName = cn(
+                    "h-6 w-6 transition-colors",
+                    item.isActive ? style.activeFg : style.fg
+                  );
+                  return (
+                    <span className={bubbleClassName}>
+                      <item.icon className={iconClassName} strokeWidth={item.isActive ? 2 : 1.5} />
+                    </span>
+                  );
+                })()}
                 {item.badge && item.badge > 0 && (
                   <Badge 
                     variant="destructive" 
@@ -315,7 +339,7 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
 
               {/* Notifications */}
               <NotificationDropdown
-                triggerClassName="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 transition-colors relative"
+                triggerClassName="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 transition-colors relative shadow-sm ring-1 ring-black/5 hover:shadow-md"
                 iconClassName="h-5 w-5"
                 onOpen={handleNotificationClick}
               />

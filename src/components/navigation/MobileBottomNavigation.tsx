@@ -26,6 +26,22 @@ export function MobileBottomNavigation({
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const isVisible = useScrollDirection();
 
+  const iconStyles: Record<string, { bg: string; fg: string; activeBg: string; activeFg: string }> = {
+    "/": { bg: "bg-blue-100", fg: "text-blue-600", activeBg: "bg-blue-200", activeFg: "text-blue-700" },
+    "/home": { bg: "bg-blue-100", fg: "text-blue-600", activeBg: "bg-blue-200", activeFg: "text-blue-700" },
+    "/groups": { bg: "bg-emerald-100", fg: "text-emerald-600", activeBg: "bg-emerald-200", activeFg: "text-emerald-700" },
+    "/projects": { bg: "bg-cyan-100", fg: "text-cyan-600", activeBg: "bg-cyan-200", activeFg: "text-cyan-700" },
+    "/explore": { bg: "bg-violet-100", fg: "text-violet-600", activeBg: "bg-violet-200", activeFg: "text-violet-700" },
+    "__action__": { bg: "bg-primary/10", fg: "text-primary", activeBg: "bg-primary/20", activeFg: "text-primary" },
+  };
+
+  const defaultIconStyle = { bg: "bg-muted", fg: "text-foreground", activeBg: "bg-muted", activeFg: "text-foreground" };
+
+  const getIconStyle = (path: string, isAction?: boolean) => {
+    if (isAction) return iconStyles["__action__"];
+    return iconStyles[path] ?? defaultIconStyle;
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -123,16 +139,22 @@ export function MobileBottomNavigation({
                     navigate(item.path);
                   }
                 }}
-                className="flex flex-col items-center justify-center h-full relative gap-0.5"
+                className="group flex flex-col items-center justify-center h-full relative gap-0.5"
               >
                 <div className="relative">
-                  <Icon 
-                    className={cn(
-                      "h-6 w-6",
-                      isActive ? "text-foreground" : "text-muted-foreground"
-                    )}
-                    strokeWidth={isActive ? 2 : 1.5}
-                  />
+                  {(() => {
+                    const style = getIconStyle(item.path, item.isAction);
+                    const bubbleClassName = cn(
+                      "h-10 w-10 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
+                      isActive ? style.activeBg : style.bg
+                    );
+                    const iconClassName = cn("h-6 w-6 transition-colors", isActive ? style.activeFg : style.fg);
+                    return (
+                      <span className={bubbleClassName}>
+                        <Icon className={iconClassName} strokeWidth={isActive ? 2 : 1.5} />
+                      </span>
+                    );
+                  })()}
                   {item.badge && (
                     <Badge 
                       variant="destructive" 
