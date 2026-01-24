@@ -27,11 +27,11 @@ export function MobileBottomNavigation({
   const isVisible = useScrollDirection();
 
   const iconStyles: Record<string, { bg: string; fg: string; activeBg: string; activeFg: string }> = {
-    "/": { bg: "bg-blue-100", fg: "text-blue-600", activeBg: "bg-blue-200", activeFg: "text-blue-700" },
-    "/home": { bg: "bg-blue-100", fg: "text-blue-600", activeBg: "bg-blue-200", activeFg: "text-blue-700" },
-    "/groups": { bg: "bg-emerald-100", fg: "text-emerald-600", activeBg: "bg-emerald-200", activeFg: "text-emerald-700" },
-    "/projects": { bg: "bg-cyan-100", fg: "text-cyan-600", activeBg: "bg-cyan-200", activeFg: "text-cyan-700" },
-    "/explore": { bg: "bg-violet-100", fg: "text-violet-600", activeBg: "bg-violet-200", activeFg: "text-violet-700" },
+    "/": { bg: "bg-blue-100 dark:bg-blue-900/25", fg: "text-blue-600 dark:text-blue-300", activeBg: "bg-blue-200 dark:bg-blue-900/45", activeFg: "text-blue-700 dark:text-blue-200" },
+    "/home": { bg: "bg-blue-100 dark:bg-blue-900/25", fg: "text-blue-600 dark:text-blue-300", activeBg: "bg-blue-200 dark:bg-blue-900/45", activeFg: "text-blue-700 dark:text-blue-200" },
+    "/groups": { bg: "bg-emerald-100 dark:bg-emerald-900/25", fg: "text-emerald-600 dark:text-emerald-300", activeBg: "bg-emerald-200 dark:bg-emerald-900/45", activeFg: "text-emerald-700 dark:text-emerald-200" },
+    "/projects": { bg: "bg-cyan-100 dark:bg-cyan-900/25", fg: "text-cyan-600 dark:text-cyan-300", activeBg: "bg-cyan-200 dark:bg-cyan-900/45", activeFg: "text-cyan-700 dark:text-cyan-200" },
+    "/explore": { bg: "bg-violet-100 dark:bg-violet-900/25", fg: "text-violet-600 dark:text-violet-300", activeBg: "bg-violet-200 dark:bg-violet-900/45", activeFg: "text-violet-700 dark:text-violet-200" },
     "__action__": { bg: "bg-primary/10", fg: "text-primary", activeBg: "bg-primary/20", activeFg: "text-primary" },
   };
 
@@ -145,7 +145,7 @@ export function MobileBottomNavigation({
                 <div className="relative">
                   {(() => {
                     const bubbleClassName = cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
+                      "h-10 w-10 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 dark:ring-white/10 group-hover:shadow-md",
                       isActive ? style.activeBg : style.bg
                     );
                     const iconClassName = cn("h-6 w-6 transition-colors", isActive ? style.activeFg : style.fg);

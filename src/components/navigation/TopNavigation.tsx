@@ -302,7 +302,7 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
                     {(userProfile?.username?.[0] ?? "U").toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="ml-2 text-sm font-bold text-[#050505] max-w-20 truncate">
+                <span className="ml-2 text-sm font-bold text-[#050505] dark:text-white max-w-20 truncate">
                   {userProfile?.username || 'Usuario'}
                 </span>
               </Button>

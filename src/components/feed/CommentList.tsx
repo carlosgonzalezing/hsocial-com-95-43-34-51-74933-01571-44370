@@ -28,7 +28,7 @@ export function CommentList({ postId, className = '' }: CommentListProps) {
 
   if (comments.length === 0) {
     return (
-      <div className={`text-center py-4 text-sm text-gray-500 ${className}`}>
+      <div className={`text-center py-4 text-sm text-gray-500 dark:text-gray-400 ${className}`}>
         <div className="flex flex-col items-center justify-center space-y-2">
           <MessageSquare className="h-5 w-5 text-gray-400" />
           <p>No hay comentarios aún. ¡Sé el primero en comentar!</p>
@@ -56,7 +56,7 @@ export function CommentList({ postId, className = '' }: CommentListProps) {
                 <span className="font-medium text-sm text-gray-900 dark:text-white">
                   @{comment.profiles.username}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {new Date(comment.created_at).toLocaleDateString('es-ES', {
                     day: 'numeric',
                     month: 'short',
