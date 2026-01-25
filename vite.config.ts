@@ -22,6 +22,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Configuración para producción en Render.com
+  base: mode === 'production' ? '/' : '/',
   build: {
     // Production optimizations
     minify: 'esbuild',

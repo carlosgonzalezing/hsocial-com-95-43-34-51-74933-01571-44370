@@ -1,0 +1,22 @@
+# Configuración adicional para Render.com
+# Asegura que el servidor maneje correctamente las rutas SPA
+
+# Handle client-side routing
+# For any request that doesn't match a file or directory, serve index.html
+# This is the key fix for the 404 error on page reload
+
+# API routes - proxy to backend
+/api/* 200
+
+# Static assets - serve directly
+/static/* 200
+/assets/* 200
+/*.js 200
+/*.css 200
+/*.png 200
+/*.jpg 200
+/*.webp 200
+/*.woff2 200
+
+# SPA fallback - serve index.html for all other routes
+/*    /index.html   200

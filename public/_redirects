@@ -1,0 +1,8 @@
+# Configuración para Render.com - SPA Fallback
+# Este archivo asegura que todas las rutas redirijan a index.html para React Router
+
+# For all requests to /api/*, proxy to the API server
+/api/* 200
+
+# For all other requests, serve the index.html (SPA fallback)
+/*    /index.html   200
