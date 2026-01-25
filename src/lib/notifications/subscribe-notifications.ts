@@ -4,6 +4,8 @@ import { formatNotificationMessage } from "./format-message";
 
 let subscriptionManager: any = null;
 let removeChannelCallback: (() => void) | null = null;
+let retryAttempt = 0;
+let retryTimeoutId: NodeJS.Timeout | null = null;
 
 // Create a simple subscription manager for notifications
 function createNotificationSubscriptionManager() {
@@ -33,7 +35,7 @@ function createNotificationSubscriptionManager() {
           currentChannel = null;
           pendingSubscription = null;
           reject(new Error("Subscription timeout"));
-        }, 45000);
+        }, 60000);
 
         currentChannel.subscribe((status: string) => {
           console.log(`Notifications channel subscription status: ${status}`);
@@ -72,6 +74,13 @@ export function subscribeToNotifications(
   callback: (notification: NotificationWithSender) => void,
   toastCallback: (title: string, description: string) => void
 ) {
+  // Reset retry attempt on fresh subscribe
+  retryAttempt = 0;
+  if (retryTimeoutId) {
+    clearTimeout(retryTimeoutId);
+    retryTimeoutId = null;
+  }
+
   // Remove existing subscription if it exists
   if (removeChannelCallback) {
     removeChannelCallback();
@@ -256,8 +265,9 @@ export function subscribeToNotifications(
   });
 
   const retry = (attempt: number) => {
-    const waitMs = Math.min(30000, 1000 * Math.pow(2, attempt));
-    setTimeout(() => {
+    const waitMs = Math.min(30000, 2000 * Math.pow(2, attempt - 1)); // exponential backoff starting at 2s
+    console.log(`Retrying notifications subscription in ${waitMs}ms (attempt ${attempt})`);
+    retryTimeoutId = setTimeout(() => {
       subscriptionManager?.removeChannel();
       subscribeToNotifications(callback, toastCallback);
     }, waitMs);
@@ -265,12 +275,17 @@ export function subscribeToNotifications(
 
   subscriptionPromise.catch((error) => {
     console.error('Failed to subscribe to notifications:', error);
+    retryAttempt += 1;
     // No romper la app si Realtime no conecta; reintentar con backoff.
-    retry(1);
+    retry(retryAttempt);
   });
 
   // Return cleanup function
   removeChannelCallback = () => {
+    if (retryTimeoutId) {
+      clearTimeout(retryTimeoutId);
+      retryTimeoutId = null;
+    }
     if (subscriptionManager) {
       subscriptionManager.removeChannel();
     }

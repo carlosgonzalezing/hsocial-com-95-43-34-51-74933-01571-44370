@@ -20,11 +20,15 @@ export type PostType = 'idea' | 'proyecto' | 'encuesta' | 'evento' | 'empleo' | 
 
 interface ModalPublicacionWebProps {
   isVisible: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   onPublish?: (content: string, postType: PostType, mediaFile: File | null) => void;
   userAvatar?: string;
   isPublishing?: boolean;
   initialPostType?: PostType;
+  initialContent?: string;
+  initialMedia?: File | null;
+  initialMediaType?: string | null;
 }
 
  async function sendIdeaPublishedAutoMessage(recipientUserId: string) {
@@ -43,11 +47,15 @@ interface ModalPublicacionWebProps {
 
 const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   isVisible,
+  isOpen,
   onClose,
   onPublish,
   userAvatar,
   isPublishing = false,
   initialPostType,
+  initialContent = '',
+  initialMedia = null,
+  initialMediaType = null,
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -68,9 +76,9 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
 
-  const [content, setContent] = useState('');
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [filePreviews, setFilePreviews] = useState<string[]>([]);
+  const [content, setContent] = useState(initialContent);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>(initialMedia ? [initialMedia] : []);
+  const [filePreviews, setFilePreviews] = useState<string[]>(initialMedia ? [URL.createObjectURL(initialMedia)] : []);
   const [showPostTypeMenu, setShowPostTypeMenu] = useState(false);
   const [selectedPostType, setSelectedPostType] = useState<PostType>(null);
   const [privacy, setPrivacy] = useState('Público');
@@ -118,15 +126,15 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
   );
 
   useEffect(() => {
-    if (isVisible) {
-      setSelectedPostType(initialPostType ?? null);
-      if (initialPostType !== 'servicios') {
-        setServiceCategory('');
-      }
-      setSelectedGroupId('');
-      setSelectedCompanyId('');
+    setContent(initialContent);
+    if (initialMedia) {
+      setSelectedFiles([initialMedia]);
+      setFilePreviews([URL.createObjectURL(initialMedia)]);
+    } else {
+      setSelectedFiles([]);
+      setFilePreviews([]);
     }
-  }, [initialPostType, isVisible]);
+  }, [initialContent, initialMedia]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -567,10 +575,10 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
     setShowPrivacyMenu(false);
   };
 
-  if (!isVisible) return null;
+  if (!isVisible && !isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black bg-opacity-50 ${!isVisible ? 'hidden' : ''} sm:px-4`}>
+    <div className={`fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black bg-opacity-50 ${(!isVisible && !isOpen) ? 'hidden' : ''} sm:px-4`}>
       <div className="bg-white dark:bg-gray-800 shadow-xl w-full h-[100dvh] max-h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:rounded-lg sm:max-w-2xl overflow-hidden sm:overflow-visible flex flex-col">
         <form
           className="flex flex-col h-full min-h-0"

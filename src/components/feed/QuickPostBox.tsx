@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ModalPublicacionWeb from "@/components/ModalPublicacionWeb";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-export function QuickPostBox() {
+export function QuickPostBox({ initialContent = '', initialMedia = null, initialMediaType = null }: { initialContent?: string; initialMedia?: File | null; initialMediaType?: string | null } = {}) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<{ avatar_url: string | null; username: string } | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
@@ -115,11 +115,12 @@ export function QuickPostBox() {
         
         {showPostModal && (
           <ModalPublicacionWeb
+            isVisible={showPostModal}
             isOpen={showPostModal}
             onClose={() => setShowPostModal(false)}
-            initialContent=""
-            initialMedia={null}
-            initialMediaType={null}
+            initialContent={initialContent}
+            initialMedia={initialMedia}
+            initialMediaType={initialMediaType}
           />
         )}
       </div>

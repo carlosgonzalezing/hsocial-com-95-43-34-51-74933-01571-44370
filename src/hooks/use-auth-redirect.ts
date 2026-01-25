@@ -22,21 +22,42 @@ export function useAuthRedirect() {
           localStorage.removeItem('auth_mode');
           
           if (provider === 'google') {
-            // Ensure profile exists for Google users
+            // Ensure profile exists for Google users, but only set username/avatar on first registration
             try {
-              const { error: profileError } = await supabase
+              // Check if profile already exists and has a username
+              const { data: existingProfile } = await supabase
                 .from('profiles')
-                .upsert({
-                  id: session.user.id,
-                  username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario',
-                  avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
-                  updated_at: new Date().toISOString(),
-                }, {
-                  onConflict: 'id'
-                });
-              
-              if (profileError) {
-                console.error('Error creating profile for Google user:', profileError);
+                .select('username, avatar_url')
+                .eq('id', session.user.id)
+                .single();
+
+              const shouldSetUsername = !existingProfile?.username;
+              const shouldSetAvatar = !existingProfile?.avatar_url && (session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture);
+
+              const updateData: any = {
+                id: session.user.id,
+                updated_at: new Date().toISOString(),
+              };
+
+              if (shouldSetUsername) {
+                updateData.username = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario';
+              }
+
+              if (shouldSetAvatar) {
+                updateData.avatar_url = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
+              }
+
+              // Only perform upsert if we actually have changes
+              if (shouldSetUsername || shouldSetAvatar) {
+                const { error: profileError } = await supabase
+                  .from('profiles')
+                  .upsert(updateData, {
+                    onConflict: 'id'
+                  });
+                
+                if (profileError) {
+                  console.error('Error updating profile for Google user:', profileError);
+                }
               }
             } catch (error) {
               console.error('Error ensuring profile exists:', error);
