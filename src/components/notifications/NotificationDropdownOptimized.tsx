@@ -127,16 +127,19 @@ export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }
           variant="ghost" 
           size="icon" 
           className={cn(
-            "relative rounded-full shadow-sm ring-1 ring-black/5 hover:shadow-md transition-colors",
+            "relative rounded-full shadow-sm ring-1 ring-black/5 hover:shadow-md transition-all duration-200",
             open 
-              ? "bg-blue-100 text-blue-600 ring-blue-200 dark:bg-blue-900/25 dark:text-blue-300 dark:ring-blue-800" 
+              ? "bg-blue-100 text-blue-600 ring-blue-200 dark:bg-blue-900/25 dark:text-blue-300 dark:ring-blue-800 shadow-lg" 
               : "text-foreground hover:bg-muted",
             triggerClassName
           )}
         >
-          <Bell className={cn(iconClassName ?? "h-5 w-5", open && "text-blue-600 dark:text-blue-300")} />
+          <Bell className={cn(
+            iconClassName ?? "h-5 w-5", 
+            open && "text-blue-600 dark:text-blue-300"
+          )} />
           {hasUnread && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-medium animate-pulse">
               {tabCounts.all > 9 ? "9+" : tabCounts.all}
             </span>
           )}
@@ -147,14 +150,15 @@ export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }
       <PopoverContent
         ref={popoverRef}
         className={cn(
-          "w-96 p-0 max-h-[80vh] overflow-hidden",
+          "p-0 max-h-[80vh] overflow-hidden",
           // Desktop: posicionado a la derecha
-          !isMobile && "fixed right-4 top-[56px] z-50",
+          !isMobile && "w-96 fixed right-4 top-[56px] z-50",
           // Mobile: centrado en pantalla con márgenes seguros
-          isMobile && "fixed left-4 right-4 top-[60px] z-50 max-w-[calc(100vw-2rem)]"
+          isMobile && "w-[calc(100vw-2rem)] fixed left-4 right-4 top-[60px] z-50 max-w-[400px]"
         )}
         align={isMobile ? "center" : "end"}
         sideOffset={isMobile ? 8 : 4}
+        avoidCollisions={true}
       >
         <NotificationDropdownHeader
           hasUnread={hasUnread}
@@ -171,16 +175,24 @@ export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }
           />
         </div>
 
-        <ScrollArea className="max-h-[calc(80vh-120px)]">
+        <ScrollArea className={cn(
+          "max-h-[calc(80vh-120px)]",
+          isMobile && "max-h-[calc(100vh-200px)]"
+        )}>
           {filteredNotifications.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground">
-              {activeTab === "all" 
-                ? "No tienes notificaciones" 
-                : `No tienes notificaciones de ${
-                    activeTab === "comments" ? "comentarios" :
-                    "reacciones"
-                  }`
-              }
+              <div className="flex flex-col items-center gap-2">
+                <Bell className="h-8 w-8 text-muted-foreground/50" />
+                <p className="text-sm">
+                  {activeTab === "all" 
+                    ? "No tienes notificaciones" 
+                    : `No tienes notificaciones de ${
+                        activeTab === "comments" ? "comentarios" :
+                        "reacciones"
+                      }`
+                  }
+                </p>
+              </div>
             </div>
           ) : (
             <>
