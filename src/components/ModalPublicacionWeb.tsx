@@ -405,7 +405,29 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         .select('id')
         .maybeSingle();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Ignore conflict errors (duplicate key) but log for debugging
+        if (insertError.code === '23505' || insertError.message?.includes('duplicate key')) {
+          console.warn('Post insert conflict (likely duplicate), ignoring:', insertError);
+          // Try to fetch existing post by user+content to continue flow
+          const { data: existingPost } = await supabase
+            .from('posts')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('content', postData.content)
+            .maybeSingle();
+          if (existingPost?.id) {
+            // Use existing post ID for downstream logic
+            // @ts-ignore
+            insertedPost = { id: existingPost.id };
+          } else {
+            // If we can't find the post, still throw to surface the error
+            throw insertError;
+          }
+        } else {
+          throw insertError;
+        }
+      }
 
       const insertedPostId = insertedPost?.id as string | undefined;
 
@@ -439,32 +461,47 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         // ignore gamification errors
       }
 
-      // Check if this is the user's first post
-      const { data: existingPosts } = await supabase
-        .from('posts')
-        .select('id')
-        .eq('user_id', user.id);
-      
-      const isFirstPost = existingPosts && existingPosts.length === 1;
+      // Check if this is the user's first post (idempotent badge award)
+      let isFirstPost = false;
+      try {
+        const { data: existingPosts } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('user_id', user.id);
+        isFirstPost = existingPosts && existingPosts.length === 1;
+      } catch (e) {
+        console.warn('Failed to check first post status:', e);
+        isFirstPost = false;
+      }
       
       if (isFirstPost) {
-        // Add first post badge to profile
-        await (supabase as any)
-          .from('profile_badges')
-          .upsert({
-            profile_id: user.id,
-            badge_type: 'first_post',
-            badge_name: 'Primera Publicación',
-            badge_description: '¡Compartiste tu primera idea con la comunidad!',
-            badge_icon: 'trophy',
-            badge_color: 'gold',
-            earned_date: new Date().toISOString()
-          }, {
-            onConflict: 'profile_id,badge_type'
+        // Add first post badge to profile (idempotent)
+        try {
+          await (supabase as any)
+            .from('profile_badges')
+            .upsert({
+              profile_id: user.id,
+              badge_type: 'first_post',
+              badge_name: 'Primera Publicación',
+              badge_description: '¡Compartiste tu primera idea con la comunidad!',
+              badge_icon: 'trophy',
+              badge_color: 'gold',
+              earned_date: new Date().toISOString()
+            }, {
+              onConflict: 'profile_id,badge_type'
+            });
+          toast({
+            title: '¡Felicidades! 🎉',
+            description: 'Has ganado tu primera insignia por tu primera publicación.',
           });
-        
-        // Show the badge modal
-        setShowFirstPostBadge(true);
+        } catch (badgeError) {
+          // Ignore badge duplicate errors but log for debugging
+          if (badgeError.code === '23505' || badgeError.message?.includes('duplicate key')) {
+            console.warn('First post badge already exists, ignoring:', badgeError);
+          } else {
+            console.warn('Failed to award first post badge:', badgeError);
+          }
+        }
       }
 
       if (selectedPostType === 'idea') {
