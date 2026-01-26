@@ -1,6 +1,12 @@
 -- Fix posts_project_status_check to accept both 'in_progress' and 'En desarrollo'
 -- This resolves the 409 Conflict when users publish with project_status = 'En desarrollo'
 
+-- First, update any existing rows that might violate the new constraint
+UPDATE public.posts 
+SET project_status = 'En desarrollo' 
+WHERE project_status NOT IN ('idea', 'in_progress', 'En desarrollo') 
+  AND project_status IS NOT NULL;
+
 -- Drop the old restrictive check
 ALTER TABLE public.posts DROP CONSTRAINT IF EXISTS posts_project_status_check;
 
