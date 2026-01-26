@@ -405,6 +405,8 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         .select('id')
         .maybeSingle();
 
+      let insertedPostId = insertedPost?.id as string | undefined;
+
       if (insertError) {
         // Ignore conflict errors (duplicate key) but log for debugging
         if (insertError.code === '23505' || insertError.message?.includes('duplicate key')) {
@@ -418,8 +420,7 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
             .maybeSingle();
           if (existingPost?.id) {
             // Use existing post ID for downstream logic
-            // @ts-ignore
-            insertedPost = { id: existingPost.id };
+            insertedPostId = existingPost.id;
           } else {
             // If we can't find the post, still throw to surface the error
             throw insertError;
@@ -428,8 +429,6 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
           throw insertError;
         }
       }
-
-      const insertedPostId = insertedPost?.id as string | undefined;
 
       // Variable reinforcement: award points for meaningful contributions
       try {
