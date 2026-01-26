@@ -102,7 +102,7 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
           return;
         }
 
-        const { data, error } = await supabase.rpc('get_user_groups', {
+        const { data, error } = await (supabase as any).rpc('get_user_groups', {
           user_id_param: user.id,
         });
         if (error) throw error;
@@ -261,6 +261,12 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
       queryClient.invalidateQueries({ queryKey: ["feed"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["user-posts"], exact: false });
       queryClient.refetchQueries({ queryKey: ["posts"], exact: false });
+
+      try {
+        window.dispatchEvent(new Event('hsocial:home_refresh'));
+      } catch {
+        // ignore
+      }
       
       toast({
         title: "¡Publicación creada!",

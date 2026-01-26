@@ -34,7 +34,7 @@ interface FeedProps {
 
 export function Feed({ userId, groupId, companyId }: FeedProps) {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [pullDistance, setPullDistance] = useState(0);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const pullDistanceRef = useRef(0);
@@ -202,7 +202,7 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
   }, [isAuthenticated, hasNextPage, maybeLoadMore, posts.length]);
 
   // Set up real-time subscriptions for feed, reactions and comments
-  useRealtimeFeedSimple(isAuthenticated ? userId : undefined);
+  useRealtimeFeedSimple(isAuthenticated ? (user?.id ?? undefined) : undefined);
 
   useEffect(() => {
     const handler = () => {

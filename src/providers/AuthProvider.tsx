@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const presenceIntervalRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const debug = import.meta.env.DEV;
 
   const buildProfilePayload = (u: User) => {
     const username =
@@ -58,28 +59,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    console.log('🔐 AuthProvider: Setting up auth listener...');
+    if (debug) console.log('🔐 AuthProvider: Setting up auth listener...');
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 AuthProvider: Auth event:', event, session?.user?.email);
-
-        if (event === 'TOKEN_REFRESH_FAILED') {
-          console.warn('🔐 AuthProvider: TOKEN_REFRESH_FAILED, clearing session and redirecting to /auth');
-          clearSupabaseAuthStorage();
-          try {
-            await supabase.auth.signOut();
-          } catch {
-            // Best-effort
-          }
-          setSession(null);
-          setUser(null);
-          userIdRef.current = null;
-          setLoading(false);
-          window.location.href = '/auth';
-          return;
-        }
+        if (debug) console.log('🔐 AuthProvider: Auth event:', event, session?.user?.email);
         
         setSession(session);
         setUser(session?.user ?? null);
@@ -126,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        console.error('🔐 AuthProvider: Error getting session:', error);
+        if (debug) console.error('🔐 AuthProvider: Error getting session:', error);
 
         const message = (error as any)?.message as string | undefined;
         if (message && message.toLowerCase().includes('invalid refresh token')) {
@@ -140,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      console.log('🔐 AuthProvider: Initial session check:', { hasSession: !!session, userEmail: session?.user?.email });
+      if (debug) console.log('🔐 AuthProvider: Initial session check:', { hasSession: !!session, userEmail: session?.user?.email });
       setSession(session);
       setUser(session?.user ?? null);
       userIdRef.current = session?.user?.id ?? null;
@@ -148,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
-      console.log('🔐 AuthProvider: Cleaning up auth listener');
+      if (debug) console.log('🔐 AuthProvider: Cleaning up auth listener');
       subscription.unsubscribe();
     };
   }, []);
@@ -215,13 +200,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const ensureProfileExists = async (user: User) => {
     try {
-      const payload = buildProfilePayload(user);
+      const computed = buildProfilePayload(user);
+      const googleName =
+        user.user_metadata?.name ||
+        user.user_metadata?.full_name ||
+        null;
+
+      const { data: existing, error: existingError } = await (supabase as any)
+        .from('profiles')
+        .select('id, name_manually_edited')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      const payload = (existing as any)?.name_manually_edited
+        ? {
+            id: computed.id,
+            career: computed.career,
+            semester: computed.semester,
+            birth_date: computed.birth_date,
+            account_type: computed.account_type,
+            person_status: computed.person_status,
+            google_name: googleName,
+            updated_at: computed.updated_at,
+          }
+        : {
+            ...computed,
+            google_name: googleName,
+          };
 
       await (supabase as any)
         .from('profiles')
         .upsert(payload, { onConflict: 'id' });
     } catch (error) {
-      console.error('❌ Error ensuring profile exists:', error);
+      if (debug) console.error('❌ Error ensuring profile exists:', error);
     }
   };
 

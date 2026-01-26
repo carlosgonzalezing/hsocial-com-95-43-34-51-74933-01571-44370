@@ -31,6 +31,7 @@ export function ProfileEditDialog({
   onUpdate,
 }: ProfileEditDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const debug = import.meta.env.DEV;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -76,7 +77,7 @@ export function ProfileEditDialog({
         updateData.username = values.username;
       }
 
-      console.log("Enviando datos de actualización:", updateData);
+      if (debug) console.log("Enviando datos de actualización:", updateData);
 
       // Cast supabase and payload to avoid over-strict Database types
       const { data, error } = await (supabase as any)
@@ -101,7 +102,7 @@ export function ProfileEditDialog({
           relationship_status: profileData.relationship_status
         };
         
-        console.log("Perfil actualizado:", updatedProfile);
+        if (debug) console.log("Perfil actualizado:", updatedProfile);
         onUpdate(updatedProfile);
         
         // Invalidate profile queries to refresh data across the app
