@@ -23,6 +23,7 @@ interface CommentsProps {
   setCommentImage?: (file: File | null) => void;
   postAuthorId?: string;
   totalCommentsCount?: number;
+  isSubmitting?: boolean;
 }
 
 export function Comments({
@@ -40,7 +41,8 @@ export function Comments({
   commentImage,
   setCommentImage,
   postAuthorId,
-  totalCommentsCount
+  totalCommentsCount,
+  isSubmitting = false
 }: CommentsProps) {
   const { isAuthenticated } = useAuth();
 
@@ -125,6 +127,7 @@ export function Comments({
           onCancelReply={onCancelReply}
           commentImage={commentImage}
           setCommentImage={setCommentImage}
+          isSubmitting={isSubmitting}
         />
       </div>
     </div>

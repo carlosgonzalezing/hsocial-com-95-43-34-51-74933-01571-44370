@@ -49,14 +49,32 @@ export function ProfileEditDialog({
     setIsLoading(true);
 
     try {
+      // Verificar si el nombre de usuario cambió
+      const nameChanged = values.username !== profile.username;
+      
+      if (nameChanged && values.username.trim()) {
+        // Usar la función especial para marcar el nombre como editado manualmente
+        const { error: nameError } = await supabase.rpc('mark_name_as_manually_edited', {
+          p_user_id: profile.id,
+          p_new_name: values.username.trim()
+        });
+
+        if (nameError) throw nameError;
+      }
+
+      // Actualizar los demás campos
       const updateData: ProfileTable['Update'] = {
-        username: values.username,
         bio: values.bio || null,
         career: values.career || null,
         semester: values.semester || null,
         relationship_status: values.relationship_status || null,
         updated_at: new Date().toISOString(),
       };
+
+      // Solo actualizar username si no cambió (para no duplicar la operación)
+      if (!nameChanged) {
+        updateData.username = values.username;
+      }
 
       console.log("Enviando datos de actualización:", updateData);
 
@@ -74,7 +92,7 @@ export function ProfileEditDialog({
         const profileData = data as unknown as ProfileTable['Row'];
         const updatedProfile: Profile = {
           ...profile,
-          username: profileData.username,
+          username: values.username, // Usar el valor del formulario
           bio: profileData.bio,
           updated_at: profileData.updated_at,
           career: profileData.career,
@@ -92,7 +110,9 @@ export function ProfileEditDialog({
         
         toast({
           title: "Perfil actualizado",
-          description: "Los cambios han sido guardados exitosamente",
+          description: nameChanged 
+            ? "Tu nombre ha sido actualizado y no será modificado por Google en el futuro"
+            : "Los cambios han sido guardados exitosamente",
         });
         onClose();
       }

@@ -4,10 +4,13 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2, MoreVertical, Trash2 } from "lucide-react";
+import { Send, Loader2, MoreVertical, Trash2, At } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { MentionSuggestions } from "@/components/mentions/MentionSuggestions";
+import { useMentions } from "@/hooks/mentions";
+import { MentionUser } from "@/hooks/mentions/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,9 +51,91 @@ export function GlobalChat() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Cargar mensajes históricos
+  // Mention system
+  const {
+    mentionUsers,
+    mentionListVisible,
+    mentionPosition,
+    mentionIndex,
+    setMentionIndex,
+    handleTextChange,
+    insertMention,
+    setMentionListVisible
+  } = useMentions();
+
+  // Extract mentions from message and create notifications
+  const createMentionNotifications = async (messageContent: string, messageId: string, authorId: string) => {
+    const mentionRegex = /@(\w+)/g;
+    const mentions = messageContent.match(mentionRegex);
+    
+    if (!mentions) return;
+
+    for (const mention of mentions) {
+      const username = mention.substring(1); // Remove @
+      
+      // Find user by username
+      const { data: mentionedUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username)
+        .single();
+
+      if (mentionedUser && mentionedUser.id !== authorId) {
+        // Create mention notification
+        await supabase
+          .from("notifications")
+          .insert({
+            receiver_id: mentionedUser.id,
+            sender_id: authorId,
+            type: "mention",
+            message: `te ha mencionado en un mensaje: ${mention}`,
+            read: false
+          });
+      }
+    }
+  };
+
+  // Handle text change with mention detection
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewMessage(value);
+    
+    // Trigger mention handling
+    if (inputRef.current) {
+      handleTextChange(value, inputRef.current.selectionStart, inputRef.current);
+    }
+  };
+
+  // Handle mention selection
+  const handleSelectMention = (user: MentionUser) => {
+    const newText = insertMention(newMessage, user);
+    setNewMessage(newText);
+    setMentionListVisible(false);
+  };
+
+  // Handle mention button click
+  const handleMentionClick = () => {
+    if (inputRef.current) {
+      const cursorPos = inputRef.current.selectionStart;
+      const textBefore = newMessage.substring(0, cursorPos);
+      const textAfter = newMessage.substring(cursorPos);
+      
+      const newValue = textBefore + '@' + textAfter;
+      setNewMessage(newValue);
+      
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.setSelectionRange(cursorPos + 1, cursorPos + 1);
+          handleTextChange(newValue, cursorPos + 1, inputRef.current);
+        }
+      }, 0);
+    }
+  };
   const loadMessages = async () => {
     try {
       // Primero obtener los mensajes
@@ -116,15 +201,22 @@ export function GlobalChat() {
 
     setSending(true);
     try {
-      const { error } = await supabase
+      const { data: messageData, error } = await supabase
         .from("mensajes")
         .insert({
           contenido: newMessage.trim(),
           id_canal: GLOBAL_CHANNEL_ID,
           id_autor: currentUserId,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Create mention notifications
+      if (messageData) {
+        await createMentionNotifications(newMessage.trim(), messageData.id, currentUserId);
+      }
 
       setNewMessage("");
     } catch (error) {
@@ -347,25 +439,47 @@ export function GlobalChat() {
 
       {/* Input Area */}
       <form onSubmit={handleSendMessage} className="p-4 border-t border-border">
-        <div className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Escribe un mensaje..."
-            className="flex-1"
-            disabled={sending || !currentUserId}
+        <div className="relative" ref={containerRef}>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={handleMentionClick}
+              className="shrink-0"
+            >
+              <At className="h-4 w-4" />
+            </Button>
+            <Input
+              ref={inputRef}
+              value={newMessage}
+              onChange={handleInputChange}
+              placeholder="Escribe un mensaje... Usa @ para mencionar"
+              className="flex-1"
+              disabled={sending || !currentUserId}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!newMessage.trim() || sending || !currentUserId}
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          
+          {/* Mention Suggestions */}
+          <MentionSuggestions
+            users={mentionUsers}
+            isVisible={mentionListVisible}
+            position={mentionPosition}
+            selectedIndex={mentionIndex}
+            onSelectUser={handleSelectMention}
+            onSetIndex={setMentionIndex}
           />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!newMessage.trim() || sending || !currentUserId}
-          >
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
         </div>
       </form>
     </div>

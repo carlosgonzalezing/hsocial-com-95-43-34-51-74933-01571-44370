@@ -122,6 +122,7 @@ function PostInner({ post, hideComments = false, isHidden = false, initialShowCo
     handleCancelReply,
     handleDeleteComment,
     setNewComment,
+    isSubmitting
   } = usePost(post, hideComments, initialShowComments);
 
   // Determinar si esta es una publicación compartida
@@ -247,6 +248,7 @@ function PostInner({ post, hideComments = false, isHidden = false, initialShowCo
           setCommentImage={setCommentImage}
           postAuthorId={post.user_id}
           totalCommentsCount={(post as any).comments_count ?? (post as any).comments?.count}
+          isSubmitting={isSubmitting}
         />
       )}
 

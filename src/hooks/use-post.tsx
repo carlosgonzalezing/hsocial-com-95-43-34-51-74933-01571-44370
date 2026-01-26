@@ -52,7 +52,7 @@ export function usePost(post: Post, hideComments = false, initialShowComments = 
   const { onDeletePost } = usePostActions(post.id);
   
   // Comment submission
-  const { handleSubmitComment: submitComment } = useCommentSubmit(
+  const { handleSubmitComment: submitComment, isSubmitting } = useCommentSubmit(
     post.id,
     setNewComment,
     setCommentImage,
@@ -84,6 +84,7 @@ export function usePost(post: Post, hideComments = false, initialShowComments = 
     handleSubmitComment,
     handleCancelReply,
     handleDeleteComment: deleteComment,
-    setNewComment
+    setNewComment,
+    isSubmitting
   };
 }

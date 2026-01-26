@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePremium } from "@/hooks/use-premium";
 import { Badge } from "@/components/ui/badge";
 import { Crown } from "lucide-react";
+import { NameEditIndicator } from "./NameEditIndicator";
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -141,6 +142,12 @@ export function ProfileHeader({ profile, currentUserId, onImageUpload, onProfile
                   <h1 className="text-xl md:text-2xl font-bold">
                     {profile.username || "Usuario sin nombre"}
                   </h1>
+
+                  {/* Indicador de nombre editado manualmente */}
+                  <NameEditIndicator 
+                    isManuallyEdited={(profile as any).name_manually_edited}
+                    googleName={(profile as any).google_name}
+                  />
 
                   {isPremium && (
                     <Badge variant="secondary" className="flex items-center gap-1">

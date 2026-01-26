@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { sendMentionNotifications } from "@/lib/api/posts/notifications";
 import { playUiSound } from "@/lib/ui-sounds";
+import { useState } from "react";
 
 /**
  * Hook for submitting comments to a post
@@ -17,12 +18,15 @@ export function useCommentSubmit(
 ) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmitComment = async (
     newComment: string,
     commentImage: File | null,
     replyTo: { id: string; username: string } | null
   ) => {
+    if (isSubmitting) return; // Prevent multiple submissions
+    
     if (!newComment.trim() && !commentImage) {
       toast({
         variant: "destructive",
@@ -31,6 +35,8 @@ export function useCommentSubmit(
       });
       return;
     }
+    
+    setIsSubmitting(true);
     
     try {
       let mediaUrl = null;
@@ -88,8 +94,10 @@ export function useCommentSubmit(
         title: "Error",
         description: "No se pudo publicar el comentario",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
-  return { handleSubmitComment };
+  return { handleSubmitComment, isSubmitting };
 }

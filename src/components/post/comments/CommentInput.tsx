@@ -18,6 +18,7 @@ interface CommentInputProps {
   onCancelReply: () => void;
   commentImage?: File | null;
   setCommentImage?: (file: File | null) => void;
+  isSubmitting?: boolean;
 }
 
 export function CommentInput({ 
@@ -27,7 +28,8 @@ export function CommentInput({
   replyTo,
   onCancelReply,
   commentImage,
-  setCommentImage
+  setCommentImage,
+  isSubmitting = false
 }: CommentInputProps) {
   const {
     textareaRef,
@@ -77,6 +79,7 @@ export function CommentInput({
           <SubmitButton 
             onClick={onSubmitComment} 
             disabled={!newComment.trim() && !commentImage}
+            isLoading={isSubmitting}
           />
         </div>
         <CommentInputHelper>

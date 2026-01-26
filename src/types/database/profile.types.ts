@@ -18,6 +18,9 @@ export interface ProfileTable {
     // Nuevos campos que podrían ser útiles
     last_seen: string | null;
     status: 'online' | 'offline' | 'away' | null;
+    // Campos para control de prioridad de nombre
+    name_manually_edited: boolean;
+    google_name: string | null;
   };
   Insert: {
     id: string;
@@ -36,6 +39,8 @@ export interface ProfileTable {
     updated_at?: string;
     last_seen?: string | null;
     status?: 'online' | 'offline' | 'away' | null;
+    name_manually_edited?: boolean;
+    google_name?: string | null;
   };
   Update: {
     id?: string;
@@ -54,6 +59,8 @@ export interface ProfileTable {
     updated_at?: string;
     last_seen?: string | null;
     status?: 'online' | 'offline' | 'away' | null;
+    name_manually_edited?: boolean;
+    google_name?: string | null;
   };
 }
 
