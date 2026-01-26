@@ -40,6 +40,7 @@ export function ActionsButtons({
 }: ActionsButtonsProps) {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const closeReactionsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAuthRequired = useCallback(() => {
     if (!isAuthenticated) {
@@ -96,6 +97,21 @@ export function ActionsButtons({
     setShowReactions(false);
   }, [setShowReactions]);
 
+  const cancelCloseReactions = useCallback(() => {
+    if (closeReactionsTimeoutRef.current) {
+      clearTimeout(closeReactionsTimeoutRef.current);
+      closeReactionsTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleCloseReactions = useCallback(() => {
+    cancelCloseReactions();
+    closeReactionsTimeoutRef.current = setTimeout(() => {
+      setShowReactions(false);
+      setActiveReaction(null);
+    }, 220);
+  }, [cancelCloseReactions, setActiveReaction, setShowReactions]);
+
   const hasReacted = userReaction !== null;
   const reactionData = hasReacted ? reactionIcons[userReaction] : null;
 
@@ -109,14 +125,20 @@ export function ActionsButtons({
         {/* Reaction button */}
         <div
           className="relative flex-1"
-          onMouseEnter={() => setShowReactions(true)}
+          onMouseEnter={() => {
+            cancelCloseReactions();
+            setShowReactions(true);
+          }}
           onMouseLeave={() => {
-            setShowReactions(false);
-            setActiveReaction(null);
+            scheduleCloseReactions();
           }}
         >
           {showReactions && (
-            <div className="absolute bottom-full left-0 mb-2 z-50">
+            <div
+              className="absolute bottom-full left-0 mb-2 z-50"
+              onMouseEnter={cancelCloseReactions}
+              onMouseLeave={scheduleCloseReactions}
+            >
               <ReactionMenu
                 show={showReactions}
                 activeReaction={activeReaction}

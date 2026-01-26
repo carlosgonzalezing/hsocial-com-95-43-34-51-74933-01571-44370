@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { NotificationWithSender, NotificationType } from "@/types/notifications";
 import { fetchNotifications } from "@/lib/notifications/fetch-notifications";
@@ -14,18 +14,29 @@ import { formatNotificationMessage } from "@/lib/notifications/format-message";
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<NotificationWithSender[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const isMountedRef = useRef(true);
 
   const isFriendsNotification = (type: NotificationType) => {
     return type === 'friend_request' || type === 'friend_accepted';
   };
 
-  const loadNotifications = async () => {
-    const notificationsData = await fetchNotifications();
-    setNotifications((notificationsData || []).filter(n => !isFriendsNotification(n.type)));
-  };
+  const loadNotifications = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const notificationsData = await fetchNotifications();
+      if (!isMountedRef.current) return;
+      setNotifications((notificationsData || []).filter(n => !isFriendsNotification(n.type)));
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
     loadNotifications();
 
     const unsubscribe = subscribeToNotifications(
@@ -33,6 +44,7 @@ export const useNotifications = () => {
         if (isFriendsNotification(newNotification.type)) {
           return;
         }
+        if (!isMountedRef.current) return;
         setNotifications(prev => [newNotification, ...prev]);
       },
       (title, description) => {
@@ -44,9 +56,10 @@ export const useNotifications = () => {
     );
 
     return () => {
+      isMountedRef.current = false;
       unsubscribe();
     };
-  }, []);
+  }, [loadNotifications, toast]);
 
   const handleFriendRequest = async (notificationId: string, senderId: string, accept: boolean) => {
     try {
@@ -151,6 +164,8 @@ export const useNotifications = () => {
 
   return {
     notifications,
+    isLoading,
+    refresh: loadNotifications,
     handleFriendRequest,
     markAsRead,
     removeNotification,

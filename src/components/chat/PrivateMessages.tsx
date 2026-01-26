@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,10 @@ import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { playUiSound } from "@/lib/ui-sounds";
+import { useArchivedChats } from "@/hooks/use-archived-chats";
+import { splitConversationsByMutualFollow } from "@/lib/chat/split-conversations";
+import { followUser } from "@/lib/api/followers/follow-actions";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +81,28 @@ export function PrivateMessages() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
+  const { archivedChats, handleChatLongPress, handleChatPressEnd, handleUnarchiveChat } = useArchivedChats();
+  const [mutualFollowMap, setMutualFollowMap] = useState<Record<string, boolean>>({});
+  const [activeInboxTab, setActiveInboxTab] = useState<'inbox' | 'requests' | 'archived'>('inbox');
+
+  const [acceptedRequests, setAcceptedRequests] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('hsocial_message_requests_accepted');
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('hsocial_message_requests_accepted', JSON.stringify(Array.from(acceptedRequests)));
+    } catch {
+      // ignore
+    }
+  }, [acceptedRequests]);
 
   // Obtener usuario actual
   useEffect(() => {
@@ -122,6 +148,22 @@ export function PrivateMessages() {
   // Obtener o crear canal privado entre dos usuarios
   const getOrCreatePrivateChannel = async (userId1: string, userId2: string): Promise<string | null> => {
     try {
+      // Prefer server-side RPC (SECURITY DEFINER) to avoid client-side RLS insert failures
+      const { data: rpcChannelId, error: rpcError }: { data: any; error: any } = await (supabase as any)
+        .rpc('get_or_create_private_channel', {
+          p_user1: userId1,
+          p_user2: userId2,
+        });
+
+      if (!rpcError && rpcChannelId) {
+        return String(rpcChannelId);
+      }
+
+      // If the RPC doesn't exist yet, fall back to legacy logic
+      if (rpcError && rpcError.code !== '42883') {
+        throw rpcError;
+      }
+
       const { data: user1Channels, error: searchError } = await supabase
         .from("miembros_canal")
         .select(`
@@ -150,26 +192,9 @@ export function PrivateMessages() {
         }
       }
 
-      // Crear nuevo canal privado
-      const { data: newChannel, error: createError } = await supabase
-        .from("canales")
-        .insert({
-          nombre: `Chat privado`,
-          es_privado: true
-        })
-        .select()
-        .single();
-
-      if (createError) throw createError;
-      if (!newChannel) return null;
-
-      // Agregar ambos usuarios como miembros
-      await supabase.from("miembros_canal").insert([
-        { id_canal: newChannel.id, id_usuario: userId1 },
-        { id_canal: newChannel.id, id_usuario: userId2 }
-      ]);
-
-      return newChannel.id;
+      // If we got here, RPC is missing and no existing channel was found.
+      // Without the RPC, creation may fail due to RLS; return null.
+      return null;
     } catch (error) {
       console.error("Error getting/creating private channel:", error);
       return null;
@@ -476,6 +501,52 @@ export function PrivateMessages() {
     }
   }, [currentUserId]);
 
+  // Calcular mutual follow (para separar Principal vs Desconocidos)
+  useEffect(() => {
+    const computeMutual = async () => {
+      if (!currentUserId) return;
+      const otherUserIds = conversations
+        .filter((c) => !c.is_global && c.id !== 'global')
+        .map((c) => c.id);
+
+      if (otherUserIds.length === 0) {
+        setMutualFollowMap({});
+        return;
+      }
+
+      try {
+        const { data: iFollowData, error: iFollowError } = await supabase
+          .from('followers')
+          .select('following_id')
+          .eq('follower_id', currentUserId)
+          .in('following_id', otherUserIds);
+
+        if (iFollowError) throw iFollowError;
+
+        const { data: theyFollowData, error: theyFollowError } = await supabase
+          .from('followers')
+          .select('follower_id')
+          .eq('following_id', currentUserId)
+          .in('follower_id', otherUserIds);
+
+        if (theyFollowError) throw theyFollowError;
+
+        const iFollowSet = new Set((iFollowData || []).map((r: any) => r.following_id));
+        const theyFollowSet = new Set((theyFollowData || []).map((r: any) => r.follower_id));
+        const nextMap: Record<string, boolean> = {};
+        for (const id of otherUserIds) {
+          nextMap[id] = iFollowSet.has(id) && theyFollowSet.has(id);
+        }
+        setMutualFollowMap(nextMap);
+      } catch (error) {
+        console.error('Error computing mutual follow map:', error);
+        setMutualFollowMap({});
+      }
+    };
+
+    computeMutual();
+  }, [currentUserId, conversations]);
+
   // Cargar mensajes cuando se selecciona una conversación
   useEffect(() => {
     if (selectedConversation) {
@@ -500,12 +571,32 @@ export function PrivateMessages() {
     }
   }, [searchParams.get("user"), currentUserId]);
 
-  // Filtrar conversaciones por búsqueda (excluyendo resultados de usuarios nuevos)
-  const filteredConversations = searchQuery.trim()
-    ? conversations.filter(conv =>
-        conv.username.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : conversations;
+  const { conversacionesPrincipales, solicitudesDeMensajes } = useMemo(() => {
+    return splitConversationsByMutualFollow(conversations, {
+      isGlobal: (c) => !!(c as any).is_global,
+      isMutualFollow: (c) => {
+        const conv = c as Conversation;
+        if (conv.is_global) return true;
+        if (acceptedRequests.has(conv.id)) return true;
+        return !!mutualFollowMap[conv.id];
+      }
+    });
+  }, [conversations, mutualFollowMap, acceptedRequests]);
+
+  const archivedConversations = useMemo(() => {
+    return conversations.filter((c) => !c.is_global && archivedChats.has(c.id));
+  }, [conversations, archivedChats]);
+
+  const visibleConversations = useMemo(() => {
+    const base = activeInboxTab === 'archived'
+      ? archivedConversations
+      : activeInboxTab === 'requests'
+        ? solicitudesDeMensajes.filter((c) => !archivedChats.has((c as Conversation).id))
+        : conversacionesPrincipales.filter((c) => (c as Conversation).is_global || !archivedChats.has((c as Conversation).id));
+
+    if (!searchQuery.trim()) return base;
+    return base.filter((conv: any) => (conv.username || '').toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [activeInboxTab, archivedConversations, solicitudesDeMensajes, conversacionesPrincipales, archivedChats, searchQuery]);
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 
@@ -554,6 +645,46 @@ export function PrivateMessages() {
               className="pl-8"
             />
           </div>
+
+          <div className="mt-3 flex gap-2">
+            <Button
+              type="button"
+              variant={activeInboxTab === 'inbox' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveInboxTab('inbox')}
+              className="h-8"
+            >
+              Principal
+            </Button>
+            <Button
+              type="button"
+              variant={activeInboxTab === 'requests' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveInboxTab('requests')}
+              className="h-8"
+            >
+              Desconocidos
+              {solicitudesDeMensajes.length > 0 && (
+                <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full h-5 px-2 flex items-center justify-center">
+                  {solicitudesDeMensajes.length}
+                </span>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant={activeInboxTab === 'archived' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveInboxTab('archived')}
+              className="h-8"
+            >
+              Archivados
+              {archivedConversations.length > 0 && (
+                <span className="ml-2 bg-muted text-foreground text-xs rounded-full h-5 px-2 flex items-center justify-center">
+                  {archivedConversations.length}
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Resultados de búsqueda de usuarios */}
@@ -588,16 +719,21 @@ export function PrivateMessages() {
 
         {/* Lista de conversaciones */}
         <ScrollArea className="flex-1">
-          {filteredConversations.length === 0 ? (
+          {visibleConversations.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground text-sm">
-              {searchQuery ? "No se encontraron conversaciones" : "No tienes conversaciones aún"}
+              {searchQuery ? "No se encontraron conversaciones" : activeInboxTab === 'requests' ? "No tienes solicitudes" : activeInboxTab === 'archived' ? "No tienes chats archivados" : "No tienes conversaciones aún"}
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {filteredConversations.map((conv) => (
+              {visibleConversations.map((conv: any) => (
                 <button
                   key={conv.id}
                   onClick={() => setSelectedConversation(conv.id)}
+                  onMouseDown={() => !conv.is_global && handleChatLongPress(conv.id)}
+                  onMouseUp={handleChatPressEnd}
+                  onMouseLeave={handleChatPressEnd}
+                  onTouchStart={() => !conv.is_global && handleChatLongPress(conv.id)}
+                  onTouchEnd={handleChatPressEnd}
                   className={cn(
                     "w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left",
                     selectedConversation === conv.id && "bg-muted"
@@ -634,6 +770,74 @@ export function PrivateMessages() {
                       })}
                     </p>
                   </div>
+
+                  {activeInboxTab === 'requests' && !conv.is_global && (
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAcceptedRequests((prev) => {
+                            const next = new Set(prev);
+                            next.add(conv.id);
+                            return next;
+                          });
+
+                          followUser(conv.id).finally(() => {
+                            setActiveInboxTab('inbox');
+                          });
+                        }}
+                        className="h-8"
+                      >
+                        Aceptar
+                      </Button>
+                      {archivedChats.has(conv.id) ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUnarchiveChat(conv.id);
+                          }}
+                          className="h-8"
+                        >
+                          Desarchivar
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChatLongPress(conv.id);
+                            setTimeout(() => handleChatPressEnd(), 0);
+                          }}
+                          className="h-8"
+                        >
+                          Archivar
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {activeInboxTab === 'archived' && !conv.is_global && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnarchiveChat(conv.id);
+                      }}
+                      className="h-8"
+                    >
+                      Desarchivar
+                    </Button>
+                  )}
                 </button>
               ))}
             </div>

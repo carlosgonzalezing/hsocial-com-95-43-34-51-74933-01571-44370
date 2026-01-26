@@ -6,8 +6,7 @@ import { Bell } from "lucide-react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { NotificationDropdownHeader } from "./NotificationDropdownHeader";
 import { NotificationGroups } from "./NotificationGroups";
-import { NotificationTabs } from "./NotificationTabs";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -19,30 +18,15 @@ interface NotificationDropdownProps {
 
 export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }: NotificationDropdownProps) {
   const [open, setOpen] = useState(false);
-  const { notifications, markAsRead, removeNotification } = useNotifications();
+  const { notifications, markAsRead, removeNotification, isLoading } = useNotifications();
   const [hasUnread, setHasUnread] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
   const popoverRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    if (activeTab === 'friends') {
-      setActiveTab('all');
-    }
-  }, [activeTab]);
-
-  // Filter notifications by active tab
   const filteredNotifications = notifications.filter((notification) => {
-    // Friends/requests removed globally
     if (["friend_request", "friend_accepted"].includes(notification.type)) return false;
-    if (activeTab === "all") return true;
-    if (activeTab === "comments") {
-      return ["post_comment", "comment_reply", "mention"].includes(notification.type);
-    }
-    if (activeTab === "reactions") {
-      return ["post_like", "story_reaction", "comment_like"].includes(notification.type);
-    }
     return true;
   });
 
@@ -66,16 +50,9 @@ export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }
     { today: [], yesterday: [], older: [] },
   );
 
-  // Calculate tab counts
-  const tabCounts = {
-    all: notifications.filter((n) => !n.read && !["friend_request", "friend_accepted"].includes(n.type)).length,
-    comments: notifications.filter(
-      (n) => !n.read && ["post_comment", "comment_reply", "mention"].includes(n.type)
-    ).length,
-    reactions: notifications.filter(
-      (n) => !n.read && ["post_like", "story_reaction", "comment_like"].includes(n.type)
-    ).length,
-  };
+  const unreadCount = notifications.filter(
+    (n) => !n.read && !["friend_request", "friend_accepted"].includes(n.type)
+  ).length;
 
   useEffect(() => {
     const hasUnreadNotifications = notifications.some(
@@ -113,6 +90,10 @@ export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }
     navigate("/notifications");
   };
 
+  const handleMobileNavigate = () => {
+    navigate("/notifications");
+  };
+
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) {
@@ -120,80 +101,77 @@ export function NotificationDropdown({ triggerClassName, iconClassName, onOpen }
     }
   };
 
+  const isActive = open || (isMobile && location.pathname.startsWith("/notifications"));
+
+  const trigger = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={cn(
+        "relative rounded-full shadow-sm ring-1 ring-black/5 hover:shadow-md transition-all duration-200",
+        isActive
+          ? "bg-blue-100 text-blue-600 ring-blue-200 dark:bg-blue-900/25 dark:text-blue-300 dark:ring-blue-800 shadow-lg"
+          : "text-foreground hover:bg-muted",
+        triggerClassName
+      )}
+      onClick={isMobile ? handleMobileNavigate : undefined}
+    >
+      <Bell className={cn(iconClassName ?? "h-5 w-5", isActive && "text-blue-600 dark:text-blue-300")} />
+      {hasUnread && (
+        <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-medium animate-pulse">
+          {unreadCount > 9 ? "9+" : unreadCount}
+        </span>
+      )}
+    </Button>
+  );
+
+  const content = (
+    <>
+      <NotificationDropdownHeader
+        hasUnread={hasUnread}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onViewAll={handleViewAll}
+        onClose={handleClose}
+      />
+
+      <ScrollArea className={"max-h-[calc(80vh-120px)]"}>
+        {isLoading ? (
+          <div className="p-4 space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-14 rounded-md bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : filteredNotifications.length === 0 ? (
+          <div className="p-6 text-center text-muted-foreground">
+            No tienes notificaciones
+          </div>
+        ) : (
+          <NotificationGroups
+            groupedNotifications={groupedNotifications}
+            handleFriendRequest={() => {}}
+            markAsRead={markAsRead}
+            removeNotification={removeNotification}
+            setOpen={setOpen}
+          />
+        )}
+      </ScrollArea>
+    </>
+  );
+
+  if (isMobile) {
+    return trigger;
+  }
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={cn(
-            "relative rounded-full shadow-sm ring-1 ring-black/5 hover:shadow-md transition-colors",
-            open 
-              ? "bg-blue-100 text-blue-600 ring-blue-200 dark:bg-blue-900/25 dark:text-blue-300 dark:ring-blue-800" 
-              : "text-foreground hover:bg-muted",
-            triggerClassName
-          )}
-        >
-          <Bell className={cn(iconClassName ?? "h-5 w-5", open && "text-blue-600 dark:text-blue-300")} />
-          {hasUnread && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-              {tabCounts.all > 9 ? "9+" : tabCounts.all}
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      
-      {/* Panel optimizado para móvil y desktop */}
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         ref={popoverRef}
-        className={cn(
-          "w-96 p-0 max-h-[80vh] overflow-hidden",
-          // Desktop: posicionado a la derecha
-          !isMobile && "fixed right-4 top-[56px] z-50",
-          // Mobile: centrado en pantalla con márgenes seguros
-          isMobile && "fixed left-4 right-4 top-[60px] z-50 max-w-[calc(100vw-2rem)]"
-        )}
-        align={isMobile ? "center" : "end"}
-        sideOffset={isMobile ? 8 : 4}
+        className="w-96 p-0 fixed right-4 top-[56px] z-50 max-h-[80vh] overflow-hidden"
+        align="end"
+        sideOffset={4}
       >
-        <NotificationDropdownHeader
-          hasUnread={hasUnread}
-          onMarkAllAsRead={handleMarkAllAsRead}
-          onViewAll={handleViewAll}
-          onClose={handleClose}
-        />
-        
-        <div className="px-3 py-2">
-          <NotificationTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            counts={tabCounts}
-          />
-        </div>
-
-        <ScrollArea className="max-h-[calc(80vh-120px)]">
-          {filteredNotifications.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              {activeTab === "all" 
-                ? "No tienes notificaciones" 
-                : `No tienes notificaciones de ${
-                    activeTab === "comments" ? "comentarios" :
-                    "reacciones"
-                  }`
-              }
-            </div>
-          ) : (
-            <>
-              <NotificationGroups
-                groupedNotifications={groupedNotifications}
-                handleFriendRequest={() => {}}
-                markAsRead={markAsRead}
-                removeNotification={removeNotification}
-                setOpen={setOpen}
-              />
-            </>
-          )}
-        </ScrollArea>
+        {content}
       </PopoverContent>
     </Popover>
   );

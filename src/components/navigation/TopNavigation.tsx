@@ -15,7 +15,7 @@ import { HSocialLogo } from "./HSocialLogo";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import ModalPublicacionWeb from "@/components/ModalPublicacionWeb";
 import { useUser } from "@/hooks/use-user";
-import { NotificationDropdown } from "@/components/notifications/NotificationDropdownOptimized";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 interface TopNavigationProps {
   pendingRequestsCount: number;

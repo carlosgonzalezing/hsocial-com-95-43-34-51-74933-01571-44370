@@ -42,7 +42,7 @@ export function EmptyFeed() {
           <div>
             <h2 className="text-xl font-semibold mb-2">¡Bienvenido a H Social!</h2>
             <p className="text-muted-foreground">
-              La red social universitaria donde conectas, colaboras y creces académicamente.
+              Conecta con socios, lanza tu proyecto y haz realidad tu emprendimiento.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -115,6 +115,7 @@ export function EmptyFeed() {
       {/* Post Modal */}
       {showPostModal && (
         <ModalPublicacionWeb
+          isVisible={showPostModal}
           isOpen={showPostModal}
           onClose={() => setShowPostModal(false)}
           initialContent=""

@@ -5,7 +5,7 @@ import type { Post } from "@/types/post";
 import { FeedContent } from "./FeedContent";
 import { usePersonalizedFeed } from "@/hooks/feed/use-personalized-feed";
 import { useRealtimeFeedSimple } from "@/hooks/feed/hooks/use-realtime-feed-simple";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/providers/AuthProvider";
@@ -35,6 +35,11 @@ interface FeedProps {
 export function Feed({ userId, groupId, companyId }: FeedProps) {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const pullDistanceRef = useRef(0);
+  const touchStartYRef = useRef<number | null>(null);
+  const isPullingRef = useRef(false);
 
   const {
     data: publicPreview,
@@ -57,6 +62,72 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
     isFetchingNextPage
   } = usePersonalizedFeed(userId, groupId, companyId);
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  const isAtTop = useCallback(() => {
+    const rootEl = loaderRef.current ? getScrollParent(loaderRef.current) : null;
+    if (!rootEl) {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+      return scrollTop <= 0;
+    }
+    return rootEl.scrollTop <= 0;
+  }, []);
+
+  const triggerRefresh = useCallback(() => {
+    if (isPullRefreshing) return;
+    setIsPullRefreshing(true);
+    queryClient.invalidateQueries({ queryKey: ["posts"], exact: false });
+    queryClient.invalidateQueries({ queryKey: ["posts", "public-preview"], exact: false });
+    try {
+      window.dispatchEvent(new Event('hsocial:home_refresh'));
+    } catch {
+      // ignore
+    }
+    window.setTimeout(() => {
+      setIsPullRefreshing(false);
+      pullDistanceRef.current = 0;
+      setPullDistance(0);
+    }, 700);
+  }, [isPullRefreshing, queryClient]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isAtTop()) return;
+    touchStartYRef.current = e.touches[0]?.clientY ?? null;
+    isPullingRef.current = true;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPullingRef.current) return;
+    if (touchStartYRef.current == null) return;
+
+    const y = e.touches[0]?.clientY;
+    if (typeof y !== 'number') return;
+
+    const dy = y - touchStartYRef.current;
+    if (dy <= 0) {
+      pullDistanceRef.current = 0;
+      setPullDistance(0);
+      return;
+    }
+
+    const next = Math.min(120, dy);
+    pullDistanceRef.current = next;
+    setPullDistance(next);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isPullingRef.current) return;
+    isPullingRef.current = false;
+    touchStartYRef.current = null;
+
+    const d = pullDistanceRef.current;
+    if (d >= 70) {
+      triggerRefresh();
+      return;
+    }
+
+    pullDistanceRef.current = 0;
+    setPullDistance(0);
+  };
 
   const maybeLoadMore = useCallback(() => {
     if (!hasNextPage) return;
@@ -157,7 +228,18 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
     }
 
     return (
-      <div className="feed-container mx-auto w-full max-w-[680px] px-2 lg:px-0">
+      <div
+        className="feed-container mx-auto w-full max-w-[680px] px-2 lg:px-0"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {(pullDistance > 0 || isPullRefreshing) && (
+          <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+            <div className={`w-4 h-4 border-2 border-current border-t-transparent rounded-full ${isPullRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isPullRefreshing ? 'Actualizando…' : 'Desliza para actualizar'}</span>
+          </div>
+        )}
         <FeedContent
           posts={previewPosts}
           trackPostView={async () => {}}
@@ -179,7 +261,18 @@ export function Feed({ userId, groupId, companyId }: FeedProps) {
   }
 
   return (
-    <div className="feed-container mx-auto w-full max-w-[680px] px-2 lg:px-0">
+    <div
+      className="feed-container mx-auto w-full max-w-[680px] px-2 lg:px-0"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {(pullDistance > 0 || isPullRefreshing) && (
+        <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+          <div className={`w-4 h-4 border-2 border-current border-t-transparent rounded-full ${isPullRefreshing ? 'animate-spin' : ''}`} />
+          <span>{isPullRefreshing ? 'Actualizando…' : 'Desliza para actualizar'}</span>
+        </div>
+      )}
       <FeedContent
         posts={posts as Post[]}
         trackPostView={trackPostView}

@@ -23,6 +23,7 @@ export function HoverReactionButton({
 }: HoverReactionButtonProps) {
   const [animatingReaction, setAnimatingReaction] = useState<ReactionType | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const closeReactionsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = useIsMobile();
 
   // Long press hook para mostrar menú de reacciones
@@ -81,11 +82,50 @@ export function HoverReactionButton({
     setShowReactions(false);
   }, [onReactionClick, setShowReactions]);
 
+  const cancelCloseReactions = useCallback(() => {
+    if (closeReactionsTimeoutRef.current) {
+      clearTimeout(closeReactionsTimeoutRef.current);
+      closeReactionsTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleCloseReactions = useCallback(() => {
+    cancelCloseReactions();
+    closeReactionsTimeoutRef.current = setTimeout(() => {
+      setShowReactions(false);
+      setActiveReaction(null);
+    }, 260);
+  }, [cancelCloseReactions, setActiveReaction, setShowReactions]);
+
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onMouseEnter={() => {
+        if (!isMobile) {
+          cancelCloseReactions();
+        }
+      }}
+      onMouseLeave={() => {
+        if (!isMobile) {
+          scheduleCloseReactions();
+        }
+      }}
+    >
       {/* Menú de reacciones flotante */}
       {showReactions && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 ml-[-16rem]">
+        <div
+          className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50"
+          onMouseEnter={() => {
+            if (!isMobile) {
+              cancelCloseReactions();
+            }
+          }}
+          onMouseLeave={() => {
+            if (!isMobile) {
+              scheduleCloseReactions();
+            }
+          }}
+        >
           <ReactionMenu
             show={showReactions}
             activeReaction={activeReaction}
@@ -102,9 +142,21 @@ export function HoverReactionButton({
         size="sm"
         className={`flex items-center px-3 py-2 transition-all duration-200 ${activeClasses} ${isSubmitting ? 'opacity-70 cursor-wait' : ''}`}
         onClick={handleButtonClick}
-        onPointerDown={handlePressStart}
-        onPointerUp={handlePressEnd}
-        onPointerLeave={handlePressEnd}
+        onPointerDown={(e) => {
+          if (e.pointerType !== 'mouse') {
+            handlePressStart();
+          }
+        }}
+        onPointerUp={(e) => {
+          if (e.pointerType !== 'mouse') {
+            handlePressEnd();
+          }
+        }}
+        onPointerLeave={(e) => {
+          if (e.pointerType !== 'mouse') {
+            handlePressEnd();
+          }
+        }}
         disabled={isSubmitting}
       >
         {currentEmoji ? (

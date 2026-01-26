@@ -2,24 +2,35 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { NotificationType, NotificationWithSender } from "@/types/notifications";
 
+let notificationsTableChecked = false;
+let notificationsTableAvailable = true;
+
 export async function fetchNotifications(): Promise<NotificationWithSender[]> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    // First, check if the table and columns exist to avoid SQL errors
-    const { data: tableInfo, error: tableError } = await supabase
-      .from('notifications')
-      .select('id')
-      .limit(1);
-    
-    if (tableError) {
-      console.error('Error checking notifications table:', tableError);
+    // Check table existence only once to avoid extra query on every load
+    if (!notificationsTableChecked) {
+      const { error: tableError } = await (supabase as any)
+        .from('notifications')
+        .select('id')
+        .limit(1);
+
+      notificationsTableChecked = true;
+      if (tableError) {
+        notificationsTableAvailable = false;
+        console.error('Error checking notifications table:', tableError);
+        return [];
+      }
+    }
+
+    if (!notificationsTableAvailable) {
       return [];
     }
     
     // Use a simple query first to fetch base notification data
-    const { data, error } = await supabase
+    const { data, error }: { data: any[] | null; error: any } = await (supabase as any)
       .from('notifications')
       .select(`
         id,
@@ -33,7 +44,8 @@ export async function fetchNotifications(): Promise<NotificationWithSender[]> {
         receiver_id
       `)
       .eq('receiver_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
 
     if (error) {
       console.error('Error loading notifications:', error);
@@ -64,64 +76,49 @@ export async function fetchNotifications(): Promise<NotificationWithSender[]> {
       }));
     }
     
-    // Fetch sender profiles in a separate query
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, username, avatar_url')
-      .in('id', senderIds);
-      
+    const postIds = [...new Set(data.filter(item => item.post_id).map(item => item.post_id!))];
+    const commentIds = [...new Set(data.filter(item => item.comment_id).map(item => item.comment_id!))];
+
+    const [profilesResult, postsResult, commentsResult]: any[] = await Promise.all([
+      (supabase as any)
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', senderIds),
+      postIds.length > 0
+        ? (supabase as any)
+            .from('posts')
+            .select('id, content, media_url')
+            .in('id', postIds)
+        : Promise.resolve({ data: [], error: null } as any),
+      commentIds.length > 0
+        ? (supabase as any)
+            .from('comments')
+            .select('id, content')
+            .in('id', commentIds)
+        : Promise.resolve({ data: [], error: null } as any),
+    ]);
+
+    const { data: profiles, error: profilesError } = profilesResult;
     if (profilesError) {
       console.error('Error loading sender profiles:', profilesError);
-      // Continue with default values for senders instead of returning empty
       const defaultProfiles = senderIds.map(id => ({
         id,
         username: 'Usuario',
         avatar_url: null
       }));
-      
       return mapNotificationsWithSenders(data, defaultProfiles, {}, {});
     }
-    
-    // Get all post IDs from notifications (filter out null values)
-    const postIds = [...new Set(data.filter(item => item.post_id).map(item => item.post_id!))];
-    
-    // Fetch post details if there are any post IDs
-    let postsData: Record<string, any> = {};
-    if (postIds.length > 0) {
-      const { data: posts, error: postsError } = await supabase
-        .from('posts')
-        .select('id, content, media_url')
-        .in('id', postIds);
-        
-      if (!postsError && posts) {
-        // Create a map of post IDs to post data
-        postsData = posts.reduce((acc, post) => ({
-          ...acc,
-          [post.id]: post
-        }), {});
-      }
-    }
-    
-    // Get all comment IDs from notifications (filter out null values)
-    const commentIds = [...new Set(data.filter(item => item.comment_id).map(item => item.comment_id!))];
-    
-    // Fetch comment details if there are any comment IDs
-    let commentsData: Record<string, any> = {};
-    if (commentIds.length > 0) {
-      const { data: comments, error: commentsError } = await supabase
-        .from('comments')
-        .select('id, content')
-        .in('id', commentIds);
-        
-      if (!commentsError && comments) {
-        // Create a map of comment IDs to comment data
-        commentsData = comments.reduce((acc, comment) => ({
-          ...acc,
-          [comment.id]: comment
-        }), {});
-      }
-    }
-    
+
+    const postsData: Record<string, any> = (postsResult?.data || []).reduce((acc: any, post: any) => ({
+      ...acc,
+      [post.id]: post
+    }), {});
+
+    const commentsData: Record<string, any> = (commentsResult?.data || []).reduce((acc: any, comment: any) => ({
+      ...acc,
+      [comment.id]: comment
+    }), {});
+
     return mapNotificationsWithSenders(data, profiles || [], postsData, commentsData);
     
   } catch (error) {
