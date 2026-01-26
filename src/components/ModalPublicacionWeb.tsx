@@ -460,48 +460,8 @@ const ModalPublicacionWeb: React.FC<ModalPublicacionWebProps> = ({
         // ignore gamification errors
       }
 
-      // Check if this is the user's first post (idempotent badge award)
-      let isFirstPost = false;
-      try {
-        const { data: existingPosts } = await supabase
-          .from('posts')
-          .select('id')
-          .eq('user_id', user.id);
-        isFirstPost = existingPosts && existingPosts.length === 1;
-      } catch (e) {
-        console.warn('Failed to check first post status:', e);
-        isFirstPost = false;
-      }
-      
-      if (isFirstPost) {
-        // Add first post badge to profile (idempotent)
-        try {
-          await (supabase as any)
-            .from('profile_badges')
-            .upsert({
-              profile_id: user.id,
-              badge_type: 'first_post',
-              badge_name: 'Primera Publicación',
-              badge_description: '¡Compartiste tu primera idea con la comunidad!',
-              badge_icon: 'trophy',
-              badge_color: 'gold',
-              earned_date: new Date().toISOString()
-            }, {
-              onConflict: 'profile_id,badge_type'
-            });
-          toast({
-            title: '¡Felicidades! 🎉',
-            description: 'Has ganado tu primera insignia por tu primera publicación.',
-          });
-        } catch (badgeError) {
-          // Ignore badge duplicate errors but log for debugging
-          if (badgeError.code === '23505' || badgeError.message?.includes('duplicate key')) {
-            console.warn('First post badge already exists, ignoring:', badgeError);
-          } else {
-            console.warn('Failed to award first post badge:', badgeError);
-          }
-        }
-      }
+      // First post badge is now handled by database trigger (idempotent)
+      // No need to handle it here to avoid duplicate key conflicts
 
       if (selectedPostType === 'idea') {
         sendIdeaPublishedAutoMessage(user.id);
