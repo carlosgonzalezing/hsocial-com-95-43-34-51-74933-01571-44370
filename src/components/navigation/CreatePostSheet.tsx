@@ -196,12 +196,23 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
 
       // Upload file if present
       if (selectedFile) {
-        const { uploadWithOptimization, getMediaType } = await import("@/lib/storage/cloudflare-r2");
-        const fileExt = selectedFile.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        
-        mediaUrl = await uploadWithOptimization(selectedFile, fileName);
-        mediaType = getMediaType(selectedFile);
+        try {
+          const { uploadWithOptimization, getMediaType } = await import("@/lib/storage/cloudflare-r2");
+          const fileExt = selectedFile.name.split('.').pop();
+          const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+          
+          mediaUrl = await uploadWithOptimization(selectedFile, fileName);
+          mediaType = getMediaType(selectedFile);
+        } catch (uploadError) {
+          console.error('Error uploading file:', uploadError);
+          toast({
+            title: "Error al subir imagen",
+            description: "No se pudo subir la imagen. Intenta con otra.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       const postData: any = {
@@ -245,7 +256,11 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
 
       if (error) throw error;
 
+      // Invalidar múltiples queries para asegurar actualización
       queryClient.invalidateQueries({ queryKey: ["posts"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["feed"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["user-posts"], exact: false });
+      queryClient.refetchQueries({ queryKey: ["posts"], exact: false });
       
       toast({
         title: "¡Publicación creada!",
