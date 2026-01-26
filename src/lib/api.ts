@@ -3,6 +3,28 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { getMultiplePostSharesCounts } from "@/lib/api/posts/queries/shares";
 
+const debug = import.meta.env.DEV;
+
+let cachedHasSharedFields: boolean | null = null;
+async function getHasSharedFields(): Promise<boolean> {
+  if (cachedHasSharedFields != null) return cachedHasSharedFields;
+  try {
+    const { data: hasSharedPostId } = await (supabase as any).rpc('check_column_exists', {
+      table_name: 'posts',
+      column_name: 'shared_post_id',
+    });
+    const { data: hasSharedFrom } = await (supabase as any).rpc('check_column_exists', {
+      table_name: 'posts',
+      column_name: 'shared_from',
+    });
+    cachedHasSharedFields = !!hasSharedPostId || !!hasSharedFrom;
+  } catch {
+    // Assume modern schema to avoid blocking the feed
+    cachedHasSharedFields = true;
+  }
+  return cachedHasSharedFields;
+}
+
 async function enrichPosts(
   data: any[],
   hasSharedFields: boolean,
@@ -279,19 +301,13 @@ export async function getPostsPage(params: {
 }) {
   const { userId, groupId, companyId, limit = 20, cursor } = params;
 
-  const { data: tableInfo } = await supabase
-    .from('posts')
-    .select('*')
-    .limit(1);
-
-  const hasSharedFields = tableInfo && tableInfo.length > 0 &&
-    ('shared_post_id' in tableInfo[0] || 'shared_from' in tableInfo[0]);
+  const hasSharedFields = await getHasSharedFields();
 
   let query: any = supabase
     .from('posts')
     .select(`
       *,
-      profiles:profiles(*),
+      profiles:profiles(id, username, avatar_url, career),
       comments:comments(count)
     `);
 
@@ -364,7 +380,7 @@ export async function getPostsPage(params: {
 }
 
 export async function getPublicFeedPreview(limit = 5) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .rpc('get_public_feed_preview', {
       limit_count: limit,
     });
@@ -381,13 +397,13 @@ export async function getHiddenPosts() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("hidden_posts")
       .select("post_id")
       .eq("user_id", user.id);
 
     if (error) throw error;
-    return data.map(item => item.post_id);
+    return (data as Array<{ post_id: string }>).map((item) => item.post_id);
   } catch (error) {
     console.error("Error fetching hidden posts:", error);
     return [];
@@ -399,9 +415,9 @@ export async function hidePost(postId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("No user logged in");
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("hidden_posts")
-      .insert({ user_id: user.id, post_id: postId });
+      .insert({ user_id: user.id, post_id: postId } as any);
 
     if (error) throw error;
 
@@ -456,7 +472,7 @@ export async function createPost({
 
     // Upload file if present
     if (file) {
-      console.log('Uploading file:', { name: file.name, size: file.size, type: file.type });
+      if (debug) console.log('Uploading file:', { name: file.name, size: file.size, type: file.type });
       
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -494,7 +510,7 @@ export async function createPost({
         mediaType = 'image';
       }
 
-      console.log('File uploaded successfully:', { mediaUrl, mediaType });
+      if (debug) console.log('File uploaded successfully:', { mediaUrl, mediaType });
     }
 
     // Create poll object if poll data is present
@@ -547,7 +563,7 @@ export async function createPost({
       throw postError;
     }
 
-    console.log('Post created successfully:', newPost);
+    if (debug) console.log('Post created successfully:', newPost);
     return newPost;
   } catch (error) {
     console.error("Error creating post:", error);
@@ -561,7 +577,7 @@ export async function addReaction(postId: string, reactionType: string = 'love')
     if (!user) throw new Error("No user logged in");
 
     // Check if reaction exists
-    const { data: existingReaction, error: checkError } = await supabase
+    const { data: existingReaction, error: checkError } = await (supabase as any)
       .from("reactions")
       .select("id, reaction_type")
       .eq("post_id", postId)
@@ -571,11 +587,11 @@ export async function addReaction(postId: string, reactionType: string = 'love')
     if (checkError) throw checkError;
 
     // If user already reacted with the same type, remove it (toggle behavior)
-    if (existingReaction && existingReaction.reaction_type === reactionType) {
-      const { error: deleteError } = await supabase
+    if (existingReaction && (existingReaction as any).reaction_type === reactionType) {
+      const { error: deleteError } = await (supabase as any)
         .from("reactions")
         .delete()
-        .eq("id", existingReaction.id);
+        .eq("id", (existingReaction as any).id);
 
       if (deleteError) throw deleteError;
       return { success: true, action: "removed" };
@@ -583,23 +599,23 @@ export async function addReaction(postId: string, reactionType: string = 'love')
     
     // If user reacted with a different type, update the reaction type
     else if (existingReaction) {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from("reactions")
-        .update({ reaction_type: reactionType })
-        .eq("id", existingReaction.id);
+        .update({ reaction_type: reactionType } as any)
+        .eq("id", (existingReaction as any).id);
 
       if (updateError) throw updateError;
       return { success: true, action: "updated" };
     }
 
     // Add new reaction
-    const { error: insertError } = await supabase
+    const { error: insertError } = await (supabase as any)
       .from("reactions")
       .insert({
         post_id: postId,
         user_id: user.id,
         reaction_type: reactionType
-      });
+      } as any);
 
     if (insertError) throw insertError;
     return { success: true, action: "added" };
@@ -615,7 +631,7 @@ export async function deletePost(postId: string) {
     if (!user) throw new Error("No user logged in");
 
     // Get post to check ownership
-    const { data: post, error: fetchError } = await supabase
+    const { data: post, error: fetchError } = await (supabase as any)
       .from("posts")
       .select("user_id, media_url")  // Use user_id instead of author_id
       .eq("id", postId)
@@ -624,7 +640,7 @@ export async function deletePost(postId: string) {
     if (fetchError) throw fetchError;
 
     // Verify ownership
-    if (post && post.user_id !== user.id) {
+    if (post && (post as any).user_id !== user.id) {
       throw new Error("You don't have permission to delete this post");
     }
 
@@ -637,9 +653,9 @@ export async function deletePost(postId: string) {
     if (deleteError) throw deleteError;
 
     // Delete associated media if exists
-    if (post && post.media_url) {
+    if (post && (post as any).media_url) {
       // Extract file path from URL
-      const url = new URL(post.media_url);
+      const url = new URL((post as any).media_url);
       const pathParts = url.pathname.split('/');
       const filePath = pathParts.slice(pathParts.indexOf('media') + 1).join('/');
       

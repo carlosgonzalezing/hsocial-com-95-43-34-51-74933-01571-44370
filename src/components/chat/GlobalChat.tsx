@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,69 @@ interface Message {
   };
 }
 
+const MessageRow = memo(function MessageRow({
+  message,
+  currentUserId,
+  onRequestDelete,
+}: {
+  message: Message;
+  currentUserId: string | null;
+  onRequestDelete: (m: Message) => void;
+}) {
+  const isOwnMessage = message.id_autor === currentUserId;
+
+  return (
+    <div className={`flex gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
+      <Avatar className="h-8 w-8 flex-shrink-0">
+        <AvatarImage src={message.author?.avatar_url} />
+        <AvatarFallback className="bg-primary/10 text-primary">
+          {message.author?.username?.[0]?.toUpperCase() || "U"}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? "items-end" : ""}`}>
+        <div className={`flex items-center gap-2 ${isOwnMessage ? "justify-end" : ""}`}>
+          <span className="text-sm font-medium text-foreground">
+            {message.author?.username || "Usuario"}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(message.created_at), {
+              addSuffix: true,
+              locale: es,
+            })}
+          </span>
+          {isOwnMessage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => onRequestDelete(message)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        <div
+          className={`rounded-2xl px-4 py-2 ${
+            isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+          }`}
+        >
+          <p className="text-sm break-words">{message.contenido}</p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export function GlobalChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -54,6 +117,8 @@ export function GlobalChat() {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const debug = import.meta.env.DEV;
+  const authorCacheRef = useRef<Record<string, { username: string; avatar_url: string }>>({});
 
   // Mention system
   const {
@@ -67,40 +132,48 @@ export function GlobalChat() {
     setMentionListVisible
   } = useMentions();
 
-  // Extract mentions from message and create notifications
-  const createMentionNotifications = async (messageContent: string, messageId: string, authorId: string) => {
-    const mentionRegex = /@(\w+)/g;
-    const mentions = messageContent.match(mentionRegex);
-    
-    if (!mentions) return;
-
-    for (const mention of mentions) {
-      const username = mention.substring(1); // Remove @
-      
-      // Find user by username
-      const { data: mentionedUser } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", username)
-        .single();
-
-      if (mentionedUser && mentionedUser.id !== authorId) {
-        // Create mention notification
-        await supabase
-          .from("notifications")
-          .insert({
-            receiver_id: mentionedUser.id,
-            sender_id: authorId,
-            type: "mention",
-            message: `te ha mencionado en un mensaje: ${mention}`,
-            read: false
-          });
-      }
+  const createMentionNotifications = useCallback(async (messageContent: string, messageId: string, authorId: string) => {
+    const mentionRegex = /@([A-Za-z0-9_]+)/g;
+    const usernames = new Set<string>();
+    let match: RegExpExecArray | null;
+    while ((match = mentionRegex.exec(messageContent)) !== null) {
+      const u = match[1];
+      if (u) usernames.add(u);
     }
-  };
+
+    if (usernames.size === 0) return;
+
+    const { data: mentionedProfiles, error } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("username", Array.from(usernames));
+
+    if (error) {
+      if (debug) console.error('Error resolving mentions:', error);
+      return;
+    }
+
+    const receivers = (mentionedProfiles || [])
+      .map((p: any) => ({ id: p.id as string, username: p.username as string }))
+      .filter((p) => p.id && p.id !== authorId);
+
+    if (receivers.length === 0) return;
+
+    await supabase
+      .from("notifications")
+      .insert(
+        receivers.map((r) => ({
+          receiver_id: r.id,
+          sender_id: authorId,
+          type: "mention",
+          message: `te ha mencionado en un mensaje: @${r.username}`,
+          read: false,
+        }))
+      );
+  }, [debug]);
 
   // Handle text change with mention detection
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNewMessage(value);
     
@@ -108,17 +181,17 @@ export function GlobalChat() {
     if (inputRef.current) {
       handleTextChange(value, inputRef.current.selectionStart, inputRef.current);
     }
-  };
+  }, [handleTextChange]);
 
   // Handle mention selection
-  const handleSelectMention = (user: MentionUser) => {
+  const handleSelectMention = useCallback((user: MentionUser) => {
     const newText = insertMention(newMessage, user);
     setNewMessage(newText);
     setMentionListVisible(false);
-  };
+  }, [insertMention, newMessage, setMentionListVisible]);
 
   // Handle mention button click
-  const handleMentionClick = () => {
+  const handleMentionClick = useCallback(() => {
     if (inputRef.current) {
       const cursorPos = inputRef.current.selectionStart;
       const textBefore = newMessage.substring(0, cursorPos);
@@ -135,8 +208,9 @@ export function GlobalChat() {
         }
       }, 0);
     }
-  };
-  const loadMessages = async () => {
+  }, [handleTextChange, newMessage, setNewMessage]);
+
+  const loadMessages = useCallback(async () => {
     try {
       // Primero obtener los mensajes
       const { data: messagesData, error } = await supabase
@@ -157,7 +231,7 @@ export function GlobalChat() {
       const authorIds = [...new Set(messagesData?.map(m => m.id_autor).filter(Boolean) || [])];
       
       // Obtener perfiles de los autores
-      let profilesMap: Record<string, { username: string; avatar_url: string }> = {};
+      let profilesMap: Record<string, { username: string; avatar_url: string }> = { ...authorCacheRef.current };
       if (authorIds.length > 0) {
         const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
@@ -165,15 +239,16 @@ export function GlobalChat() {
           .in("id", authorIds);
         
         if (!profilesError && profiles) {
-          profilesMap = profiles.reduce((acc, profile) => {
-            acc[profile.id] = {
+          profiles.forEach((profile: any) => {
+            profilesMap[profile.id] = {
               username: profile.username || "Usuario",
-              avatar_url: profile.avatar_url || ""
+              avatar_url: profile.avatar_url || "",
             };
-            return acc;
-          }, {} as Record<string, { username: string; avatar_url: string }>);
+          });
         }
       }
+
+      authorCacheRef.current = profilesMap;
 
       // Combinar mensajes con sus autores
       const messagesWithAuthors = (messagesData || []).map(message => ({
@@ -192,10 +267,10 @@ export function GlobalChat() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   // Enviar mensaje
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !currentUserId || sending) return;
 
@@ -215,7 +290,11 @@ export function GlobalChat() {
 
       // Create mention notifications
       if (messageData) {
-        await createMentionNotifications(newMessage.trim(), messageData.id, currentUserId);
+        try {
+          await createMentionNotifications(newMessage.trim(), messageData.id, currentUserId);
+        } catch (mentionError) {
+          if (debug) console.error('Mention notifications failed (non-blocking):', mentionError);
+        }
       }
 
       setNewMessage("");
@@ -229,23 +308,23 @@ export function GlobalChat() {
     } finally {
       setSending(false);
     }
-  };
+  }, [createMentionNotifications, currentUserId, debug, newMessage, sending, toast]);
 
   // Scroll automático al último mensaje
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  };
+  }, []);
 
-  const requestDeleteMessage = (message: Message) => {
+  const requestDeleteMessage = useCallback((message: Message) => {
     if (!currentUserId) return;
     if (message.id_autor !== currentUserId) return;
     setMessageToDelete(message);
     setIsDeleteDialogOpen(true);
-  };
+  }, [currentUserId]);
 
-  const confirmDeleteMessage = async () => {
+  const confirmDeleteMessage = useCallback(async () => {
     if (!messageToDelete || !currentUserId) return;
     setIsDeleting(true);
     try {
@@ -263,7 +342,7 @@ export function GlobalChat() {
 
       setIsDeleteDialogOpen(false);
       setMessageToDelete(null);
-      await loadMessages();
+      setMessages((prev) => prev.filter((m) => m.id !== messageToDelete.id));
     } catch (error: any) {
       console.error('Error deleting message:', error);
       toast({
@@ -274,7 +353,7 @@ export function GlobalChat() {
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [currentUserId, messageToDelete, toast]);
 
   useEffect(() => {
     scrollToBottom();
@@ -292,7 +371,7 @@ export function GlobalChat() {
   // Cargar mensajes iniciales
   useEffect(() => {
     loadMessages();
-  }, []);
+  }, [loadMessages]);
 
   // Configurar Realtime
   useEffect(() => {
@@ -307,12 +386,24 @@ export function GlobalChat() {
           filter: `id_canal=eq.${GLOBAL_CHANNEL_ID}`,
         },
         async (payload) => {
-          // Obtener datos del autor para el nuevo mensaje
-          const { data: authorData } = await supabase
-            .from("profiles")
-            .select("username, avatar_url")
-            .eq("id", payload.new.id_autor)
-            .single();
+          const authorId = payload.new.id_autor as string;
+          let authorData = authorCacheRef.current[authorId];
+
+          if (!authorData) {
+            const { data } = await supabase
+              .from("profiles")
+              .select("id, username, avatar_url")
+              .eq("id", authorId)
+              .maybeSingle();
+
+            if (data) {
+              authorData = {
+                username: (data as any).username || "Usuario",
+                avatar_url: (data as any).avatar_url || "",
+              };
+              authorCacheRef.current[authorId] = authorData;
+            }
+          }
 
           const newMsg: Message = {
             id: payload.new.id,
@@ -374,65 +465,14 @@ export function GlobalChat() {
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.map((message) => {
-            const isOwnMessage = message.id_autor === currentUserId;
-            
-            return (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}
-              >
-                <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarImage src={message.author?.avatar_url} />
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {message.author?.username?.[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? "items-end" : ""}`}>
-                  <div className={`flex items-center gap-2 ${isOwnMessage ? "justify-end" : ""}`}>
-                    <span className="text-sm font-medium text-foreground">
-                      {message.author?.username || "Usuario"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(message.created_at), {
-                        addSuffix: true,
-                        locale: es,
-                      })}
-                    </span>
-                    {isOwnMessage && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => requestDeleteMessage(message)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                  
-                  <div
-                    className={`rounded-2xl px-4 py-2 ${
-                      isOwnMessage
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
-                    }`}
-                  >
-                    <p className="text-sm break-words">{message.contenido}</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {messages.map((message) => (
+            <MessageRow
+              key={message.id}
+              message={message}
+              currentUserId={currentUserId}
+              onRequestDelete={requestDeleteMessage}
+            />
+          ))}
           <div ref={scrollRef} />
         </div>
       </ScrollArea>

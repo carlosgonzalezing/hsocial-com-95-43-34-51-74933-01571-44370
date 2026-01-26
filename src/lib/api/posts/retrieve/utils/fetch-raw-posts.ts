@@ -3,23 +3,24 @@ import { supabase } from "@/integrations/supabase/client";
 
 export async function fetchRawPosts(userId?: string) {
   try {
-    console.log('📊 fetchRawPosts: Starting fetch', { userId });
+    const debug = import.meta.env.DEV;
+    if (debug) console.log('📊 fetchRawPosts: Starting fetch', { userId });
     
     let query = supabase
       .from("posts")
       .select(`
         *,
-        profiles:profiles(*),
+        profiles:profiles(id, username, avatar_url, career),
         comments:comments(count),
         post_reports:post_reports(count),
         post_shares:post_shares(count),
         reactions:reactions(reaction_type, user_id),
-        academic_events:academic_events(*),
+        academic_events:academic_events(id, title, description, start_date, end_date, location, is_virtual, max_attendees, event_type, registration_required, registration_deadline, organizer_contact, banner_url),
         shared_post:posts!shared_post_id(
           *,
-          profiles:profiles(*),
+          profiles:profiles(id, username, avatar_url, career),
           comments:comments(count),
-          academic_events:academic_events(*)
+          academic_events:academic_events(id, title, description, start_date, end_date, location, is_virtual, max_attendees, event_type, registration_required, registration_deadline, organizer_contact, banner_url)
         )
       `);
 
@@ -39,17 +40,14 @@ export async function fetchRawPosts(userId?: string) {
       console.error('❌ fetchRawPosts error:', error);
       throw error;
     }
-    
-    const sharedPostsCount = data?.filter(p => p.shared_post_id)?.length || 0;
-    console.log('✅ fetchRawPosts: Success', { 
-      count: data?.length || 0,
-      sharedPostsCount,
-      sharedPostsData: data?.filter(p => p.shared_post_id).map(p => ({
-        id: p.id,
-        has_shared_post_data: !!p.shared_post,
-        shared_post_id: p.shared_post_id
-      }))
-    });
+
+    if (debug) {
+      const sharedPostsCount = data?.filter((p: any) => p?.shared_post_id)?.length || 0;
+      console.log('✅ fetchRawPosts: Success', {
+        count: data?.length || 0,
+        sharedPostsCount,
+      });
+    }
     return data || [];
   } catch (error) {
     console.error("❌ Error in fetchRawPosts:", error);

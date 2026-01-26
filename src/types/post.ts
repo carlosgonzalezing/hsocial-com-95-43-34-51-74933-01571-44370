@@ -46,7 +46,18 @@ export interface Post {
   shares_count?: number; // Count of times shared
   userHasReacted?: boolean; // Add missing property
   content_style?: ContentStyle | null; // Add content style for background/text formatting
-  project_status?: 'idea' | 'in_progress' | 'completed' | null; // Ideas → Projects flow
+  project_status?:
+    | 'idea'
+    | 'in_progress'
+    | 'completed'
+    | 'paused'
+    | 'cancelled'
+    | 'Idea'
+    | 'En desarrollo'
+    | 'Completado'
+    | 'Pausado'
+    | 'Cancelado'
+    | null; // Ideas → Projects flow
   technologies?: string[] | null; // Technologies used in the project
   demo_url?: string | null;
 
