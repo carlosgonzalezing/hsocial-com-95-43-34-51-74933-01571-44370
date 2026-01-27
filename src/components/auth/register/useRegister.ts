@@ -38,7 +38,7 @@ export function useRegister(setLoading: (loading: boolean) => void, sendVerifica
             institution_name: institutionName || null,
             academic_role: academicRole || null,
           },
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: undefined, // Remove redirect to avoid 500 error
         },
       });
       
@@ -64,14 +64,28 @@ export function useRegister(setLoading: (loading: boolean) => void, sendVerifica
       }
 
       toast({
-        title: "¡Bienvenido a H Social!",
-        description: "Tu cuenta ha sido creada exitosamente. Completa tu perfil para obtener una mejor experiencia.",
+        title: "¡Cuenta creada!",
+        description: "Revisa tu email para verificar tu cuenta. Luego podrás iniciar sesión.",
       });
     } catch (error: any) {
+      console.error('Registration error:', error);
+      
+      let errorMessage = 'Error al crear la cuenta. Inténtalo de nuevo.';
+      
+      if (error.message?.includes('User already registered')) {
+        errorMessage = 'Este email ya está registrado. Intenta iniciar sesión.';
+      } else if (error.message?.includes('Password should be')) {
+        errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = 'Email inválido. Verifica el formato.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message,
+        title: "Error al crear usuario",
+        description: errorMessage,
       });
     } finally {
       setLoading(false);

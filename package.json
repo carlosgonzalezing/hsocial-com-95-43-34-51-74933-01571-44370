@@ -1,5 +1,5 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "red-social-hsocial",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "start": "node server.js",
     "lint": "eslint src",
     "preview": "vite preview",
     "seed:demo": "tsx scripts/seed-demo.ts",
@@ -24,6 +25,7 @@
     "content:realistic": "tsx scripts/create-simple-realistic.ts"
   },
   "dependencies": {
+    "express": "^4.18.2",
     "@aws-sdk/client-s3": "^3.948.0",
     "@aws-sdk/s3-request-presigner": "^3.948.0",
     "@capacitor/android": "^7.4.3",

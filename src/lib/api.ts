@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { getMultiplePostSharesCounts } from "@/lib/api/posts/queries/shares";
+import { checkColumnExists } from "@/lib/api/posts/retrieve/utils/column-check";
 
 const debug = import.meta.env.DEV;
 
@@ -9,15 +10,9 @@ let cachedHasSharedFields: boolean | null = null;
 async function getHasSharedFields(): Promise<boolean> {
   if (cachedHasSharedFields != null) return cachedHasSharedFields;
   try {
-    const { data: hasSharedPostId } = await (supabase as any).rpc('check_column_exists', {
-      table_name: 'posts',
-      column_name: 'shared_post_id',
-    });
-    const { data: hasSharedFrom } = await (supabase as any).rpc('check_column_exists', {
-      table_name: 'posts',
-      column_name: 'shared_from',
-    });
-    cachedHasSharedFields = !!hasSharedPostId || !!hasSharedFrom;
+    const hasSharedPostId = await checkColumnExists('posts', 'shared_post_id');
+    const hasSharedFrom = await checkColumnExists('posts', 'shared_from');
+    cachedHasSharedFields = hasSharedPostId || hasSharedFrom;
   } catch {
     // Assume modern schema to avoid blocking the feed
     cachedHasSharedFields = true;

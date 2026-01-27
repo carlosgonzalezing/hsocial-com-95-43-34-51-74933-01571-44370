@@ -56,6 +56,9 @@ export default defineConfig(({ mode }) => ({
           animations: ['framer-motion'],
           icons: ['lucide-react'],
           
+          // Charts library - heavy, should be separate chunk
+          charts: ['recharts'],
+          
           // Utilities
           utils: ['date-fns', 'lodash-es', 'clsx', 'class-variance-authority'],
         },

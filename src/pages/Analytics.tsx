@@ -11,18 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BarChart3, Crown, ExternalLink, Mail, TrendingUp } from "lucide-react";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
+// Lazy load chart components to reduce initial bundle size
+const ChartComponents = React.lazy(() => import("@/components/ui/chart"));
+const RechartsComponents = React.lazy(() => import("recharts"));
 
 type Summary = {
   days: number;
@@ -283,19 +277,23 @@ export default function Analytics() {
                     {isLoading ? (
                       <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Cargando...</div>
                     ) : (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="dayLabel" tick={{ fontSize: 12 }} />
-                          <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-                          <Tooltip />
-                          <Legend />
-                          <Line type="monotone" dataKey="profile_views" name="Perfil" stroke="#2563eb" strokeWidth={2} dot={false} />
-                          <Line type="monotone" dataKey="project_views" name="Proyectos" stroke="#16a34a" strokeWidth={2} dot={false} />
-                          <Line type="monotone" dataKey="project_click_demo" name="Demo" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                          <Line type="monotone" dataKey="project_click_contact" name="Contacto" stroke="#a855f7" strokeWidth={2} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                      <React.Suspense fallback={<div className="h-full flex items-center justify-center text-sm text-muted-foreground">Cargando gráficos...</div>}>
+                        <ChartComponents>
+                          <RechartsComponents.ResponsiveContainer width="100%" height="100%">
+                            <RechartsComponents.LineChart data={chartData} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
+                              <RechartsComponents.CartesianGrid strokeDasharray="3 3" />
+                              <RechartsComponents.XAxis dataKey="dayLabel" tick={{ fontSize: 12 }} />
+                              <RechartsComponents.YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                              <RechartsComponents.Tooltip />
+                              <RechartsComponents.Legend />
+                              <RechartsComponents.Line type="monotone" dataKey="profile_views" name="Perfil" stroke="#2563eb" strokeWidth={2} dot={false} />
+                              <RechartsComponents.Line type="monotone" dataKey="project_views" name="Proyectos" stroke="#16a34a" strokeWidth={2} dot={false} />
+                              <RechartsComponents.Line type="monotone" dataKey="project_click_demo" name="Demo" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                              <RechartsComponents.Line type="monotone" dataKey="project_click_contact" name="Contacto" stroke="#a855f7" strokeWidth={2} dot={false} />
+                            </RechartsComponents.LineChart>
+                          </RechartsComponents.ResponsiveContainer>
+                        </ChartComponents>
+                      </React.Suspense>
                     )}
                   </CardContent>
                 </Card>
@@ -499,18 +497,22 @@ export default function Analytics() {
                     {projectDailyLoading ? (
                       <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Cargando...</div>
                     ) : (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={projectChartData} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="dayLabel" tick={{ fontSize: 12 }} />
-                          <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-                          <Tooltip />
-                          <Legend />
-                          <Line type="monotone" dataKey="views" name="Vistas" stroke="#16a34a" strokeWidth={2} dot={false} />
-                          <Line type="monotone" dataKey="demo_clicks" name="Demo" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                          <Line type="monotone" dataKey="contact_clicks" name="Contacto" stroke="#a855f7" strokeWidth={2} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                      <React.Suspense fallback={<div className="h-full flex items-center justify-center text-sm text-muted-foreground">Cargando gráficos...</div>}>
+                        <ChartComponents>
+                          <RechartsComponents.ResponsiveContainer width="100%" height="100%">
+                            <RechartsComponents.LineChart data={projectChartData} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
+                              <RechartsComponents.CartesianGrid strokeDasharray="3 3" />
+                              <RechartsComponents.XAxis dataKey="dayLabel" tick={{ fontSize: 12 }} />
+                              <RechartsComponents.YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                              <RechartsComponents.Tooltip />
+                              <RechartsComponents.Legend />
+                              <RechartsComponents.Line type="monotone" dataKey="views" name="Vistas" stroke="#16a34a" strokeWidth={2} dot={false} />
+                              <RechartsComponents.Line type="monotone" dataKey="demo_clicks" name="Demo" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                              <RechartsComponents.Line type="monotone" dataKey="contact_clicks" name="Contacto" stroke="#a855f7" strokeWidth={2} dot={false} />
+                            </RechartsComponents.LineChart>
+                          </RechartsComponents.ResponsiveContainer>
+                        </ChartComponents>
+                      </React.Suspense>
                     )}
                   </CardContent>
                 </Card>

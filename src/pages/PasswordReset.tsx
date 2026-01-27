@@ -24,8 +24,8 @@ export default function PasswordReset() {
 
   // SEO data for react-helmet-async
   const seoData = {
-    title: 'Restablecer contraseña | H1Z',
-    description: 'Restablece tu contraseña en H1Z de forma segura.',
+    title: 'Restablecer contraseña | RED SOCIAL HSOCIAL',
+    description: 'Restablece tu contraseña en RED SOCIAL HSOCIAL.',
     canonical: `${window.location.origin}/password-reset`,
     robots: 'noindex,nofollow'
   };

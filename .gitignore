@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Vite temporary artifacts
+vite.config.ts.timestamp-*.mjs
+
 .env
 .env.*
 

@@ -3,20 +3,16 @@ import { Button } from "@/components/ui/button";
 import { SocialAuthButtons } from "./SocialAuthButtons";
 import { MinimalUserFields } from "./register/MinimalUserFields";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useRegister } from "./register/useRegister";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { useRegisterMinimal } from "./register/useRegisterMinimal";
 
 interface SimplifiedRegistrationProps {
   loading: boolean;
   setLoading: (loading: boolean) => void;
-  sendVerificationEmail: (email: string, username: string) => Promise<any>;
 }
 
 export function SimplifiedRegistration({ 
   loading, 
-  setLoading, 
-  sendVerificationEmail 
+  setLoading 
 }: SimplifiedRegistrationProps) {
   const [acceptsPolicy, setAcceptsPolicy] = useState(false);
 
@@ -27,14 +23,8 @@ export function SimplifiedRegistration({
     setPassword,
     username,
     setUsername,
-    accountType,
-    setAccountType,
-    personStatus,
-    setPersonStatus,
-    companyName,
-    setCompanyName,
     handleRegister
-  } = useRegister(setLoading, sendVerificationEmail);
+  } = useRegisterMinimal(setLoading);
 
   return (
     <div className="space-y-6">
@@ -56,7 +46,7 @@ export function SimplifiedRegistration({
         </div>
       </div>
 
-      {/* Formulario Simple - Solo 3 campos */}
+      {/* Formulario Ultra Simple - Solo 3 campos */}
       <form onSubmit={handleRegister} className="space-y-4">
         <MinimalUserFields
           username={username}
@@ -67,60 +57,6 @@ export function SimplifiedRegistration({
           setPassword={setPassword}
           loading={loading}
         />
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Tipo de cuenta
-          </label>
-          <Select
-            value={accountType}
-            onValueChange={(v) => setAccountType(v as 'person' | 'company')}
-            disabled={loading}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="person">Persona</SelectItem>
-              <SelectItem value="company">Empresa</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {accountType === 'person' ? (
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Eres...
-            </label>
-            <Select
-              value={personStatus}
-              onValueChange={(v) => setPersonStatus(v as any)}
-              disabled={loading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="student">Estudiante</SelectItem>
-                <SelectItem value="professional">Profesional</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        ) : (
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Nombre de la empresa
-            </label>
-            <Input
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              disabled={loading}
-              required
-              placeholder="Nombre de tu empresa"
-              autoComplete="organization"
-            />
-          </div>
-        )}
 
         <div className="flex items-start space-x-2 pt-2">
           <Checkbox 
@@ -145,16 +81,14 @@ export function SimplifiedRegistration({
             !acceptsPolicy ||
             !email ||
             !password ||
-            !username ||
-            (accountType === 'person' && !personStatus) ||
-            (accountType === 'company' && !companyName)
+            !username
           }
         >
           {loading ? "Creando cuenta..." : "Crear cuenta"}
         </Button>
 
         <p className="text-xs text-center text-muted-foreground">
-          Después del registro podrás completar tu perfil académico
+          Después del registro podrás completar tu perfil
         </p>
       </form>
     </div>

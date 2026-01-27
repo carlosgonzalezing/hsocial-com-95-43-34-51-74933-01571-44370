@@ -1,11 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.393404ceed804f3d8b004201f9d67790',
+  appId: 'com.hsocial.app',
   appName: 'hsocial-com-95-43-34-51-34',
   webDir: 'dist',
   server: {
-    url: 'https://393404ce-ed80-4f3d-8b00-4201f9d67790.lovableproject.com?forceHideBadge=true',
+    url: 'https://hsocial-app.onrender.com/',
     cleartext: true
   },
   plugins: {

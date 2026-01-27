@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SimplifiedRegistration } from "@/components/auth/SimplifiedRegistration";
 import { AcademicOnboardingModal } from "@/components/onboarding/AcademicOnboardingModal";
-import { sendVerificationEmail } from "@/lib/auth/verification";
 import { CheckCircle } from "lucide-react";
 import { RecoveryTokenHandler } from "@/components/auth/RecoveryTokenHandler";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -78,10 +77,10 @@ export default function Auth() {
 
   // SEO data for react-helmet-async
   const seoData = {
-    title: authMode === 'login' ? 'Iniciar sesión | H1Z' : 'Crear cuenta | H1Z',
+    title: authMode === 'login' ? 'Iniciar sesión | RED SOCIAL HSOCIAL' : 'Crear cuenta | RED SOCIAL HSOCIAL',
     description: authMode === 'login'
-      ? 'Inicia sesión en H1Z para conectar con amigos, compartir ideas y disfrutar contenido.'
-      : 'Crea tu cuenta en H1Z para publicar ideas, hacer amigos y entretenerte.',
+      ? 'Inicia sesión en RED SOCIAL HSOCIAL.'
+      : 'Crea tu cuenta en RED SOCIAL HSOCIAL.',
     canonical: `${window.location.origin}/auth`,
     robots: 'index,follow'
   };
@@ -118,7 +117,6 @@ export default function Auth() {
           <SimplifiedRegistration 
             loading={loading} 
             setLoading={setLoading} 
-            sendVerificationEmail={sendVerificationEmail}
           />
         )}
 
