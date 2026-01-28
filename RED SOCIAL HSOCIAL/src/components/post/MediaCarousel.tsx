@@ -1,0 +1,166 @@
+import { useState } from "react";
+import { PostImage } from "@/components/ui/optimized-image";
+import { MediaLightbox } from "./MediaLightbox";
+
+interface MediaItem {
+  url: string;
+  type: 'image' | 'video';
+}
+
+interface MediaCarouselProps {
+  mediaItems: MediaItem[];
+  className?: string;
+}
+
+export function MediaCarousel({ mediaItems, className = "" }: MediaCarouselProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
+
+  if (!mediaItems || mediaItems.length === 0) return null;
+
+  const currentMedia = mediaItems[currentIndex];
+
+  const openAtIndex = (index: number) => {
+    const item = mediaItems[index];
+    if (!item) return;
+    setCurrentIndex(index);
+    setLightboxStartIndex(index);
+    setIsLightboxOpen(true);
+  };
+
+  // Estilo LinkedIn: primera imagen grande, resto pequeñas abajo
+  if (mediaItems.length === 1) {
+    return (
+      <div className={`w-full ${className}`}>
+        {currentMedia.type === 'image' ? (
+          <div className="w-full overflow-hidden h-[320px] sm:h-[420px]">
+            <PostImage
+              src={currentMedia.url}
+              alt="Contenido multimedia"
+              className="w-full h-full object-cover rounded-none cursor-zoom-in"
+              onClick={() => openAtIndex(0)}
+            />
+          </div>
+        ) : (
+          <video
+            src={currentMedia.url}
+            className="w-full max-h-[420px] object-contain rounded-none cursor-pointer"
+            onClick={() => openAtIndex(0)}
+            controls
+            preload="metadata"
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Múltiples medios: estilo LinkedIn
+  return (
+    <div className={`relative w-full ${className}`}>
+      <div className="w-full overflow-hidden">
+        {/* Grid tipo Facebook con altura fija */}
+        {(() => {
+          const total = mediaItems.length;
+          const heightClass = "h-[320px] sm:h-[420px]";
+
+          const Tile = ({ item, index, overlayText }: { item: MediaItem; index: number; overlayText?: string }) => (
+            <button
+              type="button"
+              className="relative w-full h-full overflow-hidden"
+              onClick={() => openAtIndex(index)}
+            >
+              {item.type === 'image' ? (
+                <PostImage
+                  src={item.url}
+                  alt={`Media ${index + 1} de ${total}`}
+                  className="w-full h-full object-cover"
+                  lazy={false}
+                />
+              ) : (
+                <video
+                  src={item.url}
+                  className="w-full h-full object-cover"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+              )}
+              {overlayText && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="text-white text-3xl font-bold">{overlayText}</span>
+                </div>
+              )}
+            </button>
+          );
+
+          if (total === 2) {
+            return (
+              <div className={`grid grid-cols-2 gap-[2px] ${heightClass}`}>
+                <Tile item={mediaItems[0]} index={0} />
+                <Tile item={mediaItems[1]} index={1} />
+              </div>
+            );
+          }
+
+          if (total === 3) {
+            return (
+              <div className={`grid grid-cols-2 grid-rows-2 gap-[2px] ${heightClass}`}>
+                <div className="row-span-2">
+                  <Tile item={mediaItems[0]} index={0} />
+                </div>
+                <Tile item={mediaItems[1]} index={1} />
+                <Tile item={mediaItems[2]} index={2} />
+              </div>
+            );
+          }
+
+          if (total === 4) {
+            return (
+              <div className={`grid grid-cols-2 gap-[2px] ${heightClass}`}>
+                <div className="h-full">
+                  <Tile item={mediaItems[0]} index={0} />
+                </div>
+                <div className="grid grid-rows-3 gap-[2px] h-full">
+                  <Tile item={mediaItems[1]} index={1} />
+                  <Tile item={mediaItems[2]} index={2} />
+                  <Tile item={mediaItems[3]} index={3} />
+                </div>
+              </div>
+            );
+          }
+
+          const extra = total - 5;
+          // Estilo Facebook común: 2 arriba, 3 abajo (con overlay +N en la última si hay más de 5)
+          return (
+            <div className={`grid grid-cols-6 grid-rows-2 gap-[2px] ${heightClass}`}>
+              <div className="col-span-3 row-span-1">
+                <Tile item={mediaItems[0]} index={0} />
+              </div>
+              <div className="col-span-3 row-span-1">
+                <Tile item={mediaItems[1]} index={1} />
+              </div>
+              <div className="col-span-2 row-span-1">
+                <Tile item={mediaItems[2]} index={2} />
+              </div>
+              <div className="col-span-2 row-span-1">
+                <Tile item={mediaItems[3]} index={3} />
+              </div>
+              <div className="col-span-2 row-span-1">
+                <Tile item={mediaItems[4]} index={4} overlayText={extra > 0 ? `+${extra}` : undefined} />
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Modales */}
+      <MediaLightbox
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        items={mediaItems}
+        startIndex={lightboxStartIndex}
+      />
+    </div>
+  );
+}
