@@ -1,20 +1,20 @@
 // 3 tipos de reacciones para H Social
 
-import { Handshake, Lightbulb, PartyPopper, Star, ThumbsUp } from "lucide-react";
+import { Handshake, Heart, Lightbulb, Smile, Star } from "lucide-react";
 
 export const reactionIcons = {
   love: {
-    icon: ThumbsUp,
-    color: "text-blue-600",
-    label: "Me gusta",
-    emoji: "👍",
+    icon: Heart,
+    color: "text-red-600",
+    label: "Me encanta",
+    emoji: "❤️",
     animationClass: "reaction-love",
     size: "text-3xl",
   },
   awesome: {
     icon: Lightbulb,
     color: "text-amber-600",
-    label: "Interesante",
+    label: "Buena idea",
     emoji: "💡",
     animationClass: "reaction-awesome",
     size: "text-3xl",
@@ -22,24 +22,24 @@ export const reactionIcons = {
   incredible: {
     icon: Handshake,
     color: "text-emerald-600",
-    label: "Apoyo",
+    label: "Colaborar",
     emoji: "🤝",
     animationClass: "reaction-incredible",
     size: "text-3xl",
   },
   funny: {
-    icon: PartyPopper,
+    icon: Smile,
     color: "text-fuchsia-600",
-    label: "Celebrar",
-    emoji: "🎉",
+    label: "XD",
+    emoji: "😆",
     animationClass: "reaction-funny",
     size: "text-3xl",
   },
   surprised: {
     icon: Star,
-    color: "text-yellow-600",
-    label: "\u00datil",
-    emoji: "⭐",
+    color: "text-purple-600",
+    label: "Genio",
+    emoji: "🤯",
     animationClass: "reaction-surprised",
     size: "text-3xl",
   },
@@ -57,20 +57,35 @@ export function normalizeReactionType(type: string | null | undefined): Reaction
     megusta: "love",
     gusta: "love",
     love: "love",
+    encanta: "love",
+    corazon: "love",
 
     awesome: "awesome",
     interesante: "awesome",
+    idea: "awesome",
+    buena: "awesome",
+    buenaidea: "awesome",
+    goodidea: "awesome",
 
     incredible: "incredible",
     apoyo: "incredible",
     apoyar: "incredible",
+    colaborar: "incredible",
+    teamwork: "incredible",
 
     funny: "funny",
     celebrar: "funny",
+    xd: "funny",
+    risa: "funny",
+    reir: "funny",
+    divertido: "funny",
 
     surprised: "surprised",
     util: "surprised",
     útil: "surprised",
+    genio: "surprised",
+    asombro: "surprised",
+    wow: "surprised",
   };
 
   return aliasMap[t] || "love";
