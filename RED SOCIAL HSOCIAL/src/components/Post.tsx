@@ -21,7 +21,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useNavigate } from "react-router-dom";
-import { normalizeReactionType } from "@/components/post/reactions/ReactionIcons";
 
 interface PostProps {
   post: PostType;
@@ -88,17 +87,17 @@ function PostInner({ post, hideComments = false, isHidden = false, initialShowCo
 
   // Resumen de reacciones (para contadores)
   const reactionsByType: Record<string, number> = {};
-  if (Array.isArray(post.reactions)) {
+  
+  // Priorizar el formato canonical del API (reactions_by_type)
+  if (post.reactions_by_type && typeof post.reactions_by_type === 'object') {
+    Object.assign(reactionsByType, post.reactions_by_type);
+  } else if (Array.isArray(post.reactions)) {
     post.reactions.forEach((reaction: any) => {
-      const rawType = reaction.reaction_type || reaction.type || "love";
-      const type = normalizeReactionType(rawType);
+      const type = reaction.reaction_type || reaction.type || "love";
       reactionsByType[type] = (reactionsByType[type] || 0) + 1;
     });
   } else if ((post.reactions as any)?.by_type) {
-    Object.entries((post.reactions as any).by_type).forEach(([rawType, count]) => {
-      const type = normalizeReactionType(rawType as string);
-      reactionsByType[type] = (reactionsByType[type] || 0) + (Number(count) || 0);
-    });
+    Object.assign(reactionsByType, (post.reactions as any).by_type);
   }
 
   if (Object.keys(reactionsByType).length === 0 && (post.reactions_count || 0) > 0) {

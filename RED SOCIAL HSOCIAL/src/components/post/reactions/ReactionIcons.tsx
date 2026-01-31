@@ -63,9 +63,9 @@ export function normalizeReactionType(type: string | null | undefined): Reaction
     awesome: "awesome",
     interesante: "awesome",
     idea: "awesome",
-    buena: "awesome",
-    buenaidea: "awesome",
-    goodidea: "awesome",
+    buena_idea: "awesome",
+    buen_idea: "awesome",
+    bombilla: "awesome",
 
     incredible: "incredible",
     apoyo: "incredible",
