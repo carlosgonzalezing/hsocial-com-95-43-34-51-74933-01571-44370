@@ -13,6 +13,16 @@ export default defineConfig(({ mode }) => ({
     // Headers removidos para evitar conflictos con el servidor de Vite
     // Vite maneja automáticamente los tipos MIME correctos
   },
+  build: {
+    // Force cache busting with timestamp
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        assetFileNames: `assets/[name]-[hash]-${Date.now()}.[ext]`
+      }
+    }
+  },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
