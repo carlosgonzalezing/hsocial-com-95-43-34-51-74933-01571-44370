@@ -1,7 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { normalizeReactionType, reactionIcons, type ReactionType } from "@/components/post/reactions/ReactionIcons";
 import { ReactionMenu } from "@/components/post/reactions/ReactionMenu";
 import { useLongPress } from "@/components/post/reactions/hooks/use-long-press";
@@ -23,7 +21,6 @@ export function CommentReactionsEnhanced({
   onReaction,
   readOnly = false
 }: CommentReactionsProps) {
-  const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [animatingReaction, setAnimatingReaction] = useState<ReactionType | null>(null);
@@ -49,12 +46,6 @@ export function CommentReactionsEnhanced({
     onReaction(commentId, type);
   }, [handleAuthRequired, commentId, onReaction]);
 
-  const handleReactionSelected = useCallback((type: ReactionType) => {
-    setAnimatingReaction(type);
-    setTimeout(() => setAnimatingReaction(null), 600);
-    handleReactionClick(type);
-  }, [handleReactionClick]);
-
   const cancelCloseReactions = useCallback(() => {
     // Clear any timeout for closing reactions
   }, []);
@@ -78,6 +69,16 @@ export function CommentReactionsEnhanced({
       setShowReactions(false);
     }
   });
+
+  const handleReactionSelected = useCallback((type: ReactionType) => {
+    if (handleAuthRequired()) return;
+
+    setAnimatingReaction(type);
+    setTimeout(() => setAnimatingReaction(null), 600);
+    onReaction(commentId, type);
+    setActiveReaction(null);
+    setShowReactions(false);
+  }, [handleAuthRequired, commentId, onReaction, setActiveReaction, setShowReactions]);
 
   if (readOnly) {
     return (
