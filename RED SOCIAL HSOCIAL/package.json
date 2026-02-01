@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm install --legacy-peer-deps && ./node_modules/.bin/vite build",
+    "build": "npm install --legacy-peer-deps && npx vite build",
     "build:dev": "vite build --mode development",
     "start": "node server.js",
     "lint": "eslint src",
