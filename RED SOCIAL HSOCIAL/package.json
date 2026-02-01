@@ -97,7 +97,6 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "terser": "^5.43.1",
-    "tsx": "^4.20.4",
     "uuid": "^11.1.0",
     "vaul": "^0.9.3",
     "zod": "^3.24.2"
@@ -117,6 +116,7 @@
     "globals": "^15.9.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
+    "tsx": "^4.20.4",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
