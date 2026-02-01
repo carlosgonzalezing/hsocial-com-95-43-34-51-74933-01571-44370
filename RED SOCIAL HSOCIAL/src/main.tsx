@@ -1,5 +1,5 @@
-// Cache busting for Render deployment - 2026-01-31 v4.0 FINAL
-console.log('🚀 H Social loaded with new reactions system v4.0 - FINAL DEPLOYMENT - VERSION 1.0.1');
+// Cache busting for Render deployment - 2026-02-01 v5.0 FINAL - FORCED UPDATE
+console.log('🚀 H Social loaded with new reactions system v5.0 - FORCED CACHE INVALIDATION - VERSION 1.0.2');
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
