@@ -39,6 +39,7 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [showDonate, setShowDonate] = useState(false);
+  const [showSettingsPrivacy, setShowSettingsPrivacy] = useState(false);
   
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -61,6 +62,11 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
   const handleNavigate = (path: string) => {
     navigate(path);
     onClose();
+  };
+
+  const handleSettingsPrivacyNavigate = (path: string) => {
+    setShowSettingsPrivacy(false);
+    handleNavigate(path);
   };
 
   const cycleTheme = () => {
@@ -155,7 +161,7 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
         <Button
           variant="ghost"
           className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
-          onClick={() => handleNavigate("/settings")}
+          onClick={() => setShowSettingsPrivacy(true)}
         >
           <div className="flex items-center">
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center mr-3">
@@ -330,6 +336,55 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
               Listo
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSettingsPrivacy} onOpenChange={setShowSettingsPrivacy}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configuración y privacidad</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
+              onClick={() => handleSettingsPrivacyNavigate("/settings/personalization")}
+            >
+              <span className="font-medium">Perfil</span>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
+              onClick={() => handleSettingsPrivacyNavigate("/settings/account")}
+            >
+              <span className="font-medium">Cuenta</span>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
+              onClick={() => handleSettingsPrivacyNavigate("/settings/privacy")}
+            >
+              <span className="font-medium">Privacidad</span>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
+              onClick={() => handleSettingsPrivacyNavigate("/settings/security")}
+            >
+              <span className="font-medium">Contraseña</span>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full mt-2"
+            onClick={() => setShowSettingsPrivacy(false)}
+          >
+            Cerrar
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
