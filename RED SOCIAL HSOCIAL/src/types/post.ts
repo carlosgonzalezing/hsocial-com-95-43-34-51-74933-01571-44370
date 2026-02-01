@@ -175,6 +175,7 @@ export interface Comment {
   user_reaction?: string | null;
   likes_count?: number; // Add missing property
   replies?: Comment[]; // Add missing property for nested comments
+  reactions_by_type?: Record<string, number>; // Add reactions summary for comments
 }
 
 export interface CreatePostData {

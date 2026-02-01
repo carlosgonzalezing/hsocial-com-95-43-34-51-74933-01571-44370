@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { CommentHeader } from "./CommentHeader";
 import { CommentContent } from "./CommentContent";
 import { CommentFooter } from "./CommentFooter";
+import { CommentReactionSummary } from "./CommentReactionSummary";
 import { ReportCommentDialog } from "./ReportCommentDialog";
 import { CommentActions } from "./CommentActions";
 import type { Comment } from "@/types/post";
@@ -63,24 +64,33 @@ export function SingleComment({
           mediaType={comment.media_type} 
         />
         
-        <div className="flex items-center gap-2 mt-1">
-          <CommentFooter
-            commentId={comment.id}
-            userReaction={comment.user_reaction}
-            reactionsCount={comment.likes_count || 0}
-            onReaction={onReaction}
-            onReply={handleReply}
-            readOnly={readOnly}
-          />
-          
-          <div className="flex-grow"></div>
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-2">
+            <CommentFooter
+              commentId={comment.id}
+              userReaction={comment.user_reaction}
+              reactionsCount={comment.likes_count || 0}
+              onReaction={onReaction}
+              onReply={handleReply}
+              readOnly={readOnly}
+            />
+            
+            {!readOnly && <ReportCommentDialog comment={comment} />}
 
-          {!readOnly && <ReportCommentDialog comment={comment} />}
+            {!readOnly && (
+              <CommentActions 
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+              />
+            )}
+          </div>
 
-          {!readOnly && (
-            <CommentActions 
-              onDelete={handleDelete}
-              onEdit={handleEdit}
+          {/* Resumen de reacciones en la parte derecha */}
+          {comment.reactions_by_type && Object.keys(comment.reactions_by_type).length > 0 && (
+            <CommentReactionSummary
+              reactionsByType={comment.reactions_by_type}
+              totalCount={comment.likes_count || 0}
+              compact={true}
             />
           )}
         </div>
