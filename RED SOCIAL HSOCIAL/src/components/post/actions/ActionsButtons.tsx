@@ -179,7 +179,7 @@ export function ActionsButtons({
               <ThumbsUp className="h-5 w-5" strokeWidth={1.75} />
             )}
             <span className="text-sm font-medium hidden sm:inline">
-              {hasReacted && reactionData ? reactionData.label : 'Me gusta'}
+              {hasReacted && reactionData ? reactionData.label : reactionIcons.love.label}
             </span>
           </Button>
         </div>
