@@ -176,7 +176,7 @@ export function ActionsButtons({
                 {reactionData.emoji}
               </span>
             ) : (
-              <ThumbsUp className="h-5 w-5" strokeWidth={1.75} />
+              <ThumbsUp className="h-5 w-5" strokeWidth={hasReacted ? 2 : 1.5} />
             )}
             <span className="text-sm font-medium hidden sm:inline">
               {hasReacted && reactionData ? reactionData.label : reactionIcons.love.label}
@@ -194,7 +194,7 @@ export function ActionsButtons({
             onComment();
           }}
         >
-          <MessageCircle className="h-5 w-5" strokeWidth={1.75} />
+          <MessageCircle className="h-5 w-5" strokeWidth={1.5} />
           <span className="text-sm font-medium hidden sm:inline">Comentar</span>
         </Button>
         
@@ -208,7 +208,7 @@ export function ActionsButtons({
             onShare?.();
           }}
         >
-          <Repeat2 className="h-5 w-5" strokeWidth={1.75} />
+          <Repeat2 className="h-5 w-5" strokeWidth={1.5} />
           <span className="text-sm font-medium hidden sm:inline">Volver a publicar</span>
         </Button>
         
@@ -222,7 +222,7 @@ export function ActionsButtons({
             onSend?.();
           }}
         >
-          <Send className="h-5 w-5" strokeWidth={1.75} />
+          <Send className="h-5 w-5" strokeWidth={1.5} />
           <span className="text-sm font-medium hidden sm:inline">Enviar</span>
         </Button>
       </div>
