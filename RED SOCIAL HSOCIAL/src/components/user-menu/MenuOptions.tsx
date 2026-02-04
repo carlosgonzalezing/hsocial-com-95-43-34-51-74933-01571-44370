@@ -101,7 +101,7 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
         >
           <div className="flex items-center">
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center mr-3">
-              <Brain className="h-5 w-5 text-purple-500" />
+              <Brain className="h-5 w-5 text-primary" />
             </div>
             <span className="font-medium">Coquitos Destacados</span>
           </div>
@@ -245,7 +245,7 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
         >
           <div className="flex items-center">
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center mr-3">
-              <HeartHandshake className="h-5 w-5 text-emerald-600" />
+              <HeartHandshake className="h-5 w-5 text-primary" />
             </div>
             <div className="flex flex-col items-start">
               <span className="font-medium">Donar al desarrollador (Nequi)</span>

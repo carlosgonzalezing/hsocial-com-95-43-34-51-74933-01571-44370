@@ -76,7 +76,7 @@ export function PostActionButtons({
                 onAttachmentChange={handleFileSelect}
                 showLabel={true}
                 buttonVariant="ghost"
-                buttonClassName="w-full flex justify-start text-blue-500"
+                buttonClassName="w-full flex justify-start text-primary"
                 label="Foto/vídeo"
                 accept="image/*,video/*"
               />
@@ -126,7 +126,7 @@ export function PostActionButtons({
           buttonSize="icon"
           buttonVariant="ghost"
           disabled={isPending}
-          buttonClassName="h-10 w-10 p-0 text-blue-500"
+          buttonClassName="h-10 w-10 p-0 text-primary"
           accept="image/*,video/*"
         />
         <AttachmentInput
@@ -136,7 +136,7 @@ export function PostActionButtons({
           buttonSize="icon"
           buttonVariant="ghost"
           disabled={isPending}
-          buttonClassName="h-10 w-10 p-0 text-gray-500"
+          buttonClassName="h-10 w-10 p-0 text-muted-foreground"
         />
         <AudioRecorder onRecordingComplete={(blob) => onFileSelect(new File([blob], "audio.webm", { type: "audio/webm" }))} />
         <Button
@@ -144,7 +144,7 @@ export function PostActionButtons({
           disabled={isPending}
           title="Crear encuesta"
           onClick={onPollCreate}
-          className="h-10 text-sm font-normal px-2 text-gray-500"
+          className="h-10 text-sm font-normal px-2 text-muted-foreground"
         >
           Encuesta
         </Button>
@@ -154,7 +154,7 @@ export function PostActionButtons({
             disabled={isPending}
             title={isIdeaMode ? "Cancelar idea" : "Crear idea"}
             onClick={onIdeaCreate}
-            className={`h-10 ${isIdeaMode ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary' : 'text-gray-500'}`}
+            className={`h-10 ${isIdeaMode ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary' : 'text-muted-foreground'}`}
           >
             <Lightbulb className="h-4 w-4" />
           </Button>
