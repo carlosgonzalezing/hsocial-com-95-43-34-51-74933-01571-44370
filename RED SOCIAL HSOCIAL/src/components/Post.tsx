@@ -10,6 +10,7 @@ import { PostWrapper } from "./post/PostWrapper";
 import { useState, useEffect } from "react";
 import { IdeaContent } from "./post/IdeaContent";
 import { ProjectContent } from "./post/ProjectContent";
+import { ProyectoPostContent } from "./post/ProyectoPostContent";
 import { PostOptionsMenu } from "./post/actions/PostOptionsMenu";
 import { EventCard } from "./events/EventCard";
 import { EventDetailModal } from "./events/EventDetailModal";
@@ -27,6 +28,21 @@ interface PostProps {
   hideComments?: boolean;
   isHidden?: boolean;
   initialShowComments?: boolean;
+}
+
+function ProyectoPostView({ post }: { post: PostType }) {
+  const proyecto = (post as any)?.post_metadata?.proyecto;
+  if (!proyecto) {
+    return (
+      <div className="px-0 md:px-4 pb-2">
+        <PostContent post={post} postId={post.id} />
+      </div>
+    );
+  }
+
+  return (
+    <ProyectoPostContent profileId={post.user_id} proyecto={proyecto} />
+  );
 }
 
 export function Post({ post, hideComments = false, isHidden = false, initialShowComments = false }: PostProps) {
@@ -137,6 +153,7 @@ function PostInner({ post, hideComments = false, isHidden = false, initialShowCo
   const isEventPost = post.post_type === 'academic_event';
   // Determinar si es un proyecto
   const isProjectPost = post.post_type === 'project';
+  const isProyectoPost = post.post_type === 'proyecto';
   // Determinar si la publicación está fijada
   const isPinned = post.is_pinned;
 
@@ -210,6 +227,8 @@ function PostInner({ post, hideComments = false, isHidden = false, initialShowCo
         <EventPostView post={post} />
       ) : isProjectPost ? (
         <ProjectPostView post={post} />
+      ) : isProyectoPost ? (
+        <ProyectoPostView post={post} />
       ) : (
         <StandardPostView post={post} />
       )}

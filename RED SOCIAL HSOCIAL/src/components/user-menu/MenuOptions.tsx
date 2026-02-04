@@ -7,17 +7,16 @@ import {
   HelpCircle,
   MessageSquare,
   Monitor,
-  Trophy,
   Bookmark,
   HeartHandshake,
   PlaySquare,
   Brain,
-  BarChart3
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "next-themes";
+
 import { Separator } from "@/components/ui/separator";
 import { Users } from "lucide-react";
 import { useState } from "react";
@@ -134,23 +133,6 @@ export function MenuOptions({ userId, onClose, onCopyProfileLink }: MenuOptionsP
               <PlaySquare className="h-5 w-5" />
             </div>
             <span className="font-medium">Reels</span>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="w-full justify-between h-14 px-3 rounded-lg hover:bg-accent"
-          onClick={() => handleNavigate("/analytics")}
-        >
-          <div className="flex items-center">
-            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center mr-3">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="font-medium">Analytics Pro</span>
-              <span className="text-xs text-muted-foreground">Visitas, clicks y rendimiento</span>
-            </div>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Button>

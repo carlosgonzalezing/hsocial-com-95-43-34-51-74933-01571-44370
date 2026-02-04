@@ -82,7 +82,7 @@ export function RegisterForm({ loading, setLoading, sendVerificationEmail }: Reg
           </label>
         </div>
         
-        <Button type="submit" className="w-full" disabled={loading || !acceptsPolicy}>
+        <Button type="submit" className="w-full" disabled={loading || !acceptsPolicy || !career.trim()}>
           {loading ? "Cargando..." : "Crear cuenta"}
         </Button>
       </form>

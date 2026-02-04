@@ -38,6 +38,7 @@ export interface Post {
   marketplace?: Marketplace | null;
   event?: Event | null;
   post_type?: string | null;
+  post_metadata?: any;
   is_pinned?: boolean | null;
   reactions?: ReactionSummary | any[]; // Allow both formats for flexibility
   reactions_count?: number;

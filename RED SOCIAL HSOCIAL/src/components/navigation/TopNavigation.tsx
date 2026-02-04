@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, MessageCircle, Users, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen, Compass, Crown } from "lucide-react";
+import { Home, MessageCircle, Users, User, Search, Settings, UserPlus, PlaySquare, Plus, Menu, FolderOpen, Compass } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,15 +39,14 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
   const [showPostModal, setShowPostModal] = useState(false);
   const { user } = useUser();
 
-  const centerIconStyles: Record<string, { bg: string; fg: string; activeBg: string; activeFg: string }> = {
-    "/home": { bg: "bg-blue-100", fg: "text-blue-600", activeBg: "bg-blue-200", activeFg: "text-blue-700" },
-    "/explore": { bg: "bg-violet-100", fg: "text-violet-600", activeBg: "bg-violet-200", activeFg: "text-violet-700" },
-    "/groups": { bg: "bg-emerald-100", fg: "text-emerald-600", activeBg: "bg-emerald-200", activeFg: "text-emerald-700" },
-    "/projects": { bg: "bg-cyan-100", fg: "text-cyan-600", activeBg: "bg-cyan-200", activeFg: "text-cyan-700" },
-    "/reels": { bg: "bg-fuchsia-100", fg: "text-fuchsia-600", activeBg: "bg-fuchsia-200", activeFg: "text-fuchsia-700" },
-  };
+  const centerIconStyles: Record<string, { bg: string; fg: string; activeBg: string; activeFg: string }> = {};
 
-  const defaultCenterIconStyle = { bg: "bg-muted", fg: "text-foreground", activeBg: "bg-muted", activeFg: "text-foreground" };
+  const defaultCenterIconStyle = {
+    bg: "bg-transparent",
+    fg: "text-muted-foreground",
+    activeBg: "bg-primary",
+    activeFg: "text-primary-foreground",
+  };
 
   const getCenterIconStyle = (path: string) => centerIconStyles[path] ?? defaultCenterIconStyle;
 
@@ -156,17 +155,6 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
           
           {/* Search + Actions - Right */}
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full text-foreground hover:bg-muted"
-              onClick={() => navigate("/pricing")}
-              aria-label="Premium"
-              title="Premium"
-            >
-              <Crown className="h-6 w-6" />
-            </Button>
-
             {/* Search button (abre buscador de pantalla completa) */}
             <Button
               variant="ghost"
@@ -247,7 +235,7 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
                 {(() => {
                   const style = getCenterIconStyle(item.path);
                   const bubbleClassName = cn(
-                    "h-10 w-10 rounded-full flex items-center justify-center transition-colors shadow-sm ring-1 ring-black/5 group-hover:shadow-md",
+                    "h-10 w-10 rounded-full flex items-center justify-center transition-colors ring-1 ring-border/60 group-hover:shadow-sm",
                     item.isActive ? style.activeBg : style.bg
                   );
                   const iconClassName = cn(
@@ -280,16 +268,6 @@ export function TopNavigation({ pendingRequestsCount }: TopNavigationProps) {
         <div className="flex items-center gap-1 flex-shrink-0 w-80 justify-end">
           {isAuthenticated && (
             <>
-              <Button
-                variant="outline"
-                className="h-10 px-3 rounded-full"
-                onClick={() => navigate("/pricing")}
-                title="Premium"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                Premium
-              </Button>
-
               {/* Profile */}
               <Button
                 variant="ghost"

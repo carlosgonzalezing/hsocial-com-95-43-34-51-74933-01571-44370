@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +46,17 @@ export function ProfileEditDialog({
     },
   });
 
+  // Actualizar el formulario cuando el perfil cambia
+  useEffect(() => {
+    form.reset({
+      username: profile.username || "",
+      bio: profile.bio || "",
+      career: profile.career || "",
+      semester: profile.semester || "",
+      relationship_status: profile.relationship_status || "",
+    });
+  }, [profile, form]);
+
   const onSubmit = async (values: ProfileFormValues) => {
     setIsLoading(true);
 
@@ -64,7 +75,7 @@ export function ProfileEditDialog({
       }
 
       // Actualizar los demás campos
-      const updateData: ProfileTable['Update'] = {
+      const updateData: any = {
         bio: values.bio || null,
         career: values.career || null,
         semester: values.semester || null,
@@ -77,19 +88,26 @@ export function ProfileEditDialog({
         updateData.username = values.username;
       }
 
-      if (debug) console.log("Enviando datos de actualización:", updateData);
+      console.log("Enviando datos de actualización:", updateData);
 
-      // Cast supabase and payload to avoid over-strict Database types
+      // Actualizar en Supabase
       const { data, error } = await (supabase as any)
         .from("profiles")
-        .update(updateData as any)
-        .eq("id" as any, profile.id as any)
+        .update(updateData)
+        .eq("id", profile.id)
         .select()
         .single();
 
-      if (error) throw error;
+      console.log("Respuesta de Supabase:", { data, error });
+
+      if (error) {
+        console.error("Error específico de Supabase:", error);
+        throw error;
+      }
 
       if (data) {
+        console.log("Datos recibidos de Supabase:", data);
+        
         const profileData = data as unknown as ProfileTable['Row'];
         const updatedProfile: Profile = {
           ...profile,
@@ -102,12 +120,13 @@ export function ProfileEditDialog({
           relationship_status: profileData.relationship_status
         };
         
-        if (debug) console.log("Perfil actualizado:", updatedProfile);
+        console.log("Perfil actualizado localmente:", updatedProfile);
         onUpdate(updatedProfile);
         
-        // Invalidate profile queries to refresh data across the app
+        // Invalidate profile queries para forzar recarga
         queryClient.invalidateQueries({ queryKey: ['profile'] });
         queryClient.invalidateQueries({ queryKey: ['profiles'] });
+        queryClient.invalidateQueries({ queryKey: ['profile', profile.id] });
         
         toast({
           title: "Perfil actualizado",
@@ -116,6 +135,9 @@ export function ProfileEditDialog({
             : "Los cambios han sido guardados exitosamente",
         });
         onClose();
+      } else {
+        console.error("No se recibieron datos de Supabase");
+        throw new Error("No se recibieron datos de la base de datos");
       }
     } catch (error) {
       const message =

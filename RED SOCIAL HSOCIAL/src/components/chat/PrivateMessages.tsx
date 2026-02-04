@@ -571,6 +571,15 @@ export function PrivateMessages() {
     }
   }, [searchParams.get("user"), currentUserId]);
 
+  useEffect(() => {
+    const draft = searchParams.get("draft");
+    const userIdParam = searchParams.get("user");
+    if (!draft) return;
+    if (!userIdParam) return;
+    if (selectedConversation !== userIdParam) return;
+    setNewMessage(draft);
+  }, [searchParams, selectedConversation]);
+
   const { conversacionesPrincipales, solicitudesDeMensajes } = useMemo(() => {
     return splitConversationsByMutualFollow(conversations, {
       isGlobal: (c) => !!(c as any).is_global,

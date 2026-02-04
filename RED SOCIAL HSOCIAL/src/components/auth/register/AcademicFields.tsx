@@ -1,6 +1,6 @@
 
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { careers } from "@/data/careers";
 import { useCallback } from "react";
 
 interface AcademicFieldsProps {
@@ -35,23 +35,15 @@ export function AcademicFields({
         <label htmlFor="career" className="block text-sm font-medium mb-1">
           Carrera estudiada
         </label>
-        <Select 
-          value={career} 
-          onValueChange={handleCareerChange}
-          disabled={loading} 
+        <Input
+          id="career"
           name="career"
-        >
-          <SelectTrigger id="career" name="career">
-            <SelectValue placeholder="Selecciona tu carrera" />
-          </SelectTrigger>
-          <SelectContent>
-            {careers.map((careerOption) => (
-              <SelectItem key={careerOption} value={careerOption}>
-                {careerOption}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          value={career}
+          onChange={(e) => handleCareerChange(e.target.value)}
+          placeholder="Ej: Ingeniería de Sistemas"
+          disabled={loading}
+          required
+        />
       </div>
       
       <div>

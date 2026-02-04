@@ -208,27 +208,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { data: existing, error: existingError } = await (supabase as any)
         .from('profiles')
-        .select('id, name_manually_edited')
+        .select('id, username, name_manually_edited, career, semester, birth_date, account_type, person_status')
         .eq('id', user.id)
         .maybeSingle();
 
       if (existingError) throw existingError;
 
-      const payload = (existing as any)?.name_manually_edited
-        ? {
-            id: computed.id,
-            career: computed.career,
-            semester: computed.semester,
-            birth_date: computed.birth_date,
-            account_type: computed.account_type,
-            person_status: computed.person_status,
-            google_name: googleName,
-            updated_at: computed.updated_at,
-          }
-        : {
-            ...computed,
-            google_name: googleName,
-          };
+      const existingRow = existing as any;
+
+      // IMPORTANT: avoid overwriting DB fields with null values coming from user_metadata.
+      // Only set a field when creating a new row OR when DB has null and metadata provides a value.
+      const payload: any = {
+        id: computed.id,
+        google_name: googleName,
+        updated_at: computed.updated_at,
+      };
+
+      if (!existingRow) {
+        Object.assign(payload, computed);
+        payload.google_name = googleName;
+      } else {
+        // Username: respect manual edits; otherwise keep DB username if present, fallback to computed.
+        if (existingRow?.name_manually_edited) {
+          payload.username = existingRow?.username ?? computed.username;
+        } else {
+          payload.username = computed.username ?? existingRow?.username ?? null;
+        }
+
+        if (existingRow?.career == null && computed.career != null) payload.career = computed.career;
+        if (existingRow?.semester == null && computed.semester != null) payload.semester = computed.semester;
+        if (existingRow?.birth_date == null && computed.birth_date != null) payload.birth_date = computed.birth_date;
+        if (existingRow?.account_type == null && computed.account_type != null) payload.account_type = computed.account_type;
+        if (existingRow?.person_status == null && computed.person_status != null) payload.person_status = computed.person_status;
+      }
 
       await (supabase as any)
         .from('profiles')

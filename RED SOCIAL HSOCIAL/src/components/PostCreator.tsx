@@ -42,6 +42,10 @@ export interface Proyecto {
   required_skills: string[];
   status: 'planificacion' | 'desarrollo' | 'finalizado';
   contact_link?: string;
+  demo_url?: string;
+  github_url?: string;
+  impact?: string;
+  stack?: string[];
   max_participants: number;
 }
 
@@ -121,6 +125,10 @@ export function PostCreator({
     required_skills: [],
     status: 'planificacion',
     contact_link: "",
+    demo_url: "",
+    github_url: "",
+    impact: "",
+    stack: [],
     max_participants: 5
   });
   const [evento, setEvento] = useState<EventForm>({
@@ -459,6 +467,10 @@ export function PostCreator({
             required_skills: proyecto.required_skills,
             status: proyecto.status,
             contact_link: proyecto.contact_link || '',
+            demo_url: proyecto.demo_url || '',
+            github_url: proyecto.github_url || '',
+            impact: proyecto.impact || '',
+            stack: Array.isArray(proyecto.stack) ? proyecto.stack : [],
             max_participants: proyecto.max_participants
           }
         };
@@ -825,15 +837,27 @@ export function PostCreator({
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               placeholder="Ej: App para conectar empresas"
               value={proyecto.title}
-              onChange={(e) => setProyecto({ ...proyecto, title: e.target.value })}
+              onChange={(e) => setProyecto({ ...proBusco (roles o hecto, titl).value })}
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Descripción</label>
             <Textarea
-              placeholder="Describe tu proyecto en detalle"
+              placeholder="Describe tu proyecto en detalle"im()) })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medu">Stack tecnologías usadas</label>
+            <input
+              type="text"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="Ej: Next.js, Supabase, Tailwind"
+              value={(proyecto.stack || []).join(', ')}
+              onChange={(e) => setProyecto({ ...proyecto, stack: e.target.value.split(',').map(s => s.trim()).filter(Boolean
               value={proyecto.description}
-              onChange={(e) => setProyecto({ ...proyecto, description: e.target.value })}
+             p className="text-xs text-muted-foreground">Esto se muestra como chips en la tarjeta del proyecto.< p>
+          </  onChange={(e) => setProyecto({ ...proyecto, description: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -853,7 +877,41 @@ export function PostCreator({
               value={proyecto.status}
               onChange={(e) => setProyecto({ ...proyecto, status: e.target.value as any })}
             >
-              <option value="planificacion">En planificación</option>
+              <option value="planificacion">En planificación</option>: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Demo (URL opcional)</label>
+              <input
+                type="url"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="https://demo.tuapp.com"
+                value={proyecto.demo_url || ""}
+                onChange={(e) => setProyecto({ ...proyecto, demo_url: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">GitHub (URL opcional)</label>
+              <input
+                type="url"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="https://github.com/usuario/repo"
+                value={proyecto.github_url || ""}
+                onChange={(e) => setProyecto({ ...proyecto, github_url: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Impacto (métrica corta)</label>
+            <input
+              type="text"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="Ej: 1,200 usuarios · +25% conversion · -40% tiempo"
+              value={proyecto.impact || ""}
+              onChange={(e) => setProyecto({ ...proyecto, impact
               <option value="desarrollo">En desarrollo</option>
               <option value="finalizado">Finalizado</option>
             </select>
