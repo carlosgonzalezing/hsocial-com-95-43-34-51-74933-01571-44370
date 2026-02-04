@@ -7,6 +7,8 @@
   :root {
     /* Safe area para dispositivos móviles - detecta automáticamente el tamaño del reloj */
     --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
     
     /* H Social - Blanco, Azul y Negro */
     --background: 210 20% 98%; /* Blanco puro #FFFFFF */
@@ -159,9 +161,13 @@
   
   body {
     @apply bg-background text-foreground antialiased;
-    /* Añade un espacio arriba igual al tamaño del reloj + un poquito más */
-    padding-top: calc(var(--safe-area-inset-top) + 10px) !important;
+    /* En Chrome esto será 0px. En tu App será el tamaño del reloj y la barra inferior */
+    padding-top: var(--sat) !important;
+    padding-bottom: var(--sab) !important;
+    
+    /* Esto asegura que el fondo blanco cubra todo el espacio */
     background-color: #ffffff;
+    min-height: 100vh;
   }
   
   /* Safe area para dispositivos móviles (status bar, notch, etc.) */
@@ -188,6 +194,11 @@
   /* Si tienes una barra de navegación fija arriba (header), también dale el padding */
   header, .navbar-fixed-top {
     padding-top: var(--safe-area-inset-top) !important;
+  }
+  
+  /* Si tienes un menú fijo abajo (el de Inicio, Grupos, etc.) */
+  .footer, .bottom-nav {
+    padding-bottom: var(--sab) !important;
   }
   
   /* Bloquear selección de texto excepto en el contenido de posts */
