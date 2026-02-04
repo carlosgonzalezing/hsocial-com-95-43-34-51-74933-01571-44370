@@ -23,8 +23,8 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#transparent',
-      overlaysWebView: true,
+      backgroundColor: '#ffffff',
+      overlaysWebView: false,
     },
   }
 };

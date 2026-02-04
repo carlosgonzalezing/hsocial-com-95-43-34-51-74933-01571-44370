@@ -5,6 +5,9 @@
 
 @layer base {
   :root {
+    /* Safe area para dispositivos móviles - detecta automáticamente el tamaño del reloj */
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    
     /* H Social - Blanco, Azul y Negro */
     --background: 210 20% 98%; /* Blanco puro #FFFFFF */
     --foreground: 222 47% 11%; /* Negro puro #000000 */
@@ -156,6 +159,9 @@
   
   body {
     @apply bg-background text-foreground antialiased;
+    /* Añade un espacio arriba igual al tamaño del reloj + un poquito más */
+    padding-top: calc(var(--safe-area-inset-top) + 10px) !important;
+    background-color: #ffffff;
   }
   
   /* Safe area para dispositivos móviles (status bar, notch, etc.) */
@@ -177,6 +183,11 @@
   
   .safe-area-all {
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  
+  /* Si tienes una barra de navegación fija arriba (header), también dale el padding */
+  header, .navbar-fixed-top {
+    padding-top: var(--safe-area-inset-top) !important;
   }
   
   /* Bloquear selección de texto excepto en el contenido de posts */
