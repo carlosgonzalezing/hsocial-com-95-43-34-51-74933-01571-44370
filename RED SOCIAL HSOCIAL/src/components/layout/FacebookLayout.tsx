@@ -134,7 +134,7 @@ export function FacebookLayout({
   // Desktop layout - Facebook style
   return (
     <ChatSystemProvider>
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="h-svh overflow-hidden bg-background text-foreground">
         {/* Fixed Top Navigation */}
         {!hideNavigation && (
           <div className="fixed top-0 left-0 right-0 z-50">
@@ -143,7 +143,8 @@ export function FacebookLayout({
         )}
         
         {/* Main Content Area - Facebook 3-column layout */}
-        <div className="pt-16 flex min-h-screen w-full">
+        <div className="pt-16 h-svh w-full">
+          <div className="flex h-[calc(100svh-4rem)] w-full overflow-hidden">
           {/* Left Sidebar - Fixed width on desktop only */}
           {!hideLeftSidebar && (
             <div className="hidden lg:block fixed left-0 top-16 bottom-0 w-[280px] z-10">
@@ -152,8 +153,10 @@ export function FacebookLayout({
           )}
           
           {/* Center Content - Full width estilo LinkedIn */}
-          <main className={`flex-1 min-h-screen w-full ${!hideLeftSidebar ? 'lg:ml-[280px]' : ''} ${!hideRightSidebar ? 'xl:mr-[320px]' : ''}`}>
-            <div className="w-full px-0 py-2 lg:py-4 bg-muted/20">
+          <main
+            className={`flex-1 h-full w-full overflow-y-auto ${!hideLeftSidebar ? 'lg:ml-[280px]' : ''} ${!hideRightSidebar ? 'xl:mr-[320px]' : ''}`}
+          >
+            <div className="w-full px-0 py-2 lg:py-4 bg-muted/20 min-h-full">
               {/* Notification banner */}
               {currentUserId && <NotificationPermissionBanner />}
               {children}
@@ -167,6 +170,7 @@ export function FacebookLayout({
               <RightSidebar currentUserId={currentUserId} />
             </div>
           )}
+          </div>
         </div>
         
         {/* Chat System - Bottom right */}

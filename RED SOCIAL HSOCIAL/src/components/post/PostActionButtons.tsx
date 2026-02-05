@@ -1,7 +1,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { AudioRecorder } from "../AudioRecorder";
+import { AudioRecorder } from "@/components/media/AudioRecorder";
 import { MousePointerClick, PlusCircle, Lightbulb, Mic, BarChartBig } from "lucide-react";
 import { 
   DropdownMenu,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 // Removed StoryCreator - stories feature removed
 import { supabase } from "@/integrations/supabase/client";
-import { AttachmentInput } from "@/components/AttachmentInput";
+import { AttachmentInput } from "@/components/media/AttachmentInput";
 
 interface PostActionButtonsProps {
   onFileSelect: (file: File) => void;
@@ -138,7 +138,7 @@ export function PostActionButtons({
           disabled={isPending}
           buttonClassName="h-10 w-10 p-0 text-muted-foreground"
         />
-        <AudioRecorder onRecordingComplete={(blob) => onFileSelect(new File([blob], "audio.webm", { type: "audio/webm" }))} />
+        <AudioRecorder onRecordingComplete={(blob, _durationSeconds) => onFileSelect(new File([blob], "audio.webm", { type: "audio/webm" }))} />
         <Button
           variant="ghost"
           disabled={isPending}

@@ -6,8 +6,8 @@ import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { mobileToasts } from "@/components/ui/mobile-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { AttachmentInput } from "./AttachmentInput";
-import { AttachmentPreview } from "./AttachmentPreview";
+import { AttachmentInput } from "@/components/media/AttachmentInput";
+import { AttachmentPreview } from "@/components/media/AttachmentPreview";
 import { VisibilitySelector } from "./post/VisibilitySelector";
 import {
   Select,
