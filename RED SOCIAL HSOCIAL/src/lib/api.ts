@@ -386,7 +386,8 @@ export async function getPostsPage(params: {
     .select(`
       *,
       profiles:profiles(id, username, avatar_url, career),
-      comments:comments(count)
+      comments:comments(count),
+      media_urls
     `);
 
   if (userId) query = query.eq('user_id', userId);

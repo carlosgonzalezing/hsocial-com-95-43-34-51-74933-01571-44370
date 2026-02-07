@@ -34,6 +34,7 @@ export interface Project {
   likes_count: number;
   comments_count: number;
   views_count: number;
+  user_reaction?: string | null;
   created_at: string;
   updated_at: string;
 }

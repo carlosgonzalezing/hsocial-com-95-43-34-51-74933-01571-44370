@@ -9,8 +9,12 @@ import { ProjectModal } from '@/components/projects/ProjectModal';
 import { Layout } from '@/components/layout';
 import { PROJECT_CATEGORIES, type Project } from '@/types/project';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModalPublicacionWeb from '@/components/ModalPublicacionWeb';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function Projects() {
   const [showPostModal, setShowPostModal] = useState(false);
@@ -18,11 +22,62 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [deleteConfirmProject, setDeleteConfirmProject] = useState<string | null>(null);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Delete project mutation
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', projectId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Proyecto eliminado",
+        description: "El proyecto ha sido eliminado exitosamente",
+      });
+      queryClient.invalidateQueries({ queryKey: ['project-posts'] });
+      setDeleteConfirmProject(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al eliminar",
+        description: "No se pudo eliminar el proyecto. Intenta de nuevo.",
+        variant: "destructive",
+      });
+      console.error('Delete project error:', error);
+    }
+  });
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setShowPostModal(true);
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    setDeleteConfirmProject(projectId);
+  };
+
+  const confirmDeleteProject = () => {
+    if (deleteConfirmProject) {
+      deleteProjectMutation.mutate(deleteConfirmProject);
+    }
+  };
+
   // Query para obtener SOLO publicaciones tipo proyecto
   const { data: projectPosts = [], isLoading } = useQuery({
     queryKey: ['project-posts', selectedStatus],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       let projectsQuery = supabase
         .from('posts')
         .select(`
@@ -32,6 +87,11 @@ export default function Projects() {
             id,
             username,
             avatar_url
+          ),
+          reactions!reactions_post_id_fkey (
+            id,
+            user_id,
+            reaction_type
           )
         `)
         .eq('post_type', 'project')
@@ -51,6 +111,10 @@ export default function Projects() {
   const projects: Project[] = useMemo(() => {
     return projectPosts.map((post: any) => {
       const idea = post.idea || {};
+      
+      // Find user's reaction for this post
+      const userReaction = post.reactions?.find((reaction: any) => reaction.user_id === user?.id)?.reaction_type || null;
+      
       return {
         id: post.id,
         title: idea.title || 'Sin título',
@@ -79,10 +143,11 @@ export default function Projects() {
         image_url: post.media_urls && post.media_urls.length > 0 ? post.media_urls[0] : undefined,
         media_urls: post.media_urls || [],
         created_at: post.created_at,
-        updated_at: post.updated_at
+        updated_at: post.updated_at,
+        user_reaction: userReaction // Add user reaction
       };
     });
-  }, [projectPosts]);
+  }, [projectPosts, user]);
 
   const filteredProjects = projects?.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -192,6 +257,9 @@ export default function Projects() {
                   key={project.id}
                   project={project}
                   onClick={() => setSelectedProject(project)}
+                  onEdit={handleEditProject}
+                  onDelete={handleDeleteProject}
+                  expanded={true} // Show expanded view by default
                 />
               ))}
             </div>
@@ -214,8 +282,12 @@ export default function Projects() {
         {/* Modals */}
         <ModalPublicacionWeb
           isVisible={showPostModal}
-          onClose={() => setShowPostModal(false)}
+          onClose={() => {
+            setShowPostModal(false);
+            setEditingProject(null);
+          }}
           initialPostType={'proyecto'}
+          editingProject={editingProject}
         />
         
         {selectedProject && (
@@ -225,6 +297,34 @@ export default function Projects() {
             onOpenChange={(open) => !open && setSelectedProject(null)}
           />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deleteConfirmProject} onOpenChange={(open) => !open && setDeleteConfirmProject(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>¿Eliminar proyecto?</DialogTitle>
+              <DialogDescription>
+                Esta acción no se puede deshacer. El proyecto será eliminado permanentemente.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirmProject(null)}
+                disabled={deleteProjectMutation.isPending}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteProject}
+                disabled={deleteProjectMutation.isPending}
+              >
+                {deleteProjectMutation.isPending ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

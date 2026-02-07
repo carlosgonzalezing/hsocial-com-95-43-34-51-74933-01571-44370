@@ -17,21 +17,81 @@ export function useReelsFeed() {
 
   // Filtrar solo posts con videos - simplificado para Supabase Storage
   const videosPosts = useMemo(() => {
-    return posts.filter((post: Post) => {
-      // Verificar que tenga URL de media
-      if (!post.media_url) return false;
+    console.log('🔍 Debug: Total posts received:', posts.length);
+    console.log('🔍 Debug: Posts sample:', posts.slice(0, 3).map(p => ({
+      id: p.id,
+      media_urls: p.media_urls,
+      media_type: p.media_type,
+      content: p.content?.substring(0, 50)
+    })));
+    
+    const realVideos = posts.filter((post: Post) => {
+      // Verificar que tenga media_urls array con contenido
+      if (!post.media_urls || !Array.isArray(post.media_urls) || post.media_urls.length === 0) {
+        return false;
+      }
       
-      // Verificar por extensión de archivo
+      // Verificar si alguna URL es un video
       const videoExtensions = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.m4v'];
-      const hasVideoExtension = videoExtensions.some(ext => 
-        post.media_url?.toLowerCase().includes(ext)
-      );
+      const hasVideoUrl = post.media_urls.some((url: string) => {
+        if (!url) return false;
+        const hasVideoExtension = videoExtensions.some(ext => 
+          url.toLowerCase().includes(ext)
+        );
+        return hasVideoExtension;
+      });
       
       // Verificar por media_type
       const hasVideoType = post.media_type === 'video';
       
-      return hasVideoExtension || hasVideoType;
+      const isVideo = hasVideoUrl || hasVideoType;
+      if (isVideo) {
+        console.log('✅ Video found:', {
+          id: post.id,
+          media_urls: post.media_urls,
+          media_type: post.media_type
+        });
+      }
+      
+      return isVideo;
     });
+
+    // Si no hay videos reales, añadir videos de demo para testing
+    if (realVideos.length === 0 && posts.length === 0) {
+      console.log('🎬 Adding demo videos for testing');
+      return [
+        {
+          id: 'demo-1',
+          content: 'Video de demostración 1 - Paisaje natural',
+          user_id: 'demo-user',
+          media_urls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'],
+          media_type: 'video',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          visibility: 'public' as const,
+          profiles: {
+            username: 'Demo User',
+            avatar_url: null
+          }
+        },
+        {
+          id: 'demo-2', 
+          content: 'Video de demostración 2 - Animación',
+          user_id: 'demo-user',
+          media_urls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'],
+          media_type: 'video',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          visibility: 'public' as const,
+          profiles: {
+            username: 'Demo User',
+            avatar_url: null
+          }
+        }
+      ] as Post[];
+    }
+    
+    return realVideos;
   }, [posts]);
 
   // Track view específico para reels con duración optimizado

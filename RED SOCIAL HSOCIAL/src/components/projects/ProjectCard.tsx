@@ -1,23 +1,107 @@
 import React, { useState } from 'react';
-import { Eye, Heart, MessageCircle, Users, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Heart, MessageCircle, Users, Calendar, X, ChevronLeft, ChevronRight, Edit, Trash2, MoreHorizontal, ExternalLink } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PROJECT_STATUS_CONFIG, type Project } from '@/types/project';
+import { useAuth } from '@/hooks/use-auth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { HoverReactionButton } from '@/components/post/reactions/HoverReactionButton';
+import { ReactionType } from '@/types/database/social.types';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ProjectCardProps {
   project: Project;
   onClick: () => void;
+  onEdit?: (project: Project) => void;
+  onDelete?: (projectId: string) => void;
+  expanded?: boolean; // New prop to show expanded view
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
+export function ProjectCard({ project, onClick, onEdit, onDelete, expanded }: ProjectCardProps) {
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const statusConfig = PROJECT_STATUS_CONFIG[project.status];
+  
+  const isOwner = user?.id === project.author_id;
+
+  // Handle reactions
+  const handleReaction = async (reactionType: ReactionType) => {
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        toast({
+          title: "Error",
+          description: "Debes iniciar sesión para reaccionar",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check if user already reacted
+      const { data: existingReaction } = await supabase
+        .from('reactions')
+        .select('*')
+        .eq('post_id', project.id)
+        .eq('user_id', currentUser.id)
+        .maybeSingle() as { id: number; post_id: string; user_id: string; reaction_type: ReactionType } | null;
+
+      if (existingReaction) {
+        if (existingReaction.reaction_type === reactionType) {
+          // Remove reaction if same type
+          await supabase
+            .from('reactions')
+            .delete()
+            .eq('post_id', project.id)
+            .eq('user_id', currentUser.id);
+        } else {
+          // Update reaction type
+          await supabase
+            .from('reactions')
+            .update({ reaction_type: reactionType } as any)
+            .eq('post_id', project.id)
+            .eq('user_id', currentUser.id);
+        }
+      } else {
+        // Add new reaction
+        await supabase
+          .from('reactions')
+          .insert({
+            post_id: project.id,
+            user_id: currentUser.id,
+            reaction_type: reactionType
+          } as any);
+      }
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['project-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['personalized-feed'] });
+      
+      toast({
+        title: "Reacción guardada",
+        description: "Tu reacción ha sido guardada exitosamente",
+      });
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo procesar tu reacción",
+        variant: "destructive"
+      });
+    }
+  };
   
   // Get all images from media_urls or use image_url as fallback
   const projectImages = project.media_urls && project.media_urls.length > 0 
@@ -110,6 +194,45 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
             </div>
           )}
 
+          {/* Owner Actions - Top Right (only for project owners) */}
+          {isOwner && (
+            <div className="absolute top-3 right-3 z-40">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white rounded-full"
+                  >
+                    <MoreHorizontal size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit?.(project);
+                    }}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <Edit size={14} />
+                    <span>Editar proyecto</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete?.(project.id);
+                    }}
+                    className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive"
+                  >
+                    <Trash2 size={14} />
+                    <span>Eliminar proyecto</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
           {/* Views count overlay - Bottom Right */}
           <div className="absolute bottom-3 right-3 z-30">
             <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5 text-white text-xs font-medium">
@@ -127,44 +250,105 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           </h3>
 
           {/* Description */}
-          <p className="text-muted-foreground text-sm line-clamp-3 md:line-clamp-4 leading-relaxed">
-            {project.short_description || project.description}
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {expanded ? project.description : (project.short_description || project.description)}
           </p>
 
-          <div>
-            <Button
-              type="button"
-              variant="link"
-              className="h-auto p-0 text-primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-              }}
-            >
-              Ver más
-            </Button>
-          </div>
+          {/* Expanded Information */}
+          {expanded && (
+            <div className="space-y-4 border-t pt-4">
+              {/* Objectives */}
+              {project.objectives && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-sm">Objetivos</h4>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{project.objectives}</p>
+                </div>
+              )}
 
-          {/* Technologies */}
-          <div className="flex flex-wrap gap-2">
-            {displayTechs.map((tech, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary"
-                className="bg-primary/5 text-primary border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-all px-3 py-1 text-xs font-semibold rounded-full"
-              >
-                {tech}
-              </Badge>
-            ))}
-            {remainingTechsCount > 0 && (
-              <Badge 
-                variant="secondary" 
-                className="bg-muted/50 text-muted-foreground hover:bg-muted transition-all px-3 py-1 text-xs font-semibold rounded-full"
-              >
-                +{remainingTechsCount}
-              </Badge>
-            )}
-          </div>
+              {/* Full Technologies List */}
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">Tecnologías</h4>
+                <div className="flex flex-wrap gap-2">
+                  {project.technologies.map((tech, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary"
+                      className="bg-primary/5 text-primary border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-all px-3 py-1 text-xs font-semibold rounded-full"
+                    >
+                      {tech}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Team Members */}
+              {project.team_members && project.team_members.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-sm">Miembros del Equipo</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {project.team_members.map((member, index) => (
+                      <Badge key={index} variant="outline" className="px-3 py-1 text-xs">
+                        {member}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                {project.demo_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    asChild
+                  >
+                    <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink size={14} />
+                      Demo
+                    </a>
+                  </Button>
+                )}
+                {project.github_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    asChild
+                  >
+                    <a href={project.github_url} target="_blank" rel="noopener noreferrer">
+                      <Users size={14} />
+                      GitHub
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Technologies Preview (collapsed view) */}
+          {!expanded && (
+            <div className="flex flex-wrap gap-2">
+              {displayTechs.map((tech, index) => (
+                <Badge 
+                  key={index} 
+                  variant="secondary"
+                  className="bg-primary/5 text-primary border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-all px-3 py-1 text-xs font-semibold rounded-full"
+                >
+                  {tech}
+                </Badge>
+              ))}
+              {remainingTechsCount > 0 && (
+                <Badge 
+                  variant="secondary" 
+                  className="bg-muted/50 text-muted-foreground hover:bg-muted transition-all px-3 py-1 text-xs font-semibold rounded-full"
+                >
+                  +{remainingTechsCount}
+                </Badge>
+              )}
+            </div>
+          )}
 
           {/* Divider */}
           <div className="border-t border-border/50" />
@@ -202,9 +386,13 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                   <span>{project.team_members.length + 1}</span>
                 </div>
               )}
-              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-red-500 transition-colors cursor-pointer">
-                <Heart size={15} className="opacity-70" />
-                <span>{project.likes_count}</span>
+              <div onClick={(e) => e.stopPropagation()}>
+                <HoverReactionButton
+                  postId={project.id}
+                  userReaction={project.user_reaction as ReactionType | null}
+                  onReactionClick={handleReaction}
+                  postType="project"
+                />
               </div>
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-blue-500 transition-colors cursor-pointer">
                 <MessageCircle size={15} className="opacity-70" />
